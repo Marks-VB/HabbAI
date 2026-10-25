@@ -615,9 +615,9 @@
   z-index: 55;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   height: var(--top-h);
-  padding: 0 10px 0 8px;
+  padding: 0 12px 0 10px;
   background: var(--ui-bg);
   -webkit-backdrop-filter: blur(14px) saturate(1.25);
   backdrop-filter: blur(14px) saturate(1.25);
@@ -928,13 +928,29 @@
   }
 }
 
-/* Uso por conta */
+/* Uso por conta: distribuição flexível e rolagem suave se houver muitos provedores ativos */
 .ui-usage {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-left: auto;
   min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 176, 210, 0.2) transparent;
+  padding: 2px 0;
+}
+
+.ui-usage::-webkit-scrollbar {
+  height: 3px;
+}
+
+.ui-usage::-webkit-scrollbar-thumb {
+  background: rgba(160, 176, 210, 0.2);
+  border-radius: 2px;
 }
 
 .ui-usage-card {
@@ -943,19 +959,21 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 9px;
-  width: 310px;
+  gap: 7px;
+  width: auto;
+  max-width: 260px;
   flex: 0 1 auto;
-  /* Abaixo disso o cartão perderia o reinício; o e-mail some antes (consulta de contêiner abaixo). */
-  min-width: 188px;
-  padding: 5px 10px 5px 6px;
-  border-radius: 9px;
+  /* Largura mínima compacta e adaptável para comportar múltiplas IAs sem empurrar a barra */
+  min-width: 135px;
+  padding: 4px 8px 4px 5px;
+  border-radius: 8px;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--acc) 14%, transparent), transparent 46%),
     var(--ui-bg-soft);
   border: 1px solid var(--ui-line);
   outline-offset: 2px;
   cursor: default;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
 .ui-usage-card:hover,
