@@ -10,6 +10,14 @@ do meio (0.**3**.0).
 
 ## [Não lançado]
 
+### Adicionado
+
+- **Suporte ao Gemini CLI, Antigravity e opencode no escritório virtual.**
+  - **Google Gemini CLI (`gemini`):** detecção automática de conversas em `~/.gemini/tmp/*/chats/`, hooks de comando em `~/.gemini/settings.json` (`npm run gemini:install`), atividades, ferramentas e leitor de terminal.
+  - **Antigravity (`antigravity`):** suporte completo ao Antigravity Desktop/IDE (`~/.gemini/antigravity/brain`) e Antigravity CLI (`~/.gemini/antigravity-cli/brain`), com parsing de transcript JSONL, pensamento, ferramentas, subagentes e histórico de conversas.
+  - **opencode (`opencode`):** plugin TypeScript instalado via `npm run opencode:install` enviando eventos em tempo real para `POST /api/agents/events`, permitindo acompanhar agentes, sessões, subagentes e aprovação de permissões no escritório.
+  - **Identidade visual e chips de conta:** selos e cores personalizadas nos chips de conta para Gemini CLI, Antigravity e opencode, integrados à gaveta, terminal e timeline.
+
 ## [1.0.3] - 2026-10-16
 
 ### Corrigido

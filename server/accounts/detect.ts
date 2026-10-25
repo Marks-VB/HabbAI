@@ -219,6 +219,22 @@ const ALIAS_TOOLS: Record<Provider, { invokes: RegExp; dir: RegExp }> = {
     invokes: /(?:^|[\s;&|(])(?:[\w.~/-]*\/)?codex(?=$|[\s;&|)])/,
     dir: /\bCODEX_HOME=(?:"([^"]*)"|'([^']*)'|([^\s;&|]+))/,
   },
+  gemini: {
+    invokes: /(?:^|[\s;&|(])(?:[\w.~/-]*\/)?gemini(?=$|[\s;&|)])/,
+    dir: /\bGEMINI_CONFIG_DIR=(?:"([^"]*)"|'([^']*)'|([^\s;&|]+))/,
+  },
+  antigravity: {
+    invokes: /(?:^|[\s;&|(])(?:[\w.~/-]*\/)?(?:agy|antigravity)(?=$|[\s;&|)])/,
+    dir: /\bANTIGRAVITY_CONFIG_DIR=(?:"([^"]*)"|'([^']*)'|([^\s;&|]+))/,
+  },
+  aider: {
+    invokes: /(?:^|[\s;&|(])(?:[\w.~/-]*\/)?aider(?=$|[\s;&|)])/,
+    dir: /\bAIDER_CONFIG_DIR=(?:"([^"]*)"|'([^']*)'|([^\s;&|]+))/,
+  },
+  opencode: {
+    invokes: /(?:^|[\s;&|(])(?:[\w.~/-]*\/)?opencode(?=$|[\s;&|)])/,
+    dir: /\bOPENCODE_CONFIG_DIR=(?:"([^"]*)"|'([^']*)'|([^\s;&|]+))/,
+  },
 };
 
 /**

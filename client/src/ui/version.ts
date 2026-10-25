@@ -1,3 +1,4 @@
+import { createDeveloperWatermark } from './widgets';
 // Versão do Habblaud: o número na barra superior, o selo "Nova versão" quando o GitHub tem uma release mais
 // nova (quem consulta é o servidor, server/updates/checker.ts), o aviso único por versão e a seção "Sobre"
 // das configurações (estado da verificação, "Verificar agora", novidades e como atualizar).
@@ -156,10 +157,11 @@ export class AboutGroup {
       'div',
       { class: 'ui-set-group ui-about', attrs: { id: 'ui-about' } },
       h('h3', { text: tr('Sobre'), tabIndex: -1 }),
-      h('div', { class: 'ui-about__head' }, h('span', { class: 'ui-about__name' }, 'Habblaud ', this.name), this.checkBtn),
+      h('div', { class: 'ui-about__head' }, h('span', { class: 'ui-about__name' }, 'HabbAI ', this.name), this.checkBtn),
       this.status,
       this.fresh,
       this.repo,
+      createDeveloperWatermark(),
     );
   }
 

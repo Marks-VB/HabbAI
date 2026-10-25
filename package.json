@@ -44,7 +44,17 @@
     "codex:bridge": "tsx scripts/codex-bridge.ts",
     "remote:setup": "tsx scripts/remote-setup.ts",
     "remote:mdns": "tsx scripts/remote-mdns.ts",
-    "release": "tsx scripts/release.ts"
+    "release": "tsx scripts/release.ts",
+    "gemini:install": "tsx scripts/gemini-install.ts install",
+    "gemini:uninstall": "tsx scripts/gemini-install.ts uninstall",
+    "gemini:status": "tsx scripts/gemini-install.ts status",
+    "antigravity:install": "tsx scripts/antigravity-install.ts install",
+    "antigravity:uninstall": "tsx scripts/antigravity-install.ts uninstall",
+    "antigravity:status": "tsx scripts/antigravity-install.ts status",
+    "opencode:install": "tsx scripts/opencode-install.ts install",
+    "opencode:uninstall": "tsx scripts/opencode-install.ts uninstall",
+    "opencode:status": "tsx scripts/opencode-install.ts status",
+    "launcher:build": "tsx scripts/build-launcher.ts"
   },
   "devDependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",

@@ -10,7 +10,7 @@ import { ICONS } from './icons';
 import { groupRooms, type AgentNode, type RoomGroup } from './model';
 import { officeIsEmpty } from './overlays';
 import { createAgentRow, updateAgentRow } from './rows';
-import { createAccountChip, createProgress, updateAccountChip, updateProgress } from './widgets';
+import { createAccountChip, createDeveloperWatermark, createProgress, updateAccountChip, updateProgress } from './widgets';
 import { tr } from '../../../shared/i18n';
 
 interface RoomRefs {
@@ -127,6 +127,7 @@ export class Sidebar implements UiComponent {
     });
     this.empty = h('div', { class: 'ui-side__empty', hidden: true }, this.emptyText, this.clearBtn);
     this.scroller.append(this.empty);
+    this.scroller.append(createDeveloperWatermark());
 
     const close = iconButton(ICONS.close, tr('Fechar painel lateral'), () => ctx.togglePanel('sidebar', false), 'ui-side__close');
     this.el = h(

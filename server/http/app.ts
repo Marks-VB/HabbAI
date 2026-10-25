@@ -4,6 +4,7 @@ import { NAME_MAX, parseAppearanceParts, parseCharacterName, parseSeed } from '.
 import type { AccessInfo, AgentInfo, ModSummary, OfficeSnapshot, SourceInfo, UpdateStatus } from '../../shared/types';
 import type { AccountsService } from '../accounts/service';
 import { handleCodexEvent } from '../codex/http';
+import { createAgentEventRoutes, type AgentHookDispatcher } from './agent-events';
 import type { DayStatsService } from '../history/daystats';
 import type { Office } from '../model/office';
 import type { CodexLive } from '../sources/codex/live';
@@ -63,6 +64,7 @@ export interface ApiDeps {
    * não dependem da trava do terminal).
    */
   codexLive?: CodexLive;
+  agentEvents?: (req: IncomingMessage, res: ServerResponse, path: string) => void;
   /** Novo agente pelo escritório (/api/spawn e, para o auxiliar do host, /api/host/spawn/*; server/spawn/spawn.ts). */
   spawn?: SpawnService;
   /** Pastas sugeridas no "Novo agente" (GET /api/spawn/folders; spawn/folders.ts): projetos recentes. */
@@ -124,6 +126,7 @@ function isLocalOnlyPath(path: string): boolean {
     /^\/api\/permissions\/[^/]+\/wait$/.test(path) ||
     path === '/api/mod/inbox' ||
     path === '/api/mod/inbox/ack' ||
+    path === '/api/agents/events' ||
     path.startsWith('/api/codex/') ||
     path.startsWith('/api/host/')
   );
@@ -476,6 +479,16 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
           return true;
         }
         handleCharacter(req, res, id, method).catch((err) => fail(res, err));
+      }
+      return true;
+    }
+    if (path === '/api/agents/events') {
+      if (!trusted(req) || (!deps.inDocker && !isLoopbackAddress(req.socket.remoteAddress))) {
+        sendJson(res, 403, { error: denied(req, tr('eventos só são aceitos pelo próprio computador (http://localhost ou http://127.0.0.1)')) });
+      } else if (deps.agentEvents) {
+        deps.agentEvents(req, res, path);
+      } else {
+        sendJson(res, 200, { ok: false });
       }
       return true;
     }

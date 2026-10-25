@@ -341,7 +341,7 @@
 
 /* Conta do Codex: chip "vazado" (fundo escuro, borda e letra na cor da conta) com cantos em degrau, como um pixel
    arredondado. Lê-se de longe como "outra ferramenta" sem precisar de logotipo. */
-.ui-acc-chip[data-provider='codex'] {
+.ui-acc-chip[data-provider] {
   --step: 2px;
   border-radius: 0;
   background: #161b26;
@@ -361,7 +361,7 @@
   );
 }
 
-.ui-acc-chip--lg[data-provider='codex'] {
+.ui-acc-chip--lg[data-provider] {
   --step: 3px;
 }
 
@@ -390,6 +390,22 @@
   height: 13px;
   padding: 0 4px;
   font-size: 8.5px;
+}
+
+.ui-prov--gemini {
+  color: #8ab4f8;
+}
+
+.ui-prov--antigravity {
+  color: #c4b5fd;
+}
+
+.ui-prov--opencode {
+  color: #6ee7b7;
+}
+
+.ui-prov--codex {
+  color: #a7f3d0;
 }
 
 .ui-status-dot {
@@ -11146,4 +11162,55 @@ html.is-replay #world {
 
 .ui-world-chip__visitors[hidden] {
   display: none;
+}
+
+.ui-brand__logo-text {
+  font-family: 'Pixelify Sans', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  color: #f4f1ea;
+  text-shadow: 1px 1px 0 rgba(6, 8, 14, 0.9);
+  display: inline-flex;
+  align-items: center;
+}
+
+.ui-brand__logo-ai {
+  color: #38d399;
+  margin-left: 1px;
+  text-shadow: 0 0 10px rgba(56, 211, 153, 0.5);
+}
+
+.ui-watermark {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  padding: 0 8px;
+}
+
+.ui-watermark__link {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: #64748b;
+  text-transform: uppercase;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  display: inline-block;
+}
+
+.ui-watermark__link:hover {
+  color: #cbd5e1;
+  opacity: 1;
+}
+
+.ui-watermark__cursor {
+  animation: ui-watermark-blink 1s step-start infinite;
+}
+
+@keyframes ui-watermark-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }

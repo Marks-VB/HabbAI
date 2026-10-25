@@ -8,29 +8,43 @@ import {
   fallbackShort,
   hasCodexPermission,
   isCodex,
+  looksLikeAntigravityId,
   looksLikeCodexId,
+  looksLikeGeminiId,
+  looksLikeOpencodeId,
   providerOf,
   showsProviderTag,
 } from './provider';
 
-describe('ferramenta (Claude Code ou Codex)', () => {
+describe('ferramenta (Claude Code, Codex, Gemini, Antigravity, opencode)', () => {
   it('provider ausente = Claude Code', () => {
     expect(providerOf(undefined)).toBe('claude');
     expect(providerOf({})).toBe('claude');
     expect(providerOf({ provider: 'codex' })).toBe('codex');
+    expect(providerOf({ provider: 'gemini' })).toBe('gemini');
+    expect(providerOf({ provider: 'antigravity' })).toBe('antigravity');
+    expect(providerOf({ provider: 'opencode' })).toBe('opencode');
     expect(isCodex({ provider: 'codex' })).toBe(true);
     expect(isCodex({ provider: 'claude' })).toBe(false);
     expect(isCodex(null)).toBe(false);
   });
 
-  it('id com cara de pasta do Codex (só quando a conta já não está no snapshot)', () => {
+  it('id com cara de pasta de cada ferramenta', () => {
     for (const id of ['.codex', 'demo:.codex', '.codex-trabalho', '.codex~2', '/Users/ana/.codex', 'codex']) expect(looksLikeCodexId(id), id).toBe(true);
     for (const id of ['.claude', '.claude-conta2', 'demo:.claude', 'meucodex', '.codexy', '']) expect(looksLikeCodexId(id), id).toBe(false);
+
+    for (const id of ['.gemini', 'demo:.gemini', '.gemini-work', 'gemini']) expect(looksLikeGeminiId(id), id).toBe(true);
+    for (const id of ['.antigravity', 'demo:.antigravity', 'antigravity-cli', 'antigravity']) expect(looksLikeAntigravityId(id), id).toBe(true);
+    for (const id of ['.opencode', 'demo:.opencode', 'opencode']) expect(looksLikeOpencodeId(id), id).toBe(true);
+
     // Com a conta à mão, vale o provider dela; sem ela, a dica de quem chamou e, por fim, o id.
     expect(accountProvider({ provider: 'codex' }, '.claude')).toBe('codex');
     expect(accountProvider({}, '.codex')).toBe('claude');
     expect(accountProvider(undefined, '.claude', 'codex')).toBe('codex');
     expect(accountProvider(undefined, '.codex')).toBe('codex');
+    expect(accountProvider(undefined, '.gemini')).toBe('gemini');
+    expect(accountProvider(undefined, '.antigravity')).toBe('antigravity');
+    expect(accountProvider(undefined, '.opencode')).toBe('opencode');
     expect(accountProvider(undefined, 'x')).toBe('claude');
   });
 
@@ -41,22 +55,41 @@ describe('ferramenta (Claude Code ou Codex)', () => {
     expect(fallbackShort('.codex-trabalho')).toBe('T');
     expect(fallbackShort('.codex~2')).toBe('X');
     expect(fallbackShort('demo:.codex')).toBe('X');
+    expect(fallbackShort('.gemini')).toBe('G');
+    expect(fallbackShort('.gemini-dev')).toBe('D');
+    expect(fallbackShort('.antigravity')).toBe('A');
+    expect(fallbackShort('.antigravity-cli')).toBe('C');
+    expect(fallbackShort('.opencode')).toBe('O');
+    expect(fallbackShort('.opencode-test')).toBe('T');
     expect(fallbackShort('minha-conta')).toBe('M');
     expect(fallbackShort('')).toBe('?');
     expect(fallbackShort('...', 'codex')).toBe('X');
+    expect(fallbackShort('...', 'gemini')).toBe('G');
+    expect(fallbackShort('...', 'antigravity')).toBe('A');
+    expect(fallbackShort('...', 'opencode')).toBe('O');
   });
 
-  it('selo "Codex": só no Codex, e sem repetir o nome da conta', () => {
+  it('selo da ferramenta: nos provedores suportados, sem repetir o nome da conta', () => {
     expect(showsProviderTag('codex', 'Conta X')).toBe(true);
     expect(showsProviderTag('codex', 'Codex')).toBe(false);
     expect(showsProviderTag('codex', 'Demo Codex')).toBe(false);
+    expect(showsProviderTag('gemini', 'Conta G')).toBe(true);
+    expect(showsProviderTag('gemini', 'Gemini')).toBe(false);
+    expect(showsProviderTag('antigravity', 'Brain')).toBe(true);
+    expect(showsProviderTag('antigravity', 'Antigravity')).toBe(false);
+    expect(showsProviderTag('opencode', 'Agent')).toBe(true);
+    expect(showsProviderTag('opencode', 'Opencode')).toBe(false);
     expect(showsProviderTag('claude', 'Conta C')).toBe(false);
   });
 
-  it('rótulo do chip: e-mail no Claude Code; ferramenta e plano no Codex', () => {
+  it('rótulo do chip: e-mail no Claude Code; ferramenta e plano nos demais', () => {
     expect(accountChipLabel({ name: 'Conta C', email: 'a@b.c' }, '.claude', 'claude')).toBe('Conta C (a@b.c)');
     expect(accountChipLabel({ name: 'Conta X', plan: 'Team', provider: 'codex' }, '.codex', 'codex')).toBe('Conta X · Codex · plano Team');
     expect(accountChipLabel({ name: 'Codex', plan: 'Team', provider: 'codex' }, '.codex', 'codex')).toBe('Codex · plano Team');
+    expect(accountChipLabel({ name: 'Work', provider: 'gemini' }, '.gemini', 'gemini')).toBe('Work · Gemini CLI');
+    expect(accountChipLabel(undefined, '.gemini', 'gemini')).toBe('.gemini · Gemini CLI');
+    expect(accountChipLabel(undefined, '.antigravity', 'antigravity')).toBe('.antigravity · Antigravity');
+    expect(accountChipLabel(undefined, '.opencode', 'opencode')).toBe('.opencode · opencode');
     expect(accountChipLabel(undefined, '.codex', 'codex')).toBe('.codex · Codex');
     expect(accountChipLabel(undefined, '', 'claude')).toBe('Conta desconhecida');
   });

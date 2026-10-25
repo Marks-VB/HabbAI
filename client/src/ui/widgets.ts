@@ -4,7 +4,7 @@ import type { AccountInfo, Activity, AgentInfo, AgentStatus, Provider } from '..
 import { h, setAttr, setHidden, setStyleVar, setText, setTitle, setVariant } from './dom';
 import { WORDMARK } from './icons';
 import { shellDoneKind, shellLine, shellStage, statusLabel, type ShellWait } from './model';
-import { accountChipLabel, accountProvider, fallbackShort, showsProviderTag } from './provider';
+import { accountChipLabel, accountProvider, fallbackShort, PROVIDER_NAME, showsProviderTag } from './provider';
 import { tr } from '../../../shared/i18n';
 
 /**
@@ -20,7 +20,7 @@ export function updateAccountChip(chip: HTMLElement, account: AccountInfo | unde
   const p = accountProvider(account, fallbackId, provider);
   setText(chip, account?.short ?? fallbackShort(fallbackId, p));
   setStyleVar(chip, '--acc', account?.color ?? '#8b98b3');
-  setAttr(chip, 'data-provider', p === 'codex' ? 'codex' : null);
+  setAttr(chip, 'data-provider', p !== 'claude' ? p : null);
   const label = accountChipLabel(account, fallbackId, p);
   setTitle(chip, label);
   setAttr(chip, 'aria-label', label);
@@ -33,7 +33,12 @@ export function createProviderTag(extra = ''): HTMLElement {
 
 /** Mostra o selo só para o Codex (e não repete quando o nome da conta já diz "Codex"). */
 export function updateProviderTag(tag: HTMLElement, provider: Provider, accountName = ''): void {
-  setHidden(tag, !showsProviderTag(provider, accountName));
+  const show = showsProviderTag(provider, accountName);
+  setHidden(tag, !show);
+  if (show) {
+    setText(tag, PROVIDER_NAME[provider]);
+    setVariant(tag, 'ui-prov--', provider);
+  }
 }
 
 /** Quadradinho de status (pixel), com pulso quando precisa de você. */
@@ -132,7 +137,23 @@ export function updateShellActivityLine(el: HTMLElement, wait: ShellWait, now: n
 /** Nome do produto como logotipo em pixels (o texto fica para leitores de tela). */
 export function wordmark(cls = 'ui-brand__name'): HTMLElement {
   const el = h('span', { class: cls });
-  el.innerHTML = WORDMARK;
-  el.append(h('span', { class: 'ui-sr', text: 'Habblaud' }));
+  el.innerHTML = '<span class="ui-brand__logo-text">Habb<span class="ui-brand__logo-ai">AI</span></span>';
+  el.append(h('span', { class: 'ui-sr', text: 'HabbAI' }));
   return el;
+}
+
+/** Watermark do desenvolvedor: BUILD BY MARKSVB.DEV */
+export function createDeveloperWatermark(): HTMLElement {
+  const wrap = h('div', { class: 'ui-watermark' });
+  const link = h('a', {
+    class: 'ui-watermark__link',
+    attrs: {
+      href: 'https://marksvb.dev',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+  });
+  link.innerHTML = '{ &gt; BUILD BY MARKSVB.DEV<span class="ui-watermark__cursor">_</span> }';
+  wrap.append(link);
+  return wrap;
 }

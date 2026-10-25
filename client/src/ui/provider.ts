@@ -8,7 +8,7 @@ import { shortcutHint } from './model';
 import { tr } from '../../../shared/i18n';
 
 /** Nome de cada ferramenta como aparece nos textos. */
-export const PROVIDER_NAME: Record<Provider, string> = { claude: 'Claude Code', codex: 'Codex' };
+export const PROVIDER_NAME: Record<Provider, string> = { claude: 'Claude Code', codex: 'Codex', gemini: 'Gemini CLI', antigravity: 'Antigravity', opencode: 'opencode', aider: 'Aider' };
 
 /** Ferramenta de um agente, conta, sessão ou pedido (ausente = Claude Code). */
 export function providerOf(x: { provider?: Provider } | null | undefined): Provider {
@@ -27,10 +27,32 @@ export function looksLikeCodexId(id: string): boolean {
   return /(?:^|[:/\\])\.?codex(?:[-_.~]|$)/i.test(id);
 }
 
+export function looksLikeGeminiId(id: string): boolean {
+  return /(?:^|[:/\\])\.?gemini(?:[-_.~]|$)/i.test(id);
+}
+
+export function looksLikeAntigravityId(id: string): boolean {
+  return /(?:^|[:/\\])\.?antigravity(?:[-_.~]|$)/i.test(id);
+}
+
+export function looksLikeOpencodeId(id: string): boolean {
+  return /(?:^|[:/\\])\.?opencode(?:[-_.~]|$)/i.test(id);
+}
+
+export function looksLikeAiderId(id: string): boolean {
+  return /(?:^|[:/\\])\.?aider(?:[-_.~]|$)/i.test(id);
+}
+
 /** Ferramenta da conta: a do snapshot; sem ela, a dica de quem chamou ou o jeito do id. */
 export function accountProvider(account: Pick<AccountInfo, 'provider'> | undefined, fallbackId = '', hint?: Provider): Provider {
   if (account) return providerOf(account);
-  return hint ?? (looksLikeCodexId(fallbackId) ? 'codex' : 'claude');
+  if (hint) return hint;
+  if (looksLikeCodexId(fallbackId)) return 'codex';
+  if (looksLikeGeminiId(fallbackId)) return 'gemini';
+  if (looksLikeAntigravityId(fallbackId)) return 'antigravity';
+  if (looksLikeOpencodeId(fallbackId)) return 'opencode';
+  if (looksLikeAiderId(fallbackId)) return 'aider';
+  return 'claude';
 }
 
 /**
@@ -42,22 +64,28 @@ export function fallbackShort(id: string, provider: Provider = accountProvider(u
   const rest = id
     .replace(/^.*:/, '')
     .replace(/~\d+$/, '')
-    .replace(/^\.?(?:claude|codex)(?=[-_.]|$)[-_.]?/i, '');
+    .replace(/^\.?(?:claude|codex|gemini|antigravity|opencode|aider)(?=[-_.]|$)[-_.]?/i, '');
   const letter = /[\p{L}\p{N}]/u.exec(rest)?.[0];
   if (letter) return letter.toUpperCase();
-  return provider === 'codex' ? 'X' : '?';
+  if (provider === 'codex') return 'X';
+  if (provider === 'gemini') return 'G';
+  if (provider === 'antigravity') return 'A';
+  if (provider === 'opencode') return 'O';
+  if (provider === 'aider') return 'Ai';
+  return '?';
 }
 
-/** O selo "Codex" ao lado do nome da conta (não repete quando o nome já diz "Codex"). */
+/** O selo ao lado do nome da conta (não repete quando o nome já diz a ferramenta). */
 export function showsProviderTag(provider: Provider, accountName = ''): boolean {
-  return provider === 'codex' && !/codex/i.test(accountName);
+  if (provider === 'claude') return false;
+  return !new RegExp(provider, 'i').test(accountName);
 }
 
 /** Rótulo do chip da conta (dica e leitores de tela): "Conta C (dev@x.com)", "Codex · plano Team". */
 export function accountChipLabel(account: Pick<AccountInfo, 'name' | 'email' | 'plan' | 'provider'> | undefined, fallbackId: string, provider: Provider): string {
-  if (!account) return fallbackId ? `${fallbackId}${provider === 'codex' ? ' · Codex' : ''}` : tr('Conta desconhecida');
-  if (provider !== 'codex') return `${account.name}${account.email ? ` (${account.email})` : ''}`;
-  const tag = showsProviderTag(provider, account.name) ? ' · Codex' : '';
+  if (!account) return fallbackId ? `${fallbackId}${provider !== 'claude' ? ` · ${PROVIDER_NAME[provider]}` : ''}` : tr('Conta desconhecida');
+  if (provider === 'claude') return `${account.name}${account.email ? ` (${account.email})` : ''}`;
+  const tag = showsProviderTag(provider, account.name) ? ` · ${PROVIDER_NAME[provider]}` : '';
   return `${account.name}${tag}${account.plan ? tr(' · plano {0}', [account.plan]) : ''}`;
 }
 

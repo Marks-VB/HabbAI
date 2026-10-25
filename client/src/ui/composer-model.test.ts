@@ -111,6 +111,38 @@ describe('caixa de mensagem (peças puras)', () => {
     expect(composerMode(codex({ status: 'offline' }), ON)).toEqual({ kind: 'off', text: 'Sessão encerrada' });
   });
 
+  it('Gemini, Antigravity e opencode: dicas e mensagens específicas para cada ferramenta', () => {
+    const gemini = (over: Partial<AgentInfo> = {}) => agent({ provider: 'gemini', ...over });
+    const ag = (over: Partial<AgentInfo> = {}) => agent({ provider: 'antigravity', ...over });
+    const oc = (over: Partial<AgentInfo> = {}) => agent({ provider: 'opencode', ...over });
+
+    expect(composerMode(gemini({ canMessage: undefined }), ON)).toEqual({
+      kind: 'hint',
+      text: 'Para conversar com o agente, use o terminal onde o Gemini CLI está rodando',
+    });
+    expect(composerMode(ag({ canMessage: undefined }), ON)).toEqual({
+      kind: 'hint',
+      text: 'Para conversar com o agente, envie mensagens diretamente pelo chat do Antigravity',
+    });
+    expect(composerMode(oc({ canMessage: undefined }), ON)).toEqual({
+      kind: 'hint',
+      text: 'Para mandar mensagens ao opencode: instale o plugin com npm run opencode:install',
+    });
+
+    expect(composerMode(gemini(), { ...ON, enabled: false })).toEqual({
+      kind: 'off',
+      text: 'Para responder, use o terminal do Gemini CLI',
+    });
+    expect(composerMode(ag(), { ...ON, enabled: false })).toEqual({
+      kind: 'off',
+      text: 'Para responder, use o chat do Antigravity',
+    });
+    expect(composerMode(oc(), { ...ON, enabled: false })).toEqual({
+      kind: 'off',
+      text: 'Para responder, use o terminal do opencode',
+    });
+  });
+
   it('Codex: "Entregue" é a fila da sessão; dica e prazo falam do Codex', () => {
     expect(sendStatusText({ phase: 'delivered', at: 0 }, 1_000, 'codex')).toBe('Entregue ✓ na fila da sessão: entra quando o Codex terminar o que está fazendo (até ~10 s)');
     expect(sendStatusText({ phase: 'delivered', at: 0 }, DELIVERED_SHOW_MS, 'codex')).toBe('');
