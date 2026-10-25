@@ -2659,16 +2659,28 @@
   position: fixed;
   inset: auto;
   margin: 0;
-  width: 330px;
+  width: 410px;
+  max-width: calc(100vw - 24px);
   max-height: calc(100vh - var(--top-h) - 24px);
   overflow-y: auto;
-  padding: 0 0 6px;
-  border-radius: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 176, 210, 0.28) transparent;
+  padding: 0 0 8px;
+  border-radius: 14px;
   background: var(--ui-bg-solid);
   border: 1px solid var(--ui-line-strong);
-  box-shadow: 0 20px 48px rgba(5, 7, 12, 0.55);
+  box-shadow: 0 24px 54px rgba(5, 7, 12, 0.65);
   color: var(--ui-text);
   font: 13px/1.4 var(--font-ui);
+}
+
+.ui-popover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ui-popover::-webkit-scrollbar-thumb {
+  background: rgba(160, 176, 210, 0.28);
+  border-radius: 3px;
 }
 
 .ui-popover:not(:popover-open):not(.is-open) {
@@ -2875,18 +2887,20 @@
 }
 
 .ui-seg {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 2px;
-  padding: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 3px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--ui-line);
 }
 
 .ui-seg__opt {
-  height: 26px;
+  flex: 1 1 auto;
+  min-width: fit-content;
+  padding: 0 10px;
+  height: 28px;
   border-radius: 6px;
   text-align: center;
   font-size: 12px;
@@ -6659,15 +6673,21 @@ html.is-replay #world {
 .ui-snd__chips {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
 
 .ui-snd__chip {
-  height: 26px;
+  height: 30px;
+  padding: 0 4px;
   border-radius: 6px;
   border: 1px solid var(--ui-line);
   background: rgba(0, 0, 0, 0.2);
   font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   color: var(--ui-muted);
   transition:
     background-color 0.15s,

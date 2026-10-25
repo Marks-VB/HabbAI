@@ -57,42 +57,48 @@ export function playVoice(ac: AudioContext, dest: AudioNode, kind: SoundKind, t:
   const g = o.gain;
   switch (kind) {
     case 'chime':
-      // sino suave: duas parciais e uma terceira nota logo depois, com decaimento longo
-      tone(ac, out, 'sine', 880, t, 0.16 * g, 0.012, 1.1);
-      tone(ac, out, 'sine', 1318.5, t, 0.08 * g, 0.012, 1.1);
-      tone(ac, out, 'sine', 1174.7, t + 0.14, 0.1 * g, 0.012, 1.1);
+      // sino suave e cristalino: tom fundamental com harmônicos quentes e brilho estendido
+      tone(ac, out, 'sine', 880, t, 0.22 * g, 0.012, 1.4);
+      tone(ac, out, 'sine', 1318.5, t, 0.13 * g, 0.012, 1.2);
+      tone(ac, out, 'sine', 1760, t, 0.05 * g, 0.008, 0.8);
+      tone(ac, out, 'sine', 1174.7, t + 0.12, 0.18 * g, 0.012, 1.3);
+      tone(ac, out, 'sine', 1760, t + 0.12, 0.06 * g, 0.008, 0.7);
       return;
     case 'pop':
-      // "pop": varredura curta para baixo
-      tone(ac, out, 'triangle', 740, t, 0.14 * g, 0.008, 0.15, 330);
+      // estalo "pop" nítido e orgânico (clique + corpo)
+      tone(ac, out, 'sine', 880, t, 0.18 * g, 0.003, 0.12, 280);
+      tone(ac, out, 'triangle', 440, t, 0.12 * g, 0.005, 0.08, 160);
       return;
     case 'elevator':
-      // "ding" de elevador: uma nota redonda com o brilho de sino sumindo antes
-      tone(ac, out, 'sine', 784, t, 0.11 * g, 0.004, 1.5);
-      tone(ac, out, 'sine', 1568, t, 0.025 * g, 0.004, 0.7);
-      tone(ac, out, 'sine', 2164, t, 0.012 * g, 0.004, 0.25);
+      // "ding" de elevador rico: harmônicos dourados com reverb natural
+      tone(ac, out, 'sine', 784, t, 0.18 * g, 0.004, 1.8);
+      tone(ac, out, 'sine', 1174.7, t, 0.06 * g, 0.004, 1.1);
+      tone(ac, out, 'sine', 1568, t, 0.05 * g, 0.004, 0.9);
+      tone(ac, out, 'sine', 2349, t, 0.02 * g, 0.003, 0.4);
       return;
     case 'keys':
       keys(ac, out, t, o);
       return;
     case 'pingpong':
-      // raquetada: "tok" agudo com a altura caindo
-      tone(ac, out, 'sine', 1250, t, 0.09 * g, 0.002, 0.06, 880);
+      // raquetada: "tok" nítido e amortecido
+      tone(ac, out, 'sine', 1320, t, 0.14 * g, 0.002, 0.07, 820);
+      tone(ac, out, 'triangle', 400, t, 0.06 * g, 0.002, 0.04, 200);
       return;
     case 'table':
-      // quique na mesa: mais grave e mais curto
-      tone(ac, out, 'sine', 760, t, 0.06 * g, 0.002, 0.045, 520);
+      // quique na mesa: batida de celuloide oca
+      tone(ac, out, 'sine', 740, t, 0.11 * g, 0.002, 0.055, 480);
+      tone(ac, out, 'triangle', 260, t, 0.05 * g, 0.002, 0.035, 140);
       return;
     case 'arcade': {
-      // fliperama: arpejo de três notas em onda quadrada, filtrado para não ferir
+      // fliperama 8-bit vibrante e polido
       const lp = ac.createBiquadFilter();
       lp.type = 'lowpass';
-      lp.frequency.value = 2600;
+      lp.frequency.value = 3200;
       lp.connect(out);
       const scale = [1046.5, 1318.5, 1568, 1760, 2093];
       for (let i = 0; i < 3; i++) {
         const f = scale[Math.floor(o.rng() * scale.length)];
-        tone(ac, lp, 'square', f, t + i * 0.055, 0.03 * g, 0.003, 0.05);
+        tone(ac, lp, 'square', f, t + i * 0.05, 0.045 * g, 0.003, 0.06);
       }
       return;
     }
@@ -109,12 +115,13 @@ function keys(ac: AudioContext, out: AudioNode, t: number, o: VoiceOpts): void {
     src.buffer = o.noise;
     const bp = ac.createBiquadFilter();
     bp.type = 'bandpass';
-    bp.frequency.value = 1900 + o.rng() * 1500;
-    bp.Q.value = 1.4;
+    bp.frequency.value = 1800 + o.rng() * 1600;
+    bp.Q.value = 1.6;
     const g = ac.createGain();
-    env(g, at, 0.08 * o.gain * (0.6 + o.rng() * 0.4), 0.0015, 0.022 + o.rng() * 0.012);
+    // pequeno claque mecânico com ataque ultra-rápido e corpo
+    env(g, at, 0.12 * o.gain * (0.7 + o.rng() * 0.3), 0.001, 0.028 + o.rng() * 0.014);
     src.connect(bp).connect(g).connect(out);
-    src.start(at, o.rng() * 0.02, 0.04);
+    src.start(at, o.rng() * 0.02, 0.045);
     at += 0.06 + o.rng() * 0.08 + (o.rng() < 0.15 ? 0.12 : 0);
   }
 }
