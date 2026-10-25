@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { seasonalThemeFor } from './api';
+import { isWorldOfficeTheme, seasonalThemeFor } from './api';
 
 describe('tema do escritório', () => {
   const at = (month: number, day: number, hour = 12) => new Date(2026, month - 1, day, hour);
@@ -22,6 +22,15 @@ describe('tema do escritório', () => {
       expect(seasonalThemeFor('none', date)).toBe('none');
       expect(seasonalThemeFor('christmas', date)).toBe('christmas');
       expect(seasonalThemeFor('halloween', date)).toBe('halloween');
+      expect(seasonalThemeFor('cyberpunk', date)).toBe('cyberpunk');
+      expect(seasonalThemeFor('retro', date)).toBe('retro');
     }
+  });
+
+  it('só os temas sazonais vão para o prédio do World', () => {
+    for (const theme of ['auto', 'none', 'christmas', 'halloween'] as const) expect(isWorldOfficeTheme(theme)).toBe(true);
+    expect(isWorldOfficeTheme('cyberpunk')).toBe(false);
+    expect(isWorldOfficeTheme('retro')).toBe(false);
+    expect(isWorldOfficeTheme(undefined)).toBe(false);
   });
 });

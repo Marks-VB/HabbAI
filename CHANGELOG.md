@@ -12,6 +12,12 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Dois temas novos no escritório: Cyberpunk e Retrô.** Em **Configurações › Aparência › Tema do escritório**,
+  - **Cyberpunk:** paredes escuras com cornijas de neon ciano e magenta, letreiros luminosos, terminais holográficos no
+    lugar das plantas, tapetes de circuito, chuva de neon nas janelas e viseiras nos personagens.
+  - **Retrô:** paredes quentes, bandeirinhas de lanchonete, fliperamas e televisões de tubo no lugar das plantas,
+    tapetes com galões setentistas, entardecer nas janelas e fones nos personagens.
+  - Os dois temas são locais: o prédio do Habblaud World continua com os temas sazonais.
 - **Suporte ao Gemini CLI, Antigravity e opencode no escritório virtual.**
   - **Google Gemini CLI (`gemini`):** detecção automática de conversas em `~/.gemini/tmp/*/chats/`, hooks de comando em `~/.gemini/settings.json` (`npm run gemini:install`), atividades, ferramentas e leitor de terminal.
   - **Antigravity (`antigravity`):** suporte completo ao Antigravity Desktop/IDE (`~/.gemini/antigravity/brain`) e Antigravity CLI (`~/.gemini/antigravity-cli/brain`), com parsing de transcript JSONL, pensamento, ferramentas, subagentes e histórico de conversas.

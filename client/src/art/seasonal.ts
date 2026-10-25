@@ -2,7 +2,7 @@
 import { PixelBuf } from './core/pixbuf';
 import type { BufSprite } from './core/sprite';
 
-export type SeasonalProp = 'tree' | 'gift' | 'pumpkin' | 'ghost' | 'wreath' | 'bat';
+export type SeasonalProp = 'tree' | 'gift' | 'pumpkin' | 'ghost' | 'wreath' | 'bat' | 'neon' | 'holo' | 'arcade' | 'tv';
 
 export function renderSeasonalProp(kind: SeasonalProp): BufSprite {
   const b = new PixelBuf(40, 64);
@@ -73,7 +73,7 @@ export function renderSeasonalProp(kind: SeasonalProp): BufSprite {
     rect(15, 55, 4, 4, '#c93945');
     rect(21, 55, 4, 4, '#c93945');
     rect(19, 54, 2, 4, '#f07368');
-  } else {
+  } else if (kind === 'bat') {
     rect(18, 51, 5, 6, '#47344f');
     rect(10, 50, 9, 4, '#47344f');
     rect(22, 50, 9, 4, '#47344f');
@@ -83,6 +83,84 @@ export function renderSeasonalProp(kind: SeasonalProp): BufSprite {
     rect(25, 53, 3, 3, '#47344f');
     b.set(19, 52, '#f5b95f');
     b.set(21, 52, '#f5b95f');
+  } else if (kind === 'neon') {
+    // Letreiro vertical de neon sobre um pé metálico.
+    b.shadow(20, 59, 10, 2, '#120c24', 0.28);
+    rect(18, 51, 4, 8, '#2a2440');
+    rect(13, 58, 14, 2, '#1c1830');
+    rect(14, 15, 13, 37, '#241d38');
+    rect(16, 17, 9, 33, '#120e22');
+    b.vline(15, 17, 49, '#39e6f0');
+    b.vline(25, 17, 49, '#ff4fd8');
+    b.hline(15, 25, 16, '#39e6f0');
+    b.hline(15, 25, 50, '#ff4fd8');
+    for (let y = 21; y <= 45; y += 6) {
+      rect(17, y, 7, 2, '#39e6f0');
+      b.set(18, y, '#c9fbff');
+    }
+    b.set(24, 21, '#ff4fd8');
+    b.set(24, 39, '#ff4fd8');
+    rect(15, 12, 11, 3, '#3a2f5c');
+    rect(17, 12, 7, 1, '#7a6bb0');
+  } else if (kind === 'holo') {
+    // Terminal holográfico: projetor no chão e painel flutuante de dados.
+    b.shadow(20, 59, 11, 2, '#120c24', 0.28);
+    rect(12, 52, 16, 4, '#2a2440');
+    rect(15, 48, 10, 4, '#3a2f5c');
+    rect(17, 46, 6, 2, '#39e6f0');
+    b.vline(20, 44, 46, '#2fb8c9');
+    rect(8, 13, 24, 30, '#1c2a44');
+    b.hline(8, 31, 13, '#39e6f0');
+    b.hline(8, 31, 42, '#39e6f0');
+    b.vline(8, 13, 42, '#2fb8c9');
+    b.vline(31, 13, 42, '#2fb8c9');
+    rect(10, 16, 20, 2, '#39e6f0');
+    rect(10, 20, 14, 2, '#7a6bb0');
+    rect(10, 24, 18, 2, '#39e6f0');
+    rect(10, 28, 10, 2, '#7a6bb0');
+    rect(10, 34, 20, 2, '#ff4fd8');
+    rect(10, 38, 8, 2, '#39e6f0');
+    b.set(29, 38, '#ff4fd8');
+    for (const [x, y] of [[7, 12], [32, 12], [7, 43], [32, 43]]) b.set(x, y, '#9df6ff');
+  } else if (kind === 'arcade') {
+    // Fliperama de madeira com marquise rosa e tela de neon.
+    b.shadow(20, 59, 11, 2, '#120c24', 0.26);
+    rect(11, 21, 18, 38, '#3b2a4a');
+    rect(12, 22, 3, 35, '#5b3f6e');
+    rect(12, 21, 16, 6, '#e060a8');
+    rect(14, 23, 12, 2, '#ffd6ec');
+    rect(13, 29, 14, 12, '#141026');
+    rect(15, 31, 10, 8, '#1f6b8a');
+    b.hline(15, 24, 34, '#39e6f0');
+    b.set(18, 32, '#ffe36e');
+    b.set(22, 33, '#ff4fd8');
+    rect(12, 42, 16, 4, '#2a2038');
+    rect(15, 41, 2, 3, '#e05b4a');
+    rect(19, 42, 2, 2, '#39e6f0');
+    rect(23, 42, 2, 2, '#ffe36e');
+    rect(14, 47, 12, 10, '#4a3358');
+    rect(16, 49, 8, 1, '#7a5b8c');
+    rect(13, 57, 4, 2, '#241d38');
+    rect(23, 57, 4, 2, '#241d38');
+  } else {
+    // Televisão de tubo com antena e tela âmbar.
+    b.shadow(20, 59, 10, 2, '#120c24', 0.24);
+    b.vline(14, 26, 36, '#4a3a2a');
+    b.vline(26, 26, 36, '#4a3a2a');
+    b.set(12, 25, '#8a6a4a');
+    b.set(28, 25, '#8a6a4a');
+    rect(9, 34, 22, 21, '#7a5230');
+    rect(10, 35, 20, 18, '#c9955c');
+    rect(12, 37, 13, 14, '#20303a');
+    rect(14, 39, 9, 10, '#2f5a52');
+    b.hline(14, 22, 42, '#8fd6a8');
+    b.hline(14, 22, 45, '#6aa87f');
+    b.set(19, 41, '#ffe36e');
+    rect(27, 38, 2, 2, '#3b2a22');
+    rect(27, 42, 2, 2, '#3b2a22');
+    b.hline(27, 28, 48, '#5a4030');
+    rect(13, 55, 3, 3, '#4a3a2a');
+    rect(24, 55, 3, 3, '#4a3a2a');
   }
   b.outline();
   return { buf: b, ax: 20, ay: 60 };

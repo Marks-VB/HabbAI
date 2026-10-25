@@ -1510,10 +1510,27 @@ function drawCostume(dc: Dc, costume: CharacterFrameRequest['costume']): void {
     b.vline(x + 4, y + 1, y + 4, '#f9ae48');
     b.vline(x + 8, y + 1, y + 4, '#f9ae48');
     b.hline(x + 2, x + 11, y + 5, '#8d4930');
-  } else {
+  } else if (costume === 'vampire') {
     // Gola da capa: rosto e crachá continuam visíveis.
     b.rect(x, y + 12, 2, 5, '#702743');
     b.rect(x + 12, y + 12, 2, 5, '#702743');
+  } else if (costume === 'visor') {
+    // Óculos de dados: faixa escura com brilho ciano e um ponto magenta.
+    b.rect(x + 1, y + 4, 11, 3, '#241d38');
+    b.rect(x + 2, y + 4, 9, 1, '#39e6f0');
+    b.hline(x + 4, x + 10, y + 5, '#1b8fa8');
+    b.set(x + 10, y + 4, '#ff4fd8');
+    b.rect(x + 12, y + 4, 1, 3, '#4c3a6b');
+  } else {
+    // Fones retrô: arco na cabeça e conchas âmbar nas laterais.
+    b.hline(x + 3, x + 9, y - 1, '#3b2a22');
+    b.hline(x + 4, x + 8, y - 2, '#5a4030');
+    b.rect(x, y + 2, 3, 6, '#d9943f');
+    b.rect(x + 11, y + 2, 3, 6, '#d9943f');
+    b.rect(x + 1, y + 3, 1, 4, '#f2c778');
+    b.rect(x + 12, y + 3, 1, 4, '#f2c778');
+    b.set(x, y + 2, '#3b2a22');
+    b.set(x + 13, y + 2, '#3b2a22');
   }
 }
 

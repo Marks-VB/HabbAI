@@ -133,8 +133,8 @@ export interface CharacterFrameRequest {
   held?: HeldItem;
   /** Para poses que podem ser em pé ou sentado (raise_hand, read, talk). */
   seated?: boolean;
-  /** Acessório sazonal; ausente mantém a aparência original. */
-  costume?: 'santa' | 'witch' | 'pumpkin' | 'vampire';
+  /** Acessório temático; ausente mantém a aparência original. */
+  costume?: 'santa' | 'witch' | 'pumpkin' | 'vampire' | 'visor' | 'headphones';
 }
 
 export type FurnitureKind =

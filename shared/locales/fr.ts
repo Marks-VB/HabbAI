@@ -2158,7 +2158,9 @@ export const FR: Readonly<Record<string, string>> = {
   "Tema do escritório": "Thème du bureau",
   "Natal": "Noël",
   "Halloween": "Halloween",
-  "Automático: Halloween em outubro e Natal de 1º de novembro a 26 de dezembro; no resto do ano, o visual original. Nenhum: sempre o original.": "Automatique : Halloween en octobre et Noël du 1er novembre au 26 décembre ; le reste de l'année, l'apparence d'origine. Aucun : toujours l'original.",
+  "Cyberpunk": "Cyberpunk",
+  "Retrô": "Rétro",
+  "Automático: Halloween em outubro e Natal de 1º de novembro a 26 de dezembro; no resto do ano, o visual original. Nenhum: sempre o original. Cyberpunk e Retrô são temas só deste escritório: o prédio do World mantém o tema sazonal.": "Automatique : Halloween en octobre et Noël du 1er novembre au 26 décembre ; le reste de l'année, l'apparence d'origine. Aucun : toujours l'original. Cyberpunk et Rétro sont des thèmes propres à ce bureau : le bâtiment du World garde son thème saisonnier.",
   "Os textos das atividades vêm do servidor: seguem HABBLAUD_LANG ou o idioma do sistema onde o Habblaud roda (o inglês, só com HABBLAUD_LANG=en).": "Les textes d'activité viennent du serveur : ils suivent HABBLAUD_LANG ou la langue du système où tourne Habblaud (l'anglais, seulement avec HABBLAUD_LANG=en).",
   "Aparência": "Apparence",
 

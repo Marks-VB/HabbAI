@@ -22,9 +22,9 @@ import {
   type WorldResult,
   type WorldSource,
   type WorldStatus,
-  type WorldThemeChoice,
   type WorldVisibility,
 } from '../../net/world';
+import { isWorldOfficeTheme, type OfficeTheme } from '../../world/api';
 import { BuildingCard, SentDialog } from './building';
 import { buildBlocked } from './blocked';
 import { TRAITS, TRAIT_IDS, type TraitId } from '../../../../shared/world/traits';
@@ -355,9 +355,15 @@ export class WorldSettingsGroup {
    * A escolha de Aparência › Tema do escritório também vai para o prédio (PUT /api/world/theme), quando o World está
    * ligado e a conta aprovada. Se não der, a dica do tema mostra o erro (o escritório troca de tema do mesmo jeito).
    */
-  async onThemePicked(theme: WorldThemeChoice): Promise<void> {
+  async onThemePicked(theme: OfficeTheme): Promise<void> {
     const client = this.client;
     this.themePickedAt = ++this.themeClock;
+    // Cyberpunk e retrô são visuais locais: o prédio do World não os conhece e mantém o tema que já tinha.
+    if (!isWorldOfficeTheme(theme)) {
+      setText(this.themeError, '');
+      setHidden(this.themeError, true);
+      return;
+    }
     if (!this.themeLinked || !client) return;
     const req = ++this.themeReq;
     this.themeInflight++;
@@ -376,6 +382,8 @@ export class WorldSettingsGroup {
   private syncTheme(st: WorldStatus, askedAt: number): void {
     if (!this.themeLinked || st.state !== 'approved' || this.themeInflight > 0 || askedAt < this.themePickedAt) return;
     const pref = this.ctx.prefs.theme;
+    // Tema local (cyberpunk/retrô): o status do prédio não sobrescreve a escolha desta página.
+    if (!isWorldOfficeTheme(pref)) return;
     if (st.theme && st.theme !== pref) this.ctx.updatePrefs({ theme: st.theme });
     else if (!st.theme && pref !== 'auto') void this.onThemePicked(pref);
   }

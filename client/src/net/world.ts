@@ -32,7 +32,7 @@ import type { IntroId } from '../../../shared/world/intro';
 import { parsePlayerName, playerNameKey } from '../../../shared/world/names-rules';
 import { GOODBYE_REASONS, UPLINK_ACK_ERRORS, type AwaySummary, type UplinkAckError, type WorldUplink } from '../../../shared/world/protocol';
 import { parseAwaySummary, summaryHasNews } from '../../../shared/world/scene';
-import { seasonalThemeFor } from '../world/api';
+import { isWorldOfficeTheme, seasonalThemeFor } from '../world/api';
 import { emailLooksValid, passwordProblem, traitsValid, DEFAULT_VISIBILITY } from '../ui/world/world-model';
 
 export type WorldServerState = 'off' | 'logged_out' | 'waiting' | 'approved';
@@ -748,7 +748,9 @@ export class FakeWorldApi implements WorldClient {
     const b = acc.building;
     if (!b || b.paused) return;
     const at = this.now();
-    const uplink: WorldUplink = { ...structuredClone(FAKE_UPLINK as WorldUplink), theme: seasonalThemeFor(this.theme, new Date(at)) };
+    // Cyberpunk/retrô são só do escritório local: o prédio do World mostra o visual original.
+    const theme = seasonalThemeFor(this.theme, new Date(at));
+    const uplink: WorldUplink = { ...structuredClone(FAKE_UPLINK as WorldUplink), theme: isWorldOfficeTheme(theme) ? theme : 'none' };
     const bytes = uplinkBytes(uplink);
     const ack: WorldUplinkAck = this.rejectCode ? { ok: false, error: this.rejectCode, at } : { ok: true, at, bytes };
     b.last = { at, bytes, uplink, ack };

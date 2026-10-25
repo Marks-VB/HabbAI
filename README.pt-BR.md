@@ -405,6 +405,13 @@ Em **Configurações → Aparência → Tema do escritório**, escolha:
 - **Nenhum**: sempre o visual original.
 - **Natal**: guirlandas, luzes quentes, árvores com presentes, tapetes natalinos, neve nas janelas e gorros nos personagens.
 - **Halloween**: abóboras, fantasmas decorativos, teias, morcegos, luzes roxas, tapetes temáticos e acessórios de fantasia.
+- **Cyberpunk**: paredes escuras com neon ciano e magenta, letreiros, terminais holográficos, tapetes de circuito, chuva de neon nas
+  janelas e viseiras nos personagens.
+- **Retrô**: paredes quentes, bandeirinhas, fliperamas e televisões de tubo no lugar das plantas, tapetes com galões setentistas,
+  entardecer nas janelas e fones nos personagens.
+
+Cyberpunk e Retrô valem só para o escritório desta página: o prédio do Habblaud World continua com os temas sazonais
+(Automático, Nenhum, Natal e Halloween).
 
 A troca é imediata e a escolha fica salva neste navegador. Os temas preservam os caminhos,
 as atividades e as animações dos agentes. O ciclo dia/noite continua sendo uma opção independente.
