@@ -19,7 +19,11 @@ export interface WorldOptions {
   daylight?: DaylightMode;
   /** Tema visual: automático (segue o calendário; ver seasonalThemeFor), nenhum, Natal, Halloween, cyberpunk ou retrô. */
   theme?: OfficeTheme;
+  /** Cenário do lado de fora do escritório (arredores: rua, árvores, janelas): cidade, floresta, cyberpunk ou retrô. */
+  scenario?: ScenarioTheme;
 }
+
+export type ScenarioTheme = 'city' | 'forest' | 'cyberpunk' | 'retro';
 
 /**
  * Tema que o renderer desenha: o escritório original ('none'), os sazonais do calendário e os temas locais
@@ -163,4 +167,5 @@ export const DEFAULT_WORLD_OPTIONS: WorldOptions = {
   followSelected: false,
   dayNight: true,
   theme: 'auto',
+  scenario: 'city',
 };

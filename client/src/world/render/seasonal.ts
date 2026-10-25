@@ -2,7 +2,7 @@ import type { CharacterFrameRequest, FurnitureKind, Sprite, WallStyle } from '..
 import { mix } from '../../art/core/color';
 import { hash32 } from '../../../../shared/hash';
 import { renderSeasonalProp, type SeasonalProp } from '../../art/seasonal';
-import type { SeasonalTheme } from '../api';
+import type { ScenarioTheme, SeasonalTheme } from '../api';
 import type { AreaLayout, WallSegment } from '../layout/types';
 
 const sprites = new Map<SeasonalProp, Sprite>();
@@ -310,13 +310,14 @@ export function drawSeasonalLights(ctx: CanvasRenderingContext2D, theme: Seasona
   ctx.restore();
 }
 
-export function drawSeasonalWindow(ctx: CanvasRenderingContext2D, theme: SeasonalTheme, glass: { x: number; y: number; w: number; h: number }, now: number, seed: number): void {
-  if (theme === 'none' || theme === 'halloween') return;
+export function drawSeasonalWindow(ctx: CanvasRenderingContext2D, theme: SeasonalTheme, glass: { x: number; y: number; w: number; h: number }, now: number, seed: number, scenario: ScenarioTheme = 'city'): void {
+  if (scenario === 'city' && (theme === 'none' || theme === 'halloween')) return;
+  const activeMode: string = scenario !== 'city' ? scenario : theme;
   ctx.save();
   ctx.beginPath();
   ctx.rect(glass.x, glass.y, glass.w, glass.h);
   ctx.clip();
-  if (theme === 'cyberpunk') {
+  if (activeMode === 'cyberpunk') {
     // Cidade de neon ao fundo e chuva fina escorrendo no vidro.
     const horizon = Math.floor(glass.y + glass.h * 0.62);
     ctx.fillStyle = '#1b1533';
@@ -337,7 +338,7 @@ export function drawSeasonalWindow(ctx: CanvasRenderingContext2D, theme: Seasona
       const y = (Math.floor(now / 70) + i * 13) % Math.max(1, Math.floor(glass.h));
       ctx.fillRect(Math.floor(glass.x + x), Math.floor(glass.y + y), 1, 3);
     }
-  } else if (theme === 'retro') {
+  } else if (activeMode === 'retro') {
     // Entardecer em faixas, meio pôster de lanchonete.
     const bands = ['#f6c46b', '#f0a05a', '#d9783c', '#a4653f'];
     const bandH = Math.max(1, Math.floor(glass.h / bands.length));
@@ -350,6 +351,18 @@ export function drawSeasonalWindow(ctx: CanvasRenderingContext2D, theme: Seasona
     ctx.fillRect(Math.floor(glass.x + glass.w * 0.32), sunY, Math.max(3, Math.floor(glass.w * 0.3)), Math.max(3, Math.floor(glass.h * 0.3)));
     ctx.fillStyle = '#f0a05a';
     for (let i = 0; i < 3; i++) ctx.fillRect(glass.x, sunY + 3 + i * 3, glass.w, 1);
+  } else if (activeMode === 'forest') {
+    // Vista de pinheiros e copas de árvores na floresta
+    const horizon = Math.floor(glass.y + glass.h * 0.55);
+    ctx.fillStyle = '#2d5a3f';
+    ctx.fillRect(glass.x, horizon, glass.w, glass.y + glass.h - horizon);
+    for (let i = 0; i < 10; i++) {
+      const pw = 4 + ((seed >>> 0) + i * 5) % 5;
+      const ph = 6 + ((seed >>> 0) + i * 7) % 8;
+      const px = glass.x + ((seed >>> 0) + i * 9) % Math.max(1, Math.floor(glass.w) - pw);
+      ctx.fillStyle = i % 2 === 0 ? '#1f452e' : '#3d7352';
+      ctx.fillRect(Math.floor(px), horizon - ph, pw, ph);
+    }
   } else {
     ctx.fillStyle = '#edf3f3';
     ctx.globalAlpha *= 0.7;

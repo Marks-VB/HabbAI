@@ -3,6 +3,7 @@
 // cinza-azulado escuro, 3–4 tons por material, luz vinda de cima/esquerda.
 import { mulberry32 } from '../../../../shared/hash';
 import type { ExteriorProp } from '../layout/types';
+import type { ScenarioTheme } from '../api';
 
 export interface PropSprite {
   canvas: HTMLCanvasElement;
@@ -94,7 +95,7 @@ function canopy(p: Painter, rng: () => number, cx: number, cy: number, r: number
   }
 }
 
-function treeSprite(seed: number): PropSprite {
+function treeSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite {
   const rng = mulberry32(seed);
   const [c, ctx] = makeCanvas(36, 48);
   shadowEllipse(ctx, 18, 45, 12, 3, 0.25);
@@ -108,7 +109,15 @@ function treeSprite(seed: number): PropSprite {
   }
   p.set(15, 45, '#4a3222');
   p.set(21, 45, '#4a3222');
-  const variants = [
+  const variants = scenario === 'retro' ? [
+    ['#9c4a24', '#bd5f28', '#e07f3c', '#f5aa67'],
+    ['#8a3a22', '#b34d28', '#d66e38', '#f29858'],
+    ['#b36822', '#d48228', '#f5a638', '#ffd16e'],
+  ] : scenario === 'cyberpunk' ? [
+    ['#1d2440', '#25355e', '#365394', '#4d7ae0'],
+    ['#2d1b45', '#482773', '#6f3aa8', '#a85ff0'],
+    ['#15333a', '#1e4f57', '#2e7a82', '#45b8bd'],
+  ] : [
     ['#2f6a43', '#3f8550', '#5aa45d', '#86c873'],
     ['#356b3c', '#4b8a45', '#6aa956', '#9fcf74'],
     ['#2c6250', '#3a7e5f', '#53a071', '#82c489'],
@@ -197,18 +206,20 @@ function hedgeSprite(seed: number): PropSprite {
   return { canvas: c, ax: 17, ay: 14 };
 }
 
-function lampSprite(): PropSprite {
+function lampSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   const [c, ctx] = makeCanvas(10, 36);
   shadowEllipse(ctx, 5, 34, 4, 1, 0.25);
-  ctx.fillStyle = '#2e3648';
+  ctx.fillStyle = scenario === 'cyberpunk' ? '#121526' : '#2e3648';
   ctx.fillRect(4, 6, 2, 28);
-  ctx.fillStyle = '#4a5468';
+  ctx.fillStyle = scenario === 'cyberpunk' ? '#39e6f0' : '#4a5468';
   ctx.fillRect(4, 6, 1, 28);
-  ctx.fillStyle = '#2e3648';
+  ctx.fillStyle = scenario === 'cyberpunk' ? '#1b1b36' : '#2e3648';
   ctx.fillRect(1, 2, 8, 5);
-  ctx.fillStyle = '#ffe9a8';
+  const glowCol = scenario === 'cyberpunk' ? '#39e6f0' : scenario === 'retro' ? '#ff9a42' : '#ffe9a8';
+  const glowHi = scenario === 'cyberpunk' ? '#a6f8ff' : scenario === 'retro' ? '#ffe08a' : '#fff6d6';
+  ctx.fillStyle = glowCol;
   ctx.fillRect(2, 4, 6, 2);
-  ctx.fillStyle = '#fff6d6';
+  ctx.fillStyle = glowHi;
   ctx.fillRect(3, 4, 2, 1);
   ctx.fillStyle = '#3a4152';
   ctx.fillRect(3, 32, 4, 2);
@@ -321,13 +332,13 @@ function totemSprite(): PropSprite {
   return { canvas: c, ax: 7, ay: 32 };
 }
 
-export function propSprite(prop: ExteriorProp): PropSprite {
-  const key = prop.kind === 'lamp' || prop.kind === 'bench' || prop.kind === 'totem' ? prop.kind : `${prop.kind}:${prop.seed % 7}`;
+export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city'): PropSprite {
+  const key = (prop.kind === 'lamp' || prop.kind === 'bench' || prop.kind === 'totem' ? prop.kind : `${prop.kind}:${prop.seed % 7}`) + `:${scenario}`;
   let s = cache.get(key);
   if (s) return s;
   switch (prop.kind) {
     case 'tree':
-      s = treeSprite(prop.seed % 7);
+      s = treeSprite(prop.seed % 7, scenario);
       break;
     case 'pine':
       s = pineSprite(prop.seed % 7);
@@ -342,7 +353,7 @@ export function propSprite(prop: ExteriorProp): PropSprite {
       s = hedgeSprite(prop.seed % 7);
       break;
     case 'lamp':
-      s = lampSprite();
+      s = lampSprite(scenario);
       break;
     case 'bench':
       s = benchSprite();
@@ -374,7 +385,7 @@ const CAR_COLORS: [string, string, string][] = [
 ];
 
 /** Carro visto de lado (3/4), virado para a direita; `flip` desenha para a esquerda. */
-export function carSprite(variant: number, flip: boolean): PropSprite {
+export function carSprite(variant: number, flip: boolean, scenario: ScenarioTheme = 'city'): PropSprite {
   const key = `car:${variant % CAR_COLORS.length}:${flip ? 1 : 0}`;
   const hit = cache.get(key);
   if (hit) return hit;

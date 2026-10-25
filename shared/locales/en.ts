@@ -3286,4 +3286,8 @@ export const EN: Readonly<Record<string, string>> = {
   "Para responder, use o terminal do Gemini CLI": "To reply, use the Gemini CLI terminal",
   "Para responder, use o chat do Antigravity": "To reply, use the Antigravity chat",
   "Para responder, use o terminal do opencode": "To reply, use the opencode terminal",
+  "Cenário externo": "External scenery",
+  "Cidade": "City",
+  "Floresta": "Forest",
+  "Altera o cenário e arredores do prédio (rua, árvores e janelas) sem modificar o interior do escritório.": "Changes the building scenery and surroundings (street, trees, and windows) without altering the office interior.",
 };

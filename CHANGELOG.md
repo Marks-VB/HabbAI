@@ -12,6 +12,12 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Cenário externo configurável (ao redor do escritório).** Em **Configurações › Aparência › Cenário externo**,
+  agora é possível alternar entre **Cidade** (padrão), **Floresta**, **Cyberpunk** e **Retrô**.
+  - O cenário afeta exclusivamente os arredores do prédio (rua, calçadas, árvores, postes e vista das janelas), sem alterar nenhuma parede, piso, móvel ou visual interior do escritório.
+  - No modo **Floresta**, o asfalto dá lugar a trilhas suaves de terra e pedra em meio à natureza sem tráfego de carros.
+  - No modo **Cyberpunk**, o exterior ganha iluminação neon ciano e magenta com asfalto tecnológico.
+  - No modo **Retrô**, os arredores e as árvores ganham folhagens outonais douradas e quentes.
 - **Dois temas novos no escritório: Cyberpunk e Retrô.** Em **Configurações › Aparência › Tema do escritório**,
   - **Cyberpunk:** paredes escuras com cornijas de neon ciano e magenta, letreiros luminosos, terminais holográficos no
     lugar das plantas, tapetes de circuito, chuva de neon nas janelas e viseiras nos personagens.

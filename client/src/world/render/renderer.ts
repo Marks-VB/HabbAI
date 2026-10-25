@@ -2,7 +2,7 @@
 // ordenadas por profundidade -> luz/escuridão -> ícones. A passada em espaço de tela (texto
 // nítido) fica em overlay.ts.
 import { TILE, type ArtModule, type CharacterFrameRequest, type IconName, type ScreenMode, type Sprite } from '../../art/api';
-import type { SeasonalTheme, WorldOptions } from '../api';
+import type { ScenarioTheme, SeasonalTheme, WorldOptions } from '../api';
 import type { WorldAssets } from '../assets';
 import type { Camera } from '../camera';
 import { BUILDING_H, COL_W, CORE_COLS, CORRIDOR_Y } from '../constants';
@@ -116,6 +116,7 @@ export class Renderer {
   private clearColor = '#7fae62';
   private grass: CanvasPattern | null = null;
   private theme: SeasonalTheme = 'none';
+  private scenario: ScenarioTheme = 'city';
 
   constructor(
     readonly canvas: HTMLCanvasElement,
@@ -124,7 +125,7 @@ export class Renderer {
     private readonly camera: Camera,
   ) {
     this.ctx = canvas.getContext('2d', { alpha: false })!;
-    this.exterior = layoutExterior(sim.building.cols);
+    this.exterior = layoutExterior(sim.building.cols, 'city');
     this.lighting = new Lighting(art, sim);
   }
 
@@ -136,11 +137,13 @@ export class Renderer {
   // =================================================================== sincronização com a simulação
 
   /** Mantém caches e visuais coerentes com o prédio atual. */
-  sync(theme: SeasonalTheme = 'none'): void {
+  sync(theme: SeasonalTheme = 'none', scenario: ScenarioTheme = 'city'): void {
     const sim = this.sim;
     const themeChanged = theme !== this.theme;
+    const scenarioChanged = scenario !== this.scenario;
+    this.scenario = scenario;
     this.theme = theme;
-    const assetsChanged = this.builtAssetsVersion !== this.assetsVersion || themeChanged;
+    const assetsChanged = this.builtAssetsVersion !== this.assetsVersion || themeChanged || scenarioChanged;
     if (this.baseCols !== sim.building.cols || assetsChanged) this.buildBase();
     if (this.layoutVersion !== sim.layoutVersion || assetsChanged) {
       this.layoutVersion = sim.layoutVersion;
@@ -175,7 +178,7 @@ export class Renderer {
   private buildBase(): void {
     const cols = this.sim.building.cols;
     this.baseCols = cols;
-    this.exterior = layoutExterior(cols);
+    this.exterior = layoutExterior(cols, this.scenario);
     const b = this.exterior.bounds;
     this.baseX = b.x * TILE;
     this.baseY = b.y * TILE;
@@ -479,7 +482,7 @@ export class Renderer {
           this.drawCharacter(e.ref as Character, now, sel);
           break;
         case K.Prop:
-          this.drawProp(e.ref as ExteriorProp, e.scale);
+          this.drawProp(e.ref as ExteriorProp, e.scale, this.scenario);
           break;
         case K.Car:
           this.drawCar(e.ref as Car);
@@ -667,7 +670,7 @@ export class Renderer {
     }
     ctx.globalAlpha *= alpha;
     this.safe(() => this.art.drawWindowView(ctx, { x: o.x + r.x, y: o.y + rise + r.y, w: r.w, h: r.h }, hour, now, w.seed));
-    drawSeasonalWindow(ctx, this.theme, { x: o.x + r.x, y: o.y + rise + r.y, w: r.w, h: r.h }, now, w.seed);
+    drawSeasonalWindow(ctx, this.theme, { x: o.x + r.x, y: o.y + rise + r.y, w: r.w, h: r.h }, now, w.seed, this.scenario);
     ctx.drawImage(s.base.canvas, o.x, o.y + rise);
   }
 
@@ -1102,7 +1105,7 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawProp(prop: ExteriorProp, alpha: number): void {
+  private drawProp(prop: ExteriorProp, alpha: number, scenario: ScenarioTheme = 'city'): void {
     if (prop.kind === 'paving') {
       const c = this.pavingCanvas(prop);
       if (alpha < 1) this.ctx.globalAlpha = alpha;
@@ -1110,7 +1113,7 @@ export class Renderer {
       this.ctx.globalAlpha = 1;
       return;
     }
-    const s = propSprite(prop);
+    const s = propSprite(prop, scenario);
     if (alpha < 1) this.ctx.globalAlpha = alpha;
     this.ctx.drawImage(s.canvas, Math.round(prop.x - s.ax), Math.round(prop.y - s.ay));
     this.ctx.globalAlpha = 1;
