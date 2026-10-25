@@ -109,7 +109,11 @@ function treeSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
   }
   p.set(15, 45, '#4a3222');
   p.set(21, 45, '#4a3222');
-  const variants = scenario === 'retro' ? [
+  const variants = scenario === 'forest' ? [
+    ['#1e5436', '#2a7448', '#3ba060', '#5ec983'],
+    ['#1b4c33', '#276c44', '#389558', '#54bd79'],
+    ['#16452f', '#206341', '#2f8a55', '#49b273'],
+  ] : scenario === 'retro' ? [
     ['#9c4a24', '#bd5f28', '#e07f3c', '#f5aa67'],
     ['#8a3a22', '#b34d28', '#d66e38', '#f29858'],
     ['#b36822', '#d48228', '#f5a638', '#ffd16e'],
@@ -127,13 +131,20 @@ function treeSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
   return { canvas: c, ax: 18, ay: 45 };
 }
 
-function pineSprite(seed: number): PropSprite {
+function pineSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite {
   const rng = mulberry32(seed);
   const [c, ctx] = makeCanvas(28, 48);
   shadowEllipse(ctx, 14, 45, 9, 3, 0.25);
   const p = new Painter(ctx, 28, 48);
   for (let y = 38; y < 46; y++) for (let x = 12; x < 16; x++) p.set(x, y, x === 12 ? '#8a6243' : x === 15 ? '#4a3222' : '#6b4a32');
-  const tones = ['#24533f', '#2f6b4f', '#3f8a5f', '#62ab79'];
+  const tones = scenario === 'forest'
+    ? ['#1c4532', '#245a40', '#327c54', '#4aa46e'] // Floresta: verde profundo vibrante e rico
+    : scenario === 'retro'
+    ? ['#6e4125', '#8c542e', '#b8753d', '#df9a56'] // Retrô: outonal
+    : scenario === 'cyberpunk'
+    ? ['#162540', '#1f3c66', '#2b5894', '#4288d4'] // Cyberpunk: ciano/azul
+    : ['#24533f', '#2f6b4f', '#3f8a5f', '#62ab79'];
+  const outline = scenario === 'forest' ? '#143325' : scenario === 'retro' ? '#4a2b18' : scenario === 'cyberpunk' ? '#0f1a2e' : '#1d3f33';
   const layers = 4;
   for (let l = 0; l < layers; l++) {
     const top = 4 + l * 8;
@@ -143,7 +154,7 @@ function pineSprite(seed: number): PropSprite {
       for (let x = 14 - half; x <= 14 + half; x++) {
         const edge = x === 14 - half || x === 14 + half || y === bottom - 1;
         const light = (14 - x) / (half + 1) - (y - top) / (bottom - top) + (rng() - 0.5) * 0.5;
-        p.set(x, y, edge ? '#1d3f33' : tones[light > 0.5 ? 3 : light > -0.1 ? 2 : light > -0.6 ? 1 : 0]);
+        p.set(x, y, edge ? outline : tones[light > 0.5 ? 3 : light > -0.1 ? 2 : light > -0.6 ? 1 : 0]);
       }
     }
   }
@@ -151,16 +162,26 @@ function pineSprite(seed: number): PropSprite {
   return { canvas: c, ax: 14, ay: 45 };
 }
 
-function bushSprite(seed: number): PropSprite {
+function bushSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite {
   const rng = mulberry32(seed);
   const [c, ctx] = makeCanvas(22, 16);
   shadowEllipse(ctx, 11, 14, 9, 2, 0.22);
   const p = new Painter(ctx, 22, 16);
-  canopy(p, rng, 11, 9, 6, ['#34663f', '#47864c', '#62a45a', '#8cc66f'], '#264a36');
-  // florzinhas
-  if (rng() < 0.6) {
-    const col = ['#f2d14b', '#f28aa5', '#ffffff'][Math.floor(rng() * 3)];
-    for (let i = 0; i < 4; i++) p.set(6 + Math.floor(rng() * 10), 5 + Math.floor(rng() * 6), col);
+  const tones = scenario === 'forest'
+    ? ['#205436', '#2d7749', '#41a364', '#66cc8a']
+    : scenario === 'retro'
+    ? ['#854625', '#a85f31', '#d48344', '#f5b06e']
+    : scenario === 'cyberpunk'
+    ? ['#1f2a4a', '#2a3d6d', '#3d599c', '#5e86de']
+    : ['#34663f', '#47864c', '#62a45a', '#8cc66f'];
+  const outline = scenario === 'forest' ? '#163b26' : scenario === 'retro' ? '#5a2e16' : scenario === 'cyberpunk' ? '#141c30' : '#264a36';
+  canopy(p, rng, 11, 9, 6, tones, outline);
+  // florzinhas / cogumelos na floresta
+  if (rng() < 0.75) {
+    const col = scenario === 'forest'
+      ? ['#e8453c', '#ffffff', '#e8453c', '#f5a623'][Math.floor(rng() * 4)] // cogumelos vermelhos e bagas
+      : ['#f2d14b', '#f28aa5', '#ffffff'][Math.floor(rng() * 3)];
+    for (let i = 0; i < 5; i++) p.set(6 + Math.floor(rng() * 10), 5 + Math.floor(rng() * 6), col);
   }
   p.flush();
   return { canvas: c, ax: 11, ay: 14 };
@@ -226,20 +247,24 @@ function lampSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   return { canvas: c, ax: 5, ay: 34 };
 }
 
-function benchSprite(): PropSprite {
+function benchSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   const [c, ctx] = makeCanvas(26, 14);
   shadowEllipse(ctx, 13, 12, 11, 2, 0.22);
-  ctx.fillStyle = '#2e3648';
+  const legCol = scenario === 'forest' ? '#4a3222' : scenario === 'cyberpunk' ? '#121526' : '#2e3648';
+  ctx.fillStyle = legCol;
   ctx.fillRect(3, 8, 2, 4);
   ctx.fillRect(21, 8, 2, 4);
   // encosto e assento em ripas
-  ctx.fillStyle = '#7a5232';
+  const woodMain = scenario === 'forest' ? '#5a381e' : '#7a5232';
+  const woodHi = scenario === 'forest' ? '#82532e' : '#a0703f';
+  const woodDk = scenario === 'forest' ? '#3d2514' : '#5b3c25';
+  ctx.fillStyle = woodMain;
   ctx.fillRect(1, 1, 24, 3);
   ctx.fillRect(1, 6, 24, 3);
-  ctx.fillStyle = '#a0703f';
+  ctx.fillStyle = woodHi;
   ctx.fillRect(1, 1, 24, 1);
   ctx.fillRect(1, 6, 24, 1);
-  ctx.fillStyle = '#5b3c25';
+  ctx.fillStyle = woodDk;
   ctx.fillRect(1, 8, 24, 1);
   ctx.fillRect(1, 3, 24, 1);
   return { canvas: c, ax: 13, ay: 12 };
@@ -341,10 +366,10 @@ export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city')
       s = treeSprite(prop.seed % 7, scenario);
       break;
     case 'pine':
-      s = pineSprite(prop.seed % 7);
+      s = pineSprite(prop.seed % 7, scenario);
       break;
     case 'bush':
-      s = bushSprite(prop.seed % 7);
+      s = bushSprite(prop.seed % 7, scenario);
       break;
     case 'flowers':
       s = flowersSprite(prop.seed % 7);
@@ -356,7 +381,7 @@ export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city')
       s = lampSprite(scenario);
       break;
     case 'bench':
-      s = benchSprite();
+      s = benchSprite(scenario);
       break;
     case 'rock':
       s = rockSprite(prop.seed % 7);

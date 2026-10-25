@@ -189,10 +189,12 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false;
     ctx.translate(-this.baseX, -this.baseY);
     paintShell(this.art, ctx, this.exterior.floors, []);
-    // faixas da rua
-    const ly = this.exterior.streetY + Math.round(this.exterior.streetH / 2) - 1;
-    ctx.fillStyle = 'rgba(255,236,170,0.75)';
-    for (let x = this.baseX + 4; x < this.baseX + c.width; x += 24) ctx.fillRect(x, ly, 12, 2);
+    // faixas da rua (apenas em cenários com tráfego urbano/tecnológico)
+    if (this.scenario !== 'forest') {
+      const ly = this.exterior.streetY + Math.round(this.exterior.streetH / 2) - 1;
+      ctx.fillStyle = this.scenario === 'cyberpunk' ? 'rgba(57,230,240,0.85)' : 'rgba(255,236,170,0.75)';
+      for (let x = this.baseX + 4; x < this.baseX + c.width; x += 24) ctx.fillRect(x, ly, 12, 2);
+    }
     this.shells = [];
     this.shellWindows = [];
     for (let col = CORE_COLS; col < cols; col++) {
@@ -239,12 +241,14 @@ export class Renderer {
       tctx.fillStyle = avg;
       tctx.fillRect(0, 0, 2 * s, 2 * s);
       tctx.globalAlpha = 1;
-      tctx.fillStyle = VIGNETTE_EDGE;
+      const vigEdge = this.scenario === 'forest' ? 'rgba(12,32,16,0.25)' : this.scenario === 'cyberpunk' ? 'rgba(10,12,24,0.35)' : this.scenario === 'retro' ? 'rgba(40,24,12,0.2)' : VIGNETTE_EDGE;
+      tctx.fillStyle = vigEdge;
       tctx.fillRect(0, 0, 2 * s, 2 * s);
       this.grass = this.ctx.createPattern(tile, 'repeat');
       // cor de fundo (antes do padrão carregar): a média já com o tom da vinheta
       const k = VIGNETTE_ALPHA;
-      this.clearColor = `rgb(${Math.round((r / n) * (1 - k) + 18 * k)},${Math.round((g / n) * (1 - k) + 40 * k)},${Math.round((bl / n) * (1 - k) + 26 * k)})`;
+      const [vr, vg, vb] = this.scenario === 'forest' ? [12, 32, 16] : this.scenario === 'cyberpunk' ? [10, 12, 24] : this.scenario === 'retro' ? [40, 24, 12] : [18, 40, 26];
+      this.clearColor = `rgb(${Math.round((r / n) * (1 - k) + vr * k)},${Math.round((g / n) * (1 - k) + vg * k)},${Math.round((bl / n) * (1 - k) + vb * k)})`;
     } catch {
       this.grass = null;
       this.clearColor = '#6f9a5a';
@@ -1138,7 +1142,7 @@ export class Renderer {
   }
 
   private drawCar(car: Car): void {
-    const s = carSprite(car.variant, car.dir < 0);
+    const s = carSprite(car.variant, car.dir < 0, this.scenario);
     this.ctx.drawImage(s.canvas, Math.round(car.x - s.ax), Math.round(car.y - s.ay));
   }
 

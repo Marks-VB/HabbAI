@@ -40,11 +40,16 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
 
   const south = BUILDING_H;
   if (scenario === 'forest') {
-    floors.push({ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 101 });
-    // Na floresta, a rua dá lugar a uma trilha de pedras/terra
-    floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 102 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 103 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 4 - CORRIDOR_Y - 5), seed: 104 });
+    // Gramado verde floresta denso e vibrante
+    floors.push({ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 101, tint: '#3e8043' });
+    // Calçada que contorna o prédio
+    floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 102 });
+    // A rua de asfalto é mantida (estrada florestal rústica)
+    floors.push({ kind: 'street', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 103 });
+    floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 104 });
+    // Caminho da recepção até a calçada
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 105 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 106 });
   } else if (scenario === 'cyberpunk') {
     floors.push({ kind: 'concrete', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 201 });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 202 });
@@ -53,7 +58,7 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
     floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 205 });
     floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 206 });
   } else {
-    floors.push({ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 11 });
+    floors.push({ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 11, tint: scenario === 'retro' ? '#949c4e' : undefined });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 12 });
     floors.push({ kind: 'street', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 13 });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 14 });
@@ -62,18 +67,22 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
   }
 
   // árvores ao norte (fileira com variação) e a oeste/leste
-  for (let x = bounds.x + 1; x < bounds.x + bounds.w - 1; x += 4 + Math.floor(rng() * 3)) {
-    props.push({ kind: rng() < 0.25 ? 'pine' : 'tree', x: px(x) + Math.floor(rng() * 8), y: px(-3) - Math.floor(rng() * 20), seed: Math.floor(rng() * 1e9) });
-    if (rng() < 0.6) props.push({ kind: 'bush', x: px(x + 2), y: px(-1) - 2, seed: Math.floor(rng() * 1e9) });
+  const northStep = scenario === 'forest' ? 2 : 4;
+  for (let x = bounds.x + 1; x < bounds.x + bounds.w - 1; x += northStep + Math.floor(rng() * (scenario === 'forest' ? 2 : 3))) {
+    const pineChance = scenario === 'forest' ? 0.65 : 0.25;
+    props.push({ kind: rng() < pineChance ? 'pine' : 'tree', x: px(x) + Math.floor(rng() * 8), y: px(-3) - Math.floor(rng() * 20), seed: Math.floor(rng() * 1e9) });
+    if (rng() < (scenario === 'forest' ? 0.85 : 0.6)) props.push({ kind: 'bush', x: px(x + 2), y: px(-1) - 2, seed: Math.floor(rng() * 1e9) });
+    if (scenario === 'forest' && rng() < 0.45) props.push({ kind: 'rock', x: px(x + 1), y: px(-2) + 2, seed: Math.floor(rng() * 1e9) });
   }
   // bosque ao norte: fileiras irregulares cada vez mais esparsas
-  for (const [row, gap] of [
-    [-6, 5],
-    [-10, 6],
-    [-14, 8],
-  ] as const) {
-    for (let x = bounds.x + 2; x < bounds.x + bounds.w - 1; x += gap + Math.floor(rng() * 4)) {
-      props.push({ kind: rng() < 0.3 ? 'pine' : 'tree', x: px(x) + Math.floor(rng() * 8), y: px(row) - Math.floor(rng() * 12), seed: Math.floor(rng() * 1e9) });
+  const woodsConfig = scenario === 'forest'
+    ? [[-5, 3], [-8, 4], [-11, 4], [-14, 5]] as const
+    : [[-6, 5], [-10, 6], [-14, 8]] as const;
+  for (const [row, gap] of woodsConfig) {
+    for (let x = bounds.x + 2; x < bounds.x + bounds.w - 1; x += gap + Math.floor(rng() * (scenario === 'forest' ? 2 : 4))) {
+      const pineChance = scenario === 'forest' ? 0.7 : 0.3;
+      props.push({ kind: rng() < pineChance ? 'pine' : 'tree', x: px(x) + Math.floor(rng() * 8), y: px(row) - Math.floor(rng() * 12), seed: Math.floor(rng() * 1e9) });
+      if (scenario === 'forest' && rng() < 0.35) props.push({ kind: 'rock', x: px(x + 2), y: px(row) + 4, seed: Math.floor(rng() * 1e9) });
     }
   }
   for (const side of [-1, 1]) {
@@ -97,10 +106,14 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
   for (let x = bounds.x + 4; x < bounds.x + bounds.w; x += 10) {
     props.push({ kind: 'lamp', x: px(x), y: px(south + 3) + 6, seed: x });
   }
-  for (const row of [13, 17, 21]) {
-    for (let x = bounds.x + 3; x < bounds.x + bounds.w - 2; x += 6 + Math.floor(rng() * 5)) {
-      props.push({ kind: rng() < 0.2 ? 'pine' : 'tree', x: px(x) + Math.floor(rng() * 10), y: px(south + row) + Math.floor(rng() * 10), seed: Math.floor(rng() * 1e9) });
-      if (rng() < 0.3) props.push({ kind: 'bush', x: px(x + 3), y: px(south + row + 1), seed: Math.floor(rng() * 1e9) });
+  const southRows = scenario === 'forest' ? [12, 15, 18, 21] : [13, 17, 21];
+  for (const row of southRows) {
+    const sGap = scenario === 'forest' ? 3 : 6;
+    for (let x = bounds.x + 3; x < bounds.x + bounds.w - 2; x += sGap + Math.floor(rng() * (scenario === 'forest' ? 3 : 5))) {
+      const pineChance = scenario === 'forest' ? 0.65 : 0.2;
+      props.push({ kind: rng() < pineChance ? 'pine' : 'tree', x: px(x) + Math.floor(rng() * 10), y: px(south + row) + Math.floor(rng() * 10), seed: Math.floor(rng() * 1e9) });
+      if (rng() < (scenario === 'forest' ? 0.6 : 0.3)) props.push({ kind: 'bush', x: px(x + 3), y: px(south + row + 1), seed: Math.floor(rng() * 1e9) });
+      if (scenario === 'forest' && rng() < 0.4) props.push({ kind: 'rock', x: px(x + 1), y: px(south + row + 3), seed: Math.floor(rng() * 1e9) });
     }
   }
   props.push({ kind: 'bench', x: px(-4), y: px(CORRIDOR_Y + 3) + 6, seed: 1 });
@@ -113,7 +126,7 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
     bounds,
     floors,
     props,
-    lanes: scenario === 'forest' ? [] : [
+    lanes: [
       { y: streetY + Math.round(streetH * 0.36), dir: 1 },
       { y: streetY + Math.round(streetH * 0.86), dir: -1 },
     ],

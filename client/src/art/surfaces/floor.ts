@@ -131,7 +131,8 @@ function paintTile(b: PixelBuf, kind: FloorKind, tx: number, ty: number, o: Floo
       break;
     }
     case 'grass': {
-      const g = ramp('#6cab57', 0.045);
+      const grassColor = o.tint ?? '#6cab57';
+      const g = ramp(grassColor, 0.045);
       const n = noise(tx * TILE, ty * TILE, 48, o.seed + 5);
       const base = mix(g.dk, g.lt, n);
       b.rect(0, 0, TILE, TILE, base);
@@ -150,10 +151,10 @@ function paintTile(b: PixelBuf, kind: FloorKind, tx: number, ty: number, o: Floo
         b.set(x + 1, y - 1, g.dk);
         b.set(x, y - 2, g.lt);
       }
-      if (r(99) < 0.12) {
+      if (r(99) < (o.tint ? 0.22 : 0.12)) {
         const fx = 3 + Math.floor(r(100) * 10);
         const fy = 3 + Math.floor(r(101) * 10);
-        const fc = ['#ffffff', '#f7d154', '#f28fb0', '#b9a2f0'][Math.floor(r(102) * 4)];
+        const fc = ['#ffffff', '#f7d154', '#f28fb0', '#b9a2f0', '#ff9a42'][Math.floor(r(102) * 5)];
         b.set(fx, fy, fc);
         b.set(fx + 1, fy, fc);
         b.set(fx, fy - 1, fc);
