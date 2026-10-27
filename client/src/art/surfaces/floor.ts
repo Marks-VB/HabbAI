@@ -169,6 +169,92 @@ function paintTile(b: PixelBuf, kind: FloorKind, tx: number, ty: number, o: Floo
       for (let i = 0; i < 14; i++) b.set(Math.floor(r(i) * TILE), Math.floor(r(i + 30) * TILE), r(i + 60) < 0.5 ? '#5f636c' : '#43464e');
       break;
     }
+    case 'deck': {
+      // Placas de metal de 32x32 px com junta escura, borda iluminada e rebites nos cantos.
+      const p = ramp(o.tint ?? '#3a4356', 0.05);
+      const wx = tx * TILE;
+      const wy = ty * TILE;
+      const n = noise(wx, wy, 32, o.seed + 13);
+      b.rect(0, 0, TILE, TILE, mix(p.dk, p.base, n));
+      for (let y = 0; y < TILE; y++) {
+        for (let x = 0; x < TILE; x++) {
+          const sx = (wx + x) & 31;
+          const sy = (wy + y) & 31;
+          if (sx === 31 || sy === 31) b.set(x, y, p.dd);
+          else if (sx === 0 || sy === 0) b.set(x, y, p.lt);
+          else if ((sx === 3 || sx === 27) && (sy === 3 || sy === 27)) b.set(x, y, p.hi);
+          else if (r(x * 31 + y) < 0.02) b.set(x, y, p.dk);
+        }
+      }
+      break;
+    }
+    case 'snow': {
+      // Neve: branco azulado, brilho fino e covas de sombra.
+      const s = ramp(o.tint ?? '#eef4fa', 0.035);
+      const n = noise(tx * TILE, ty * TILE, 40, o.seed + 21);
+      const base = mix(s.dk, s.hi, n);
+      b.rect(0, 0, TILE, TILE, base);
+      for (let i = 0; i < 10; i++) {
+        const x = Math.floor(r(i) * TILE);
+        const y = Math.floor(r(i + 16) * TILE);
+        b.set(x, y, r(i + 32) < 0.55 ? '#ffffff' : shade(base, -0.05));
+      }
+      // covas alongadas, como marcas de vento
+      for (let i = 0; i < 2; i++) {
+        const x = 2 + Math.floor(r(i + 40) * 10);
+        const y = 3 + Math.floor(r(i + 50) * 9);
+        b.hline(x, x + 3, y, shade(base, -0.07));
+        b.set(x + 1, y + 1, shade(base, -0.04));
+      }
+      if (r(70) < 0.25) {
+        const x = 4 + Math.floor(r(71) * 8);
+        const y = 4 + Math.floor(r(72) * 8);
+        b.set(x, y, '#ffffff');
+        b.set(x, y - 1, '#ffffff');
+        b.set(x + 1, y, '#e7f1fb');
+      }
+      break;
+    }
+    case 'sand': {
+      // Areia de praia: ondulações suaves e grãos.
+      const s = ramp(o.tint ?? '#e6d2a6', 0.04);
+      const wx = tx * TILE;
+      const wy = ty * TILE;
+      const ripple = Math.sin((wy + Math.sin(wx * 0.11) * 5) * 0.42);
+      const base = mix(s.base, ripple > 0.3 ? s.lt : s.dk, 0.55);
+      b.rect(0, 0, TILE, TILE, base);
+      for (let i = 0; i < 14; i++) {
+        const x = Math.floor(r(i) * TILE);
+        const y = Math.floor(r(i + 24) * TILE);
+        b.set(x, y, r(i + 48) < 0.6 ? shade(base, -0.06) : '#f7ecd6');
+      }
+      // ondulações em traços curtos, sem emenda visível entre tiles
+      for (let i = 0; i < 3; i++) {
+        const y = 4 + i * 5 + (ty % 2);
+        const sx = (i * 5 + tx * 3) % 10;
+        b.hline(sx, Math.min(TILE - 1, sx + 5), y, shade(base, -0.04));
+      }
+      break;
+    }
+    case 'water': {
+      // Mar: fundo profundo, cristas claras em ondas e brilhos.
+      const w = ramp(o.tint ?? '#2c7590', 0.05);
+      const wx = tx * TILE;
+      const wy = ty * TILE;
+      const n = noise(wx, wy, 26, o.seed + 33);
+      b.rect(0, 0, TILE, TILE, mix(w.dk, w.base, n));
+      for (let y = 0; y < TILE; y++) {
+        const wave = Math.sin((wx + (wy + y) * 2.1) * 0.1) * 0.5 + 0.5;
+        if (wave > 0.82) {
+          const x = Math.floor((wave - 0.82) * 40) + (y % 3);
+          b.hline(x, Math.min(TILE - 1, x + 4), y, mix(w.lt, '#dff6ff', 0.4));
+        } else if (wave < 0.12) {
+          b.hline(0, TILE - 1, y, w.dd);
+        }
+      }
+      for (let i = 0; i < 4; i++) b.set(Math.floor(r(i + 60) * TILE), Math.floor(r(i + 70) * TILE), '#f2fdff');
+      break;
+    }
     default:
       b.rect(0, 0, TILE, TILE, '#dcdedf');
   }

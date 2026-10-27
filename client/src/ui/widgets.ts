@@ -3,6 +3,7 @@
 import type { AccountInfo, Activity, AgentInfo, AgentStatus, Provider } from '../../../shared/types';
 import { h, setAttr, setHidden, setStyleVar, setText, setTitle, setVariant } from './dom';
 import { WORDMARK } from './icons';
+import { providerIcon } from './provider-icons';
 import { shellDoneKind, shellLine, shellStage, statusLabel, type ShellWait } from './model';
 import { accountChipLabel, accountProvider, fallbackShort, PROVIDER_NAME, showsProviderTag } from './provider';
 import { tr } from '../../../shared/i18n';
@@ -26,19 +27,46 @@ export function updateAccountChip(chip: HTMLElement, account: AccountInfo | unde
   setAttr(chip, 'aria-label', label);
 }
 
-/** Selo de texto "Codex" ao lado do nome da conta (onde há espaço: gaveta, terminal, cartão de uso, dica). */
+/** Selo da ferramenta ao lado do nome da conta (gaveta, terminal, cartão de uso, dica): ícone em pixel art + nome. */
 export function createProviderTag(extra = ''): HTMLElement {
-  return h('span', { class: `ui-prov${extra ? ` ${extra}` : ''}`, text: 'Codex', hidden: true, title: tr('Agente do Codex (OpenAI)') });
+  const tag = h('span', { class: `ui-prov${extra ? ` ${extra}` : ''}`, hidden: true });
+  tag.append(h('span', { class: 'ui-prov__icon', attrs: { 'aria-hidden': 'true' } }), h('span', { class: 'ui-prov__text' }));
+  return tag;
 }
 
-/** Mostra o selo só para o Codex (e não repete quando o nome da conta já diz "Codex"). */
+/** Mostra o selo só fora do Claude Code (e não repete quando o nome da conta já diz a ferramenta). */
 export function updateProviderTag(tag: HTMLElement, provider: Provider, accountName = ''): void {
   const show = showsProviderTag(provider, accountName);
   setHidden(tag, !show);
-  if (show) {
-    setText(tag, PROVIDER_NAME[provider]);
-    setVariant(tag, 'ui-prov--', provider);
+  if (!show) return;
+  setVariant(tag, 'ui-prov--', provider);
+  const [icon, text] = tag.children as unknown as [HTMLElement, HTMLElement];
+  // Troca o SVG só quando a ferramenta muda: o selo é atualizado a cada quadro aberto.
+  if (tag.dataset.provider !== provider) {
+    tag.dataset.provider = provider;
+    icon.innerHTML = providerIcon(provider);
   }
+  setText(text, PROVIDER_NAME[provider]);
+  setTitle(tag, PROVIDER_NAME[provider]);
+}
+
+/** Selo só com o ícone da ferramenta (linhas apertadas, como a barra lateral). */
+export function createProviderIcon(extra = ''): HTMLElement {
+  return h('span', { class: `ui-prov ui-prov--icon${extra ? ` ${extra}` : ''}`, hidden: true });
+}
+
+/** Mostra o ícone só fora do Claude Code; o nome da ferramenta fica no title e no rótulo acessível. */
+export function updateProviderIcon(el: HTMLElement, provider: Provider): void {
+  const show = provider !== 'claude';
+  setHidden(el, !show);
+  if (!show) return;
+  setVariant(el, 'ui-prov--', provider);
+  if (el.dataset.provider !== provider) {
+    el.dataset.provider = provider;
+    el.innerHTML = providerIcon(provider);
+  }
+  setTitle(el, PROVIDER_NAME[provider]);
+  setAttr(el, 'aria-label', PROVIDER_NAME[provider]);
 }
 
 /** Quadradinho de status (pixel), com pulso quando precisa de você. */

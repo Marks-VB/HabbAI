@@ -14,6 +14,8 @@ import type { Sim } from '../sim/sim';
 import { buildAnim } from './anim';
 import { drawFxBanner } from './github-fx';
 import type { HeadInfo, Renderer } from './renderer';
+import { PROVIDER_ICON_ROWS, PROVIDER_TINT } from '../../../../shared/provider-icons';
+import type { Provider } from '../../../../shared/types';
 import { tr } from '../../../../shared/i18n';
 
 // A Pixelify Sans tem o "C" maiúsculo quase fechado (lê-se "Oopa" em vez de "Copa") em qualquer
@@ -104,10 +106,19 @@ interface Label {
 type Item = Bubble | Label;
 
 /** Luminância relativa de uma cor hex (0..1). */
-/** Fundo do chip vazado das contas do Codex (o mesmo dos painéis). */
-const CODEX_CHIP_BG = '#161b26';
-/** Selo "CODEX" das etiquetas: discreto (vidro claro), sem a cor de ninguém. */
-const CODEX_BADGE = 'CODEX';
+/** Fundo do chip vazado das contas das outras ferramentas (o mesmo dos painéis). */
+const TOOL_CHIP_BG = '#161b26';
+/** Largura do selo da ferramenta nas etiquetas: um quadradinho com o ícone 9×9 de cada uma. */
+const PROV_BADGE_W = 13;
+
+/** Desenha um mapa de pixels ('#' = pixel) a partir do canto superior esquerdo, nítido (sem antialias). */
+function drawIconRows(ctx: CanvasRenderingContext2D, rows: readonly string[], x: number, y: number, scale: number, color: string): void {
+  ctx.fillStyle = color;
+  for (let py = 0; py < rows.length; py++) {
+    const row = rows[py];
+    for (let px = 0; px < row.length; px++) if (row[px] === '#') ctx.fillRect(x + px * scale, y + py * scale, scale, scale);
+  }
+}
 
 /** Octógono "em degrau" (um quadrado de cantos cortados, como um pixel arredondado). */
 function steppedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, s: number): void {
@@ -124,14 +135,14 @@ function steppedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 }
 
 /**
- * Bolinha de uma conta (placas e pílulas das salas): cheia no Claude Code; vazada (anel na cor da conta) no Codex,
- * como o chip dos painéis.
+ * Bolinha de uma conta (placas e pílulas das salas): cheia no Claude Code; vazada (anel na cor da conta) nas outras
+ * ferramentas, como o chip dos painéis.
  */
 function accountDot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, acc: { color: string; provider?: string }): void {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
-  if (acc.provider === 'codex') {
-    ctx.fillStyle = CODEX_CHIP_BG;
+  if (acc.provider && acc.provider !== 'claude') {
+    ctx.fillStyle = TOOL_CHIP_BG;
     ctx.fill();
     ctx.lineWidth = Math.max(1.2, r * 0.55);
     ctx.strokeStyle = acc.color;
@@ -868,22 +879,28 @@ export class Overlay {
 
   // =================================================================== etiquetas
 
-  /** Larguras das partes da etiqueta. O selo "CODEX" (como o "SUB") só aparece fora do modo compacto. */
-  private labelWidth(l: Label): { nameW: number; chipW: number; badgeW: number; codexW: number } {
+  /** Ferramenta da etiqueta: a do agente; sem ela, a da conta (que também vale como padrão). */
+  private labelProvider(l: Label): Provider {
+    const acc = this.sim.accounts.get(l.ch.info.account);
+    return l.ch.info.provider ?? acc?.provider ?? 'claude';
+  }
+
+  /** Larguras das partes da etiqueta. O selo da ferramenta (ícone) só aparece fora do modo compacto. */
+  private labelWidth(l: Label): { nameW: number; chipW: number; badgeW: number; provW: number } {
     const ch = l.ch;
     const acc = this.sim.accounts.get(ch.info.account);
     const nameW = this.measure(LABEL_FONT, ch.info.name);
     const chipW = acc ? 13 : 0;
     const visitor = ch === this.sim.visitor;
     const badgeW = visitor ? this.measure(BADGE_FONT, visitorBadge()) + 7 : ch.info.kind === 'sub' && !l.compact ? this.measure(BADGE_FONT, 'SUB') + 7 : 0;
-    const codexW = ch.info.provider === 'codex' && !l.compact ? this.measure(BADGE_FONT, CODEX_BADGE) + 7 : 0;
-    return { nameW, chipW, badgeW, codexW };
+    const provW = this.labelProvider(l) !== 'claude' && !l.compact ? PROV_BADGE_W : 0;
+    return { nameW, chipW, badgeW, provW };
   }
 
   /** Posiciona a etiqueta: nos pés (ou acima da cabeça); se colidir, tenta o outro lado. */
   private placeLabel(l: Label): boolean {
-    const { nameW, chipW, badgeW, codexW } = this.labelWidth(l);
-    const w = Math.round(nameW + 10 + chipW + (badgeW ? badgeW + 3 : 0) + (codexW ? codexW + 3 : 0));
+    const { nameW, chipW, badgeW, provW } = this.labelWidth(l);
+    const w = Math.round(nameW + 10 + chipW + (badgeW ? badgeW + 3 : 0) + (provW ? provW + 3 : 0));
     const h = LABEL_H;
     const x = Math.round(this.sx(l.head.x) - w / 2);
     const below = Math.round(this.sy(l.head.feetY) + 3);
@@ -907,8 +924,9 @@ export class Overlay {
     const ch = l.ch;
     const acc = this.sim.accounts.get(ch.info.account);
     const sub = ch.info.kind === 'sub';
-    const codex = ch.info.provider === 'codex' || acc?.provider === 'codex';
-    const { nameW, chipW, badgeW, codexW } = this.labelWidth(l);
+    const provider = this.labelProvider(l);
+    const tool = provider !== 'claude';
+    const { nameW, chipW, badgeW, provW } = this.labelWidth(l);
     const { x, y, w, h } = l;
     const selected = sel.agent === ch.id;
     ctx.fillStyle = selected ? 'rgba(18,96,140,0.95)' : ch.mode === 'wait' ? 'rgba(120,78,0,0.92)' : 'rgba(22,26,38,0.82)';
@@ -916,10 +934,11 @@ export class Overlay {
     ctx.roundRect(x, y, w, h, 7.5);
     ctx.fill();
     let cx = x + 4;
-    if (acc && codex) {
-      // Codex: chip vazado de cantos em degrau (fundo escuro, borda e letra na cor da conta), como nos painéis.
+    if (acc && tool) {
+      // Outras ferramentas: chip vazado de cantos em degrau (fundo escuro, borda e letra na cor da conta), como nos
+      // painéis.
       steppedRect(ctx, cx, y + h / 2 - 5, 10, 10, 2);
-      ctx.fillStyle = CODEX_CHIP_BG;
+      ctx.fillStyle = TOOL_CHIP_BG;
       ctx.fill();
       ctx.lineWidth = 1.5;
       ctx.strokeStyle = acc.color;
@@ -963,14 +982,14 @@ export class Overlay {
       ctx.arc(x + w - 3, y + 3, 2.5, 0, Math.PI * 2);
       ctx.fill();
     }
-    if (codexW) {
+    if (provW) {
+      // Selo da ferramenta: quadradinho de vidro com o ícone em pixel art na cor da ferramenta (Gemini, Antigravity,
+      // opencode, Codex, Aider) — lê-se de longe sem precisar de texto.
       ctx.fillStyle = 'rgba(255,255,255,0.16)';
       ctx.beginPath();
-      ctx.roundRect(cx, y + 3, codexW, h - 6, 3);
+      ctx.roundRect(cx, y + 3, provW, h - 6, 3);
       ctx.fill();
-      ctx.font = BADGE_FONT;
-      ctx.fillStyle = '#e8ecf5';
-      ctx.fillText(CODEX_BADGE, cx + 3.5, y + h / 2 + 0.5);
+      drawIconRows(ctx, PROVIDER_ICON_ROWS[provider], cx + 2, y + 3, 1, PROVIDER_TINT[provider]);
     }
   }
 }

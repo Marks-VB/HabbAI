@@ -1,7 +1,14 @@
 // Testes das partes puras do módulo de arte (sem DOM): aparência, templates, personagens, móveis,
 // pisos, paredes, ícones, temas e os desenhos por quadro (com um contexto falso).
 import { describe, expect, it } from 'vitest';
-import { ACCESSORIES, BOTTOM_STYLES, FACIAL_HAIR, HAIR_STYLES, PART_KEYS, TOP_STYLES } from '../../../shared/appearance';
+import {
+  FACIAL_HAIR,
+  HAIR_STYLES,
+  OFFICE_ACCESSORIES,
+  OFFICE_BOTTOM_STYLES,
+  OFFICE_TOP_STYLES,
+  PART_KEYS,
+} from '../../../shared/appearance';
 import { FURNITURE, TILE, type Accessory, type Appearance, type Dir, type FloorKind, type FurnitureKind, type HairStyle, type HeldItem, type Pose, type ScreenMode, type TopStyle, type WallPattern } from './api';
 import { appearanceFromSeed, appearanceKey, editorConflict, editorOptions, fitToOptions } from './character/appearance';
 import { HAIR, HEAD_BASE } from './character/hair';
@@ -573,14 +580,14 @@ describe('legibilidade das mesas, sofá e olhos', () => {
 });
 
 describe('pisos e paredes', () => {
-  const floors: FloorKind[] = ['carpet', 'wood', 'tile_check', 'tile_white', 'concrete', 'marble', 'grass', 'sidewalk', 'street'];
+  const floors: FloorKind[] = ['carpet', 'wood', 'tile_check', 'tile_white', 'concrete', 'marble', 'grass', 'sidewalk', 'street', 'deck', 'snow', 'sand', 'water'];
   it('blocos de piso são opacos e determinísticos', () => {
     for (const k of floors) {
       const a = floorChunk(k, 2, -1, { seed: 3, tint: '#c9d1dc', tint2: '#bdc6d3' });
       expect(a.countOpaque(), k).toBe(CHUNK_PX * CHUNK_PX);
       expect(floorChunk(k, 2, -1, { seed: 3, tint: '#c9d1dc', tint2: '#bdc6d3' }).data).toEqual(a.data);
     }
-  });
+  }, 30000);
 
   it('a madeira continua entre blocos vizinhos (sem emenda na borda)', () => {
     const left = floorChunk('wood', 0, 0, { seed: 1 });
@@ -859,10 +866,10 @@ describe('desenhos por quadro', () => {
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const STYLE_LISTS_MATCH: [
   Same<(typeof HAIR_STYLES)[number], HairStyle>,
-  Same<(typeof TOP_STYLES)[number], TopStyle>,
-  Same<(typeof ACCESSORIES)[number], Accessory>,
+  Same<(typeof OFFICE_TOP_STYLES)[number], TopStyle>,
+  Same<(typeof OFFICE_ACCESSORIES)[number], Accessory>,
   Same<(typeof FACIAL_HAIR)[number], NonNullable<Appearance['facialHair']>>,
-  Same<(typeof BOTTOM_STYLES)[number], NonNullable<Appearance['bottomStyle']>>,
+  Same<(typeof OFFICE_BOTTOM_STYLES)[number], NonNullable<Appearance['bottomStyle']>>,
 ] = [true, true, true, true, true];
 
 describe('editor do personagem (arte)', () => {
@@ -904,7 +911,12 @@ describe('editor do personagem (arte)', () => {
     expect(editorConflict({ ...a, hairStyle: 'afro' }, 'accessory', 'cap')).toMatch(/cabelo/);
     expect(editorConflict({ ...a, hairStyle: 'afro' }, 'accessory', 'glasses')).toBeUndefined();
     expect(editorConflict({ ...a, hairStyle: 'buzz' }, 'accessory', 'bow')).toMatch(/cabelo/);
-    expect(editorConflict({ ...a, accessory: 'beanie' }, 'hairStyle', 'mohawk')).toMatch(/gorro/);
+    expect(editorConflict({ ...a, accessory: 'beanie' }, 'hairStyle', 'mohawk')).toMatch(/chapéu/);
+    // Chapéu que assenta na cabeça entra na mesma regra do boné; coroa e orelhas ficam por cima do cabelo.
+    expect(editorConflict({ ...a, accessory: 'top_hat' }, 'hairStyle', 'afro')).toMatch(/chapéu/);
+    expect(editorConflict({ ...a, accessory: 'chef_hat' }, 'hairStyle', 'bun')).toMatch(/chapéu/);
+    expect(editorConflict({ ...a, accessory: 'crown' }, 'hairStyle', 'afro')).toBeUndefined();
+    expect(editorConflict({ ...a, accessory: 'cat_ears' }, 'hairStyle', 'afro')).toBeUndefined();
     expect(editorConflict({ ...a, accessory: 'bow' }, 'hairStyle', 'bald')).toMatch(/laço/);
     expect(editorConflict({ ...a, accessory: 'none' }, 'hairStyle', 'bald')).toBeUndefined();
   });

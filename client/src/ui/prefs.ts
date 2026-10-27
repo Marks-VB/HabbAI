@@ -61,8 +61,8 @@ export function sanitizePrefs(raw: unknown): UiPrefs {
     liveliness: oneOf(o.liveliness, ['calm', 'normal', 'lively'] as const, d.liveliness),
     // preferências antigas: o interruptor "dia e noite" desligado vira "sempre dia"
     daylight: oneOf(o.daylight, ['auto', 'day', 'night'] as const, o.dayNight === false ? 'day' : d.daylight),
-    theme: oneOf(o.theme, ['auto', 'none', 'christmas', 'halloween', 'cyberpunk', 'retro'] as const, d.theme),
-    scenario: oneOf(o.scenario, ['city', 'forest', 'cyberpunk', 'retro'] as const, d.scenario),
+    theme: oneOf(o.theme, ['auto', 'seasons', 'none', 'christmas', 'halloween', 'cyberpunk', 'retro', 'orbital', 'spring', 'autumn', 'junina'] as const, d.theme),
+    scenario: oneOf(o.scenario, ['city', 'forest', 'cyberpunk', 'retro', 'orbital', 'snow', 'beach'] as const, d.scenario),
     sound: bool(o.sound, d.sound),
     sounds: sanitizeSoundSettings(o.sounds),
     browserNotifications: bool(o.browserNotifications, d.browserNotifications),

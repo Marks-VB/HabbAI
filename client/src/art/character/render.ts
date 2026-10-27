@@ -592,6 +592,10 @@ interface Dc {
   a: Appearance;
   p: CharPal;
   r: Rig;
+  /** Quadro da animação (0..n-1): base de oscilações que precisam ser estáveis dentro do mesmo sprite. */
+  frame: number;
+  /** Fantasia do tema: no fantasma, esconde cabelo e braço de perto (o lençol cobre tudo). */
+  costume?: CharacterFrameRequest['costume'];
 }
 
 function hairPalette(p: CharPal, buzz: boolean): Palette {
@@ -729,6 +733,8 @@ function drawFacialHair(dc: Dc): void {
 }
 
 function drawHair(dc: Dc, layer: 'front' | 'back'): void {
+  // Capacete fechado e fantasias de cabeça inteira: o cabelo fica escondido dentro delas (e volta ao tirar).
+  if (dc.a.accessory === 'helmet' || dc.costume === 'ghost' || dc.costume === 'robot') return;
   const style = dc.a.hairStyle;
   const set = HAIR[style]?.[dc.r.view];
   const tpl = set?.[layer];
@@ -855,6 +861,373 @@ function drawAccessory(dc: Dc): void {
       else b.stamp(rows, ox + 7, oy + 1, pal);
       break;
     }
+    case 'helmet': {
+      // Capacete fechado: cúpula, lentes escuras, filtro no queixo e aro no pescoço. Cobre o cabelo e o rosto.
+      const shell = it.base;
+      const hi = it.lt;
+      const dk = it.dk;
+      const deep = it.dd;
+      if (v === 'down') {
+        b.rect(ox + 2, oy + 1, 10, 2, shell);
+        b.hline(ox + 4, ox + 9, oy + 1, hi);
+        b.rect(ox + 1, oy + 3, 12, 6, shell);
+        b.rect(ox, oy + 4, 1, 4, dk);
+        b.rect(ox + 13, oy + 4, 1, 4, dk);
+        b.rect(ox + 2, oy + 4, 4, 2, '#11131a');
+        b.rect(ox + 8, oy + 4, 4, 2, '#11131a');
+        b.set(ox + 3, oy + 4, '#46586f');
+        b.set(ox + 9, oy + 4, '#46586f');
+        b.rect(ox + 5, oy + 6, 4, 4, dk);
+        b.rect(ox + 6, oy + 6, 2, 4, deep);
+        for (const yy of [7, 8, 9]) b.hline(ox + 6, ox + 7, oy + yy, '#0e1016');
+        b.set(ox + 1, oy + 8, deep);
+        b.set(ox + 12, oy + 8, deep);
+        b.rect(ox + 1, oy + 9, 12, 1, dk);
+        b.rect(ox + 2, oy + 10, 10, 1, deep);
+      } else if (v === 'side') {
+        b.rect(ox + 3, oy + 1, 8, 2, shell);
+        b.hline(ox + 5, ox + 9, oy + 1, hi);
+        b.rect(ox + 1, oy + 3, 11, 6, shell);
+        b.rect(ox, oy + 4, 1, 3, dk);
+        b.rect(ox + 12, oy + 4, 1, 4, dk);
+        b.rect(ox, oy + 4, 3, 2, '#11131a');
+        b.set(ox + 1, oy + 4, '#46586f');
+        b.rect(ox + 1, oy + 6, 3, 3, dk);
+        for (const yy of [7, 8]) b.hline(ox + 1, ox + 3, oy + yy, deep);
+        b.rect(ox + 1, oy + 9, 11, 1, dk);
+        b.rect(ox + 2, oy + 10, 9, 1, deep);
+      } else {
+        b.rect(ox + 2, oy + 1, 10, 2, shell);
+        b.hline(ox + 4, ox + 9, oy + 1, hi);
+        b.rect(ox + 1, oy + 3, 12, 7, shell);
+        b.vline(ox + 7, oy + 2, oy + 9, dk);
+        b.hline(ox + 1, ox + 12, oy + 9, dk);
+        b.rect(ox + 2, oy + 10, 10, 1, deep);
+      }
+      break;
+    }
+    case 'crown': {
+      // Aro fino pousado no cabelo, três pontas em cima e a joia vermelha no centro do aro.
+      const gem = '#cf3143';
+      const gemHi = '#f0748a';
+      if (v === 'side') {
+        b.hline(ox + 2, ox + 9, oy + 3, it.lt);
+        b.hline(ox + 2, ox + 9, oy + 4, it.base);
+        for (const cx of [2, 5, 8]) b.vline(ox + cx, oy + 1, oy + 2, it.base);
+        b.set(ox + 2, oy + 1, it.lt);
+        b.set(ox + 2, oy + 3, gem);
+        b.set(ox + 2, oy + 4, gem);
+        b.set(ox + 3, oy + 4, gemHi);
+      } else {
+        b.hline(ox + 2, ox + 11, oy + 3, it.lt);
+        b.hline(ox + 2, ox + 11, oy + 4, it.base);
+        for (const cx of [3, 6, 7, 10]) b.vline(ox + cx, oy + 1, oy + 2, it.base);
+        b.set(ox + 3, oy + 1, it.lt);
+        b.set(ox + 10, oy + 2, it.dk);
+        if (v === 'down') {
+          b.set(ox + 6, oy + 3, gemHi);
+          b.set(ox + 7, oy + 3, gem);
+          b.set(ox + 6, oy + 4, gem);
+          b.set(ox + 7, oy + 4, gem);
+        }
+      }
+      break;
+    }
+    case 'top_hat': {
+      // Copa alta (~5px) com topo claro, faixa escura na base e aba 1px mais larga.
+      if (v === 'side') {
+        b.rect(ox + 2, oy, 8, 4, it.base);
+        b.hline(ox + 2, ox + 9, oy, it.lt);
+        b.vline(ox + 9, oy + 1, oy + 3, it.dk);
+        b.hline(ox + 2, ox + 9, oy + 4, it.dd);
+        b.hline(ox + 1, ox + 11, oy + 5, it.dk);
+        b.set(ox + 1, oy + 5, it.base);
+        b.set(ox + 11, oy + 5, it.base);
+      } else {
+        b.rect(ox + 3, oy, 8, 4, it.base);
+        b.hline(ox + 3, ox + 10, oy, it.lt);
+        b.vline(ox + 10, oy + 1, oy + 3, it.dk);
+        b.hline(ox + 3, ox + 10, oy + 4, it.dd);
+        b.hline(ox + 1, ox + 12, oy + 5, it.dk);
+        b.set(ox + 1, oy + 5, it.base);
+        b.set(ox + 2, oy + 5, it.base);
+        b.set(ox + 12, oy + 5, it.base);
+      }
+      break;
+    }
+    case 'pirate_hat': {
+      // Tricórnio: aba larga com as pontas levantadas, copa baixa e laço claro na frente.
+      const brim = v === 'side' ? [0, 11] : [0, 13];
+      b.rect(ox + 4, oy + 2, 6, 3, it.base);
+      b.hline(ox + 4, ox + 9, oy + 2, it.lt);
+      b.set(ox + 9, oy + 3, it.dk);
+      b.set(ox + 9, oy + 4, it.dk);
+      b.hline(ox + brim[0], ox + brim[1], oy + 5, it.lt);
+      b.set(ox + brim[0] + 1, oy + 5, it.base);
+      b.set(ox + brim[1] - 1, oy + 5, it.base);
+      // Aba curvada: as pontas sobem e a frente desce, dando o tricórnio.
+      b.set(ox + brim[0], oy + 4, it.base);
+      b.set(ox + brim[0] + 1, oy + 4, it.dk);
+      b.set(ox + brim[1], oy + 4, it.base);
+      b.set(ox + brim[1] - 1, oy + 4, it.dk);
+      b.hline(ox + 5, ox + 8, oy + 6, it.dk);
+      b.hline(ox + 6, ox + 7, oy + 6, it.dd);
+      if (v === 'down') {
+        // Laço claro no meio da copa (a caveira não fica legível a 1x).
+        b.set(ox + 5, oy + 4, '#f2ead6');
+        b.set(ox + 8, oy + 4, '#f2ead6');
+        b.set(ox + 6, oy + 4, it.dd);
+        b.set(ox + 7, oy + 4, it.dd);
+        b.set(ox + 6, oy + 3, '#f2ead6');
+        b.set(ox + 7, oy + 3, '#f2ead6');
+      } else if (v === 'side') {
+        b.set(ox + 4, oy + 4, '#f2ead6');
+        b.set(ox + 5, oy + 4, it.dd);
+      }
+      break;
+    }
+    case 'chef_hat': {
+      // Touca branca: topo bufante, cilindro alto e faixa franzida na base (a cor escolhida só tinge).
+      const wh = mix(it.base, '#f7f6f0', 0.8);
+      const whLt = mix(it.lt, '#ffffff', 0.72);
+      const whDk = mix(it.dk, '#c8c5ba', 0.45);
+      const whDd = mix(it.dd, '#a5a298', 0.4);
+      if (v === 'side') {
+        b.hline(ox + 4, ox + 9, oy, whLt);
+        b.rect(ox + 2, oy + 1, 8, 2, wh);
+        b.set(ox + 2, oy + 1, whLt);
+        b.set(ox + 9, oy + 2, whDk);
+        b.set(ox + 5, oy + 1, whDk);
+        b.rect(ox + 3, oy + 3, 6, 2, wh);
+        b.hline(ox + 3, ox + 8, oy + 3, whDk);
+        b.set(ox + 3, oy + 4, whLt);
+        b.vline(ox + 8, oy + 3, oy + 4, whDk);
+        b.hline(ox + 3, ox + 9, oy + 5, whDd);
+        b.set(ox + 5, oy + 5, whDk);
+        b.set(ox + 7, oy + 5, whDk);
+      } else {
+        b.hline(ox + 3, ox + 10, oy, whLt);
+        b.rect(ox + 1, oy + 1, 12, 1, wh);
+        b.set(ox + 1, oy + 1, whLt);
+        b.rect(ox + 2, oy + 2, 10, 1, wh);
+        for (const cx of [4, 7, 10]) b.set(ox + cx, oy + 1, whDk);
+        b.set(ox + 11, oy + 1, whDk);
+        b.set(ox + 11, oy + 2, whDk);
+        b.rect(ox + 3, oy + 3, 8, 2, wh);
+        b.hline(ox + 3, ox + 10, oy + 3, whDk);
+        b.set(ox + 4, oy + 4, whLt);
+        b.vline(ox + 10, oy + 3, oy + 4, whDk);
+        b.hline(ox + 3, ox + 10, oy + 5, whDd);
+        for (const cx of [4, 6, 8]) b.set(ox + cx, oy + 5, whDk);
+      }
+      break;
+    }
+    case 'knight_helm': {
+      // Elmo fechado: cúpula metálica, fenda escura nos olhos, crista no topo e rebites no queixo.
+      const slit = '#101319';
+      const m = it.base;
+      const mL = it.lt;
+      const mD = it.dk;
+      const mDD = it.dd;
+      if (v === 'side') {
+        b.rect(ox + 6, oy, 2, 3, it.hi);
+        b.set(ox + 7, oy + 2, mD);
+        b.hline(ox + 4, ox + 8, oy + 2, mL);
+        b.rect(ox + 3, oy + 3, 6, 1, m);
+        b.rect(ox + 1, oy + 4, 10, 3, m);
+        b.vline(ox + 1, oy + 4, oy + 6, mL);
+        b.vline(ox + 10, oy + 4, oy + 6, mD);
+        b.rect(ox, oy + 6, 11, 5, m);
+        b.rect(ox, oy + 9, 6, 2, slit);
+        b.set(ox + 1, oy + 9, '#46586f');
+        b.rect(ox, oy + 11, 11, 1, mD);
+        b.rect(ox + 1, oy + 12, 9, 1, mDD);
+        b.set(ox + 9, oy + 8, mD);
+      } else {
+        b.rect(ox + 6, oy, 2, 3, it.hi);
+        b.set(ox + 7, oy + 2, mD);
+        b.hline(ox + 4, ox + 9, oy + 2, mL);
+        b.rect(ox + 3, oy + 3, 8, 1, m);
+        b.rect(ox + 1, oy + 4, 12, 3, m);
+        b.hline(ox + 2, ox + 6, oy + 4, mL);
+        b.vline(ox + 12, oy + 4, oy + 6, mD);
+        b.rect(ox + 1, oy + 7, 12, 6, m);
+        b.vline(ox + 12, oy + 7, oy + 12, mD);
+        if (v === 'down') {
+          // Fenda dos olhos: só de frente (de costas é a nuca do elmo).
+          b.rect(ox + 2, oy + 9, 10, 2, slit);
+          b.set(ox + 3, oy + 9, '#46586f');
+          b.set(ox + 10, oy + 10, '#2a3444');
+        } else {
+          b.vline(ox + 6, oy + 7, oy + 12, mD);
+          b.set(ox + 7, oy + 7, mD);
+        }
+        b.rect(ox + 1, oy + 13, 12, 1, mD);
+        b.rect(ox + 2, oy + 14, 10, 1, mDD);
+        for (const cx of [4, 7, 10]) b.set(ox + cx, oy + 12, mDD);
+      }
+      break;
+    }
+    case 'hood': {
+      // Capuz: cobre cabelo e laterais do rosto; de costas é pano fechado, com a dobra central.
+      b.hline(ox + 2, ox + 11, oy + 2, it.lt);
+      b.hline(ox + 1, ox + 12, oy + 3, it.base);
+      b.hline(ox, ox + 13, oy + 4, it.base);
+      b.set(ox, oy + 4, it.dk);
+      b.set(ox + 13, oy + 4, it.dk);
+      if (v === 'up') {
+        b.rect(ox, oy + 5, 14, 10, it.base);
+        b.vline(ox, oy + 5, oy + 13, it.lt);
+        b.hline(ox, ox + 13, oy + 14, it.dk);
+        b.vline(ox + 5, oy + 6, oy + 13, it.dk);
+        b.vline(ox + 8, oy + 6, oy + 13, it.dk);
+      } else if (v === 'side') {
+        // De perfil o pano cobre a nuca e o topo; a abertura fica na frente do rosto.
+        b.rect(ox, oy + 5, 14, 2, it.base);
+        b.rect(ox + 6, oy + 7, 8, 8, it.base);
+        b.vline(ox + 6, oy + 7, oy + 14, it.dd);
+        b.hline(ox + 1, ox + 6, oy + 7, it.dd);
+        b.hline(ox + 6, ox + 13, oy + 14, it.dk);
+        b.set(ox, oy + 5, it.base);
+      } else {
+        b.rect(ox, oy + 5, 14, 2, it.base);
+        for (let cy = 7; cy <= 14; cy++) {
+          b.rect(ox, oy + cy, 3, 1, it.base);
+          b.rect(ox + 11, oy + cy, 3, 1, it.dk);
+          b.set(ox + 3, oy + cy, it.dd);
+          b.set(ox + 10, oy + cy, it.dd);
+        }
+        b.hline(ox, ox + 2, oy + 14, it.dk);
+        b.hline(ox + 11, ox + 13, oy + 14, it.dk);
+        b.hline(ox + 4, ox + 9, oy + 7, it.dd);
+      }
+      b.hline(ox + 2, ox + 11, oy + 15, it.dk);
+      break;
+    }
+    case 'cat_ears': {
+      // Duas orelhas triangulares no topo do cabelo, com o interno rosado de frente.
+      const pink = '#eda2b4';
+      if (v === 'side') {
+        b.set(ox + 9, oy, it.base);
+        b.hline(ox + 8, ox + 9, oy + 1, it.base);
+        b.hline(ox + 7, ox + 9, oy + 2, it.base);
+        b.hline(ox + 7, ox + 10, oy + 3, it.base);
+        b.set(ox + 9, oy + 1, it.dk);
+        b.set(ox + 9, oy + 2, pink);
+        b.set(ox + 10, oy + 3, it.dk);
+      } else {
+        b.set(ox + 2, oy, it.base);
+        b.hline(ox + 2, ox + 3, oy + 1, it.base);
+        b.hline(ox + 2, ox + 4, oy + 2, it.base);
+        b.hline(ox + 2, ox + 5, oy + 3, it.base);
+        b.set(ox + 11, oy, it.base);
+        b.hline(ox + 10, ox + 11, oy + 1, it.base);
+        b.hline(ox + 9, ox + 11, oy + 2, it.base);
+        b.hline(ox + 8, ox + 11, oy + 3, it.base);
+        b.set(ox + 5, oy + 3, it.dk);
+        b.set(ox + 8, oy + 3, it.dk);
+        if (v === 'down') {
+          b.set(ox + 3, oy + 3, pink);
+          b.set(ox + 4, oy + 2, pink);
+          b.set(ox + 10, oy + 3, pink);
+          b.set(ox + 9, oy + 2, pink);
+        }
+      }
+      break;
+    }
+    case 'bow_tie': {
+      // Gravata borboleta no pescoço (sobre o colarinho): duas asas de 3px, nó escuro no meio.
+      if (v === 'side') {
+        b.rect(ox + 3, oy + 15, 2, 3, it.base);
+        b.set(ox + 3, oy + 15, it.lt);
+        b.set(ox + 3, oy + 17, it.dk);
+        b.set(ox + 4, oy + 17, it.dk);
+      } else if (v === 'up') {
+        b.hline(ox + 4, ox + 9, oy + 15, it.base);
+        b.hline(ox + 4, ox + 9, oy + 16, it.dk);
+      } else {
+        b.hline(ox + 3, ox + 5, oy + 15, it.lt);
+        b.hline(ox + 8, ox + 10, oy + 15, it.lt);
+        b.hline(ox + 3, ox + 5, oy + 16, it.base);
+        b.hline(ox + 8, ox + 10, oy + 16, it.base);
+        b.set(ox + 4, oy + 17, it.dk);
+        b.set(ox + 5, oy + 17, it.dk);
+        b.set(ox + 8, oy + 17, it.dk);
+        b.set(ox + 9, oy + 17, it.dk);
+        b.rect(ox + 6, oy + 15, 2, 2, it.dk);
+        b.set(ox + 6, oy + 15, it.base);
+        b.set(ox + 6, oy + 17, it.dd);
+        b.set(ox + 7, oy + 17, it.dd);
+      }
+      break;
+    }
+    case 'monocle': {
+      // Aro de 1px em volta de um olho, com a correntinha caindo até o colarinho.
+      const ring = mix(it.base, '#f2d27a', 0.4);
+      if (v === 'up') {
+        // De costas o aro não aparece: só o cordão passando pela nuca.
+        b.set(ox + 12, oy + 13, it.dk);
+        b.set(ox + 12, oy + 14, it.dk);
+        break;
+      }
+      const x0 = v === 'side' ? 2 : 8;
+      b.hline(ox + x0, ox + x0 + 2, oy + 9, ring);
+      b.hline(ox + x0, ox + x0 + 2, oy + 12, ring);
+      b.vline(ox + x0, oy + 10, oy + 11, ring);
+      b.vline(ox + x0 + 2, oy + 10, oy + 11, ring);
+      b.set(ox + x0 + 1, oy + 9, it.lt);
+      const chain: [number, number][] =
+        v === 'side' ? [[4, 13], [4, 14], [5, 15], [5, 16]] : [[11, 13], [11, 14], [12, 15], [12, 16]];
+      for (const [cx, cy] of chain) b.set(ox + cx, oy + cy, it.dk);
+      break;
+    }
+    case 'sleep_mask': {
+      // Faixa escura sobre os olhos, com o brilho do tecido e a tira dando a volta na cabeça.
+      const mask = mix(it.base, '#191b26', 0.76);
+      const maskLt = mix(it.lt, '#3a3f52', 0.55);
+      if (v === 'side') {
+        b.rect(ox + 1, oy + 9, 6, 3, mask);
+        b.hline(ox + 7, ox + 11, oy + 10, mask);
+        b.hline(ox + 1, ox + 6, oy + 9, maskLt);
+        b.set(ox + 4, oy + 10, maskLt);
+      } else if (v === 'up') {
+        b.hline(ox + 2, ox + 11, oy + 9, mask);
+        b.hline(ox + 1, ox + 12, oy + 10, mask);
+      } else {
+        b.rect(ox, oy + 9, 14, 3, mask);
+        b.hline(ox + 1, ox + 12, oy + 9, maskLt);
+        b.set(ox + 3, oy + 10, maskLt);
+        b.set(ox + 10, oy + 10, maskLt);
+      }
+      break;
+    }
+    case 'goggles': {
+      // Óculos de natação: tira de borracha em volta da cabeça e dois vidros claros sobre os olhos.
+      const glass = 'rgba(206,240,255,0.78)';
+      if (v === 'side') {
+        b.rect(ox, oy + 9, 2, 3, it.dk);
+        b.rect(ox + 7, oy + 9, 6, 2, it.dk);
+        b.rect(ox + 1, oy + 9, 4, 3, it.dd);
+        b.rect(ox + 2, oy + 10, 2, 1, glass);
+        b.set(ox + 2, oy + 10, '#ffffff');
+        b.set(ox + 9, oy + 9, it.base);
+      } else if (v === 'up') {
+        b.rect(ox + 1, oy + 9, 12, 2, it.dk);
+        b.hline(ox + 2, ox + 11, oy + 9, it.dd);
+        b.set(ox + 3, oy + 10, it.base);
+      } else {
+        b.rect(ox, oy + 9, 2, 3, it.dk);
+        b.rect(ox + 12, oy + 9, 2, 3, it.dk);
+        for (const x0 of [2, 8]) {
+          b.rect(ox + x0, oy + 9, 4, 3, it.dd);
+          b.rect(ox + x0 + 1, oy + 10, 2, 1, glass);
+          b.set(ox + x0 + 1, oy + 10, '#ffffff');
+          b.set(ox + x0 + 3, oy + 11, it.dk);
+        }
+        b.hline(ox + 6, ox + 7, oy + 10, it.dk);
+      }
+      break;
+    }
     case 'none':
       break;
   }
@@ -906,9 +1279,25 @@ function sleeveLength(a: Appearance): number {
   switch (a.topStyle) {
     case 'tshirt':
     case 'polo':
+    case 'aloha':
       return 2;
+    case 'tank':
+      return 0;
     case 'blouse':
       return 3;
+    case 'jersey':
+    case 'life_vest':
+      return 2;
+    case 'lab_coat':
+    case 'tuxedo':
+    case 'gown':
+    case 'kimono':
+    case 'overalls':
+    case 'pajamas':
+    case 'raincoat':
+    case 'armor':
+    case 'wetsuit':
+      return 99;
     default:
       return 99;
   }
@@ -919,27 +1308,50 @@ function drawLegs(dc: Dc): void {
   const pants = p.bottom;
   const sh = p.shoes;
   const style = a.bottomStyle ?? 'pants';
-  const skinLeg = style !== 'pants';
+  // Saia longa e avental cobrem a perna: nada de pele à mostra.
+  const longSkirt = style === 'long_skirt';
+  const apron = style === 'apron';
+  const skinLeg = style !== 'pants' && !longSkirt && !apron;
+  // No avental, a calça por baixo fica mais escura para o pano da frente aparecer.
+  const behind = apron ? ramp(shade(pants.base, -0.1), 0.05) : pants;
   if (r.view === 'side') {
-    drawLegsSide(dc, pants, sh, skinLeg);
+    drawLegsSide(dc, behind, sh, skinLeg);
     return;
   }
   if (r.seated) {
     if (r.view === 'down') {
       // Colo (coxas em direção à câmera) e pontas dos sapatos.
       const y0 = 24 + r.ub;
-      const lapTop = style === 'skirt' ? p.bottom : pants;
+      const lapTop = style === 'skirt' || longSkirt || apron ? pants : behind;
       b.rect(8, y0, 8, 1, lapTop.lt);
       b.rect(8, y0 + 1, 8, 1, lapTop.base);
       b.set(15, y0, lapTop.base);
       b.set(15, y0 + 1, lapTop.dk);
       b.set(11, y0 + 1, lapTop.dk);
-      if (skinLeg) {
+      if (longSkirt) {
+        // Saia longa no colo: cobre as coxas, com prega central.
+        b.rect(7, y0 + 2, 10, 2, pants.base);
+        b.set(7, y0 + 2, pants.lt);
+        b.set(16, y0 + 2, pants.dk);
+        b.set(16, y0 + 3, pants.dk);
+        b.set(11, y0 + 3, pants.dk);
+      } else if (apron) {
+        // Pano do avental sobre a frente das coxas.
+        b.rect(10, y0 + 2, 4, 2, pants.base);
+        b.set(10, y0 + 2, pants.lt);
+        b.set(9, y0 + 2, behind.dk);
+        b.set(14, y0 + 2, behind.dk);
+        b.hline(10, 13, y0 + 3, pants.dk);
+      } else if (skinLeg) {
         b.rect(9, y0 + 2, 2, 1, p.skin.base);
         b.rect(13, y0 + 2, 2, 1, p.skin.dk);
       } else {
         b.rect(8, y0 + 2, 3, 1, pants.dk);
         b.rect(13, y0 + 2, 3, 1, pants.dk);
+      }
+      if (style === 'swim') {
+        b.set(11, y0, p.acc.lt);
+        b.set(12, y0, p.acc.base);
       }
       b.rect(8, 30, 3, 1, sh.base);
       b.set(8, 30, sh.lt);
@@ -954,18 +1366,25 @@ function drawLegs(dc: Dc): void {
       }
     } else {
       const y0 = 24 + r.ub;
-      b.rect(8, y0, 8, 2, pants.base);
-      b.rect(8, y0 + 1, 8, 1, pants.dk);
-      b.set(11, y0, pants.dk);
-      b.set(12, y0, pants.dk);
+      b.rect(8, y0, 8, 2, behind.base);
+      b.rect(8, y0 + 1, 8, 1, behind.dk);
+      b.set(11, y0, behind.dk);
+      b.set(12, y0, behind.dk);
+      if (longSkirt) {
+        // De costas, a saia cobre o colo.
+        b.rect(7, y0 + 2, 10, 2, pants.base);
+        b.set(7, y0 + 2, pants.lt);
+        b.set(16, y0 + 2, pants.dk);
+        b.hline(7, 16, y0 + 3, pants.dk);
+      }
     }
     return;
   }
   // Em pé (frente/costas). Quadril/cintura.
   const top = 24 + r.ub;
-  b.rect(8, top, 8, 2, pants.base);
-  b.set(15, top, pants.dk);
-  b.set(15, top + 1, pants.dk);
+  b.rect(8, top, 8, 2, behind.base);
+  b.set(15, top, behind.dk);
+  b.set(15, top + 1, behind.dk);
   if (style === 'skirt') {
     b.rect(7, top + 2, 10, 1, pants.base);
     b.set(16, top + 2, pants.dk);
@@ -975,9 +1394,11 @@ function drawLegs(dc: Dc): void {
   }
   const leg = (x: number, dyFoot: number, shadeRight: boolean) => {
     const y1 = 28 + dyFoot;
+    // Sunga/calção de banho: mais curto que a bermuda (a perna fica de fora já na primeira linha).
+    const skinFrom = style === 'swim' ? top + 2 : style === 'jeans' ? top + 4 : top + 3;
     for (let y = top + 2; y <= y1; y++) {
-      const isSkin = skinLeg && y >= top + 3;
-      const c = isSkin ? p.skin : pants;
+      const isSkin = skinLeg && y >= skinFrom;
+      const c = isSkin ? p.skin : behind;
       b.set(x, y, c.base);
       b.set(x + 1, y, c.base);
       b.set(x + 2, y, shadeRight ? c.dk : c.base);
@@ -991,7 +1412,42 @@ function drawLegs(dc: Dc): void {
   const b1 = r.view === 'up' ? r.legA.dy : r.legB.dy;
   leg(8, a1, true);
   leg(13, b1, true);
-  if (!skinLeg || style === 'shorts') {
+  if (longSkirt) {
+    // Saia longa: bloco até o tornozelo, com pregas e barra.
+    b.rect(8, top + 2, 8, 1, pants.base);
+    b.rect(7, top + 3, 10, 1, pants.base);
+    b.rect(6, top + 4, 12, 1, pants.base);
+    b.set(6, top + 4, pants.dk);
+    b.set(17, top + 4, pants.dk);
+    b.set(7, top + 3, pants.lt);
+    b.set(16, top + 3, pants.dk);
+    b.vline(10, top + 3, top + 4, pants.dk);
+    b.vline(13, top + 3, top + 4, pants.dk);
+    b.set(8, top + 4, pants.dk);
+    b.set(15, top + 4, pants.dk);
+  } else if (apron) {
+    // Pano do avental na frente, sobre a calça (que aparece nas laterais).
+    b.rect(10, top, 4, 4, pants.base);
+    b.set(10, top, pants.lt);
+    b.set(13, top, pants.dk);
+    b.set(13, top + 1, pants.dk);
+    b.set(11, top + 2, pants.dk);
+    b.hline(10, 13, top + 3, pants.dk);
+  } else if (style === 'jeans') {
+    // Bermuda jeans: cós, costura central e bainha clara.
+    b.hline(8, 15, top, behind.dk);
+    b.set(11, top + 1, behind.dk);
+    b.set(12, top + 1, behind.dk);
+    b.hline(8, 10, top + 3, pants.lt);
+    b.hline(13, 15, top + 3, pants.lt);
+  } else if (style === 'swim') {
+    // Cordão na cintura (dois nós) e listra lateral.
+    b.set(11, top, p.acc.lt);
+    b.set(12, top, p.acc.base);
+    b.set(10, top + 1, p.acc.base);
+    b.set(13, top + 1, p.acc.base);
+    b.set(15, top, p.acc.dk);
+  } else if (!skinLeg || style === 'shorts') {
     b.set(10, top + 2, pants.dk);
     b.set(13, top + 2, pants.base);
   }
@@ -1000,12 +1456,27 @@ function drawLegs(dc: Dc): void {
 function drawLegsSide(dc: Dc, pants: Ramp, sh: Ramp, skinLeg: boolean): void {
   const { b, p, r, a } = dc;
   const style = a.bottomStyle ?? 'pants';
+  const longSkirt = style === 'long_skirt';
+  const apron = style === 'apron';
+  const cloth = p.bottom;
   if (r.seated) {
     const y0 = 24 + r.ub; // linha do quadril
     // Coxa horizontal para a frente (esquerda) e canela para baixo.
     b.rect(7, y0 - 1, 7, 2, pants.base);
     b.rect(7, y0 - 1, 6, 1, pants.lt);
     b.set(13, y0, pants.dk);
+    if (style === 'swim') b.set(11, y0 - 1, p.acc.base);
+    if (longSkirt) {
+      // A saia cobre a coxa e a canela (sem pele).
+      b.rect(6, y0 - 1, 8, 2, pants.base);
+      b.set(6, y0 - 1, pants.lt);
+      b.set(6, y0, pants.dk);
+    } else if (apron) {
+      // Pano do avental sobre a coxa, com a calça aparecendo atrás.
+      b.hline(7, 11, y0 - 1, cloth.lt);
+      b.set(7, y0, cloth.base);
+      b.set(12, y0, cloth.dk);
+    }
     const shin = skinLeg ? p.skin : pants;
     b.rect(7, y0 + 1, 2, 30 - (y0 + 1), shin.base);
     b.set(8, y0 + 1, shin.dk);
@@ -1029,6 +1500,9 @@ function drawLegsSide(dc: Dc, pants: Ramp, sh: Ramp, skinLeg: boolean): void {
     b.rect(8, top + 1, 7, 2, pants.base);
     b.set(8, top + 1, pants.lt);
     b.set(14, top + 2, pants.dk);
+  } else if (style === 'swim') {
+    b.set(11, top, p.acc.base);
+    b.set(12, top, p.acc.dk);
   }
   const leg = (dx: number, lift: number, dim: boolean) => {
     // Perna de 3px do quadril (x≈11) ao pé deslocado `dx`.
@@ -1037,10 +1511,11 @@ function drawLegsSide(dc: Dc, pants: Ramp, sh: Ramp, skinLeg: boolean): void {
     const shc = dim ? ramp(sh.dk, 0.08) : sh;
     const y0 = top + 2;
     const y1 = 28 - lift;
+    const skinFrom = style === 'swim' ? top + 2 : style === 'jeans' ? top + 4 : top + 3;
     for (let y = y0; y <= y1; y++) {
       const tt = (y - y0) / Math.max(1, y1 - y0);
       const x = Math.round(10 + dx * tt);
-      const c = skinLeg && y >= top + 3 ? sc : pc;
+      const c = skinLeg && y >= skinFrom ? sc : pc;
       b.set(x, y, c.lt);
       b.set(x + 1, y, c.base);
       b.set(x + 2, y, c.dk);
@@ -1052,6 +1527,27 @@ function drawLegsSide(dc: Dc, pants: Ramp, sh: Ramp, skinLeg: boolean): void {
   };
   leg(r.legA.dx, -r.legA.dy, true);
   leg(r.legB.dx, -r.legB.dy, false);
+  if (longSkirt) {
+    // Saia longa de perfil: bloco do quadril ao tornozelo, com pregas.
+    b.rect(8, top + 1, 7, 1, pants.base);
+    b.rect(7, top + 2, 8, 2, pants.base);
+    b.set(7, top + 2, pants.lt);
+    b.set(8, top + 2, pants.lt);
+    b.set(14, top + 2, pants.dk);
+    b.set(14, top + 3, pants.dk);
+    b.hline(7, 14, top + 3, pants.dk);
+    b.set(10, top + 2, pants.dk);
+  } else if (apron) {
+    // Pano do avental na frente (a perna continua atrás).
+    b.vline(9, top + 1, top + 3, cloth.base);
+    b.set(9, top + 1, cloth.lt);
+    b.set(9, top + 3, cloth.dk);
+    b.set(10, top + 3, cloth.dk);
+  } else if (style === 'jeans') {
+    // Bainha clara da bermuda.
+    b.set(11, top, pants.lt);
+    b.set(13, top + 3, pants.lt);
+  }
 }
 
 function drawTorso(dc: Dc): void {
@@ -1105,7 +1601,118 @@ function drawTorso(dc: Dc): void {
       case 'tshirt':
         b.set(9 + lx, y + 2, ac.base);
         break;
+      case 'vader':
+        // Placa peitoral e fivela de perfil (a capa vem de drawCapeBack).
+        b.rect(8 + lx, y + 1, 3, 3, ac.dk);
+        b.set(8 + lx, y + 1, ac.lt);
+        b.set(9 + lx, y + 2, '#e2604f');
+        b.rect(8 + lx, y + 4, 7, 1, t.dd);
+        b.set(9 + lx, y + 4, ac.base);
+        b.rect(9 + lx, y, 4, 1, t.dd);
+        break;
+      case 'aloha':
+        // Gola aberta e uma folha estampada na frente.
+        b.set(9 + lx, y, ac.lt);
+        b.set(10 + lx, y, ac.lt);
+        b.set(9 + lx, y + 1, t.dk);
+        b.set(9 + lx, y + 2, ac.base);
+        b.set(11 + lx, y + 4, ac.base);
+        break;
+      case 'tank':
+        // Alcinha fina: o ombro aparece fora da camisa.
+        b.hline(8 + lx, 9 + lx, y, p.skin.base);
+        b.set(10 + lx, y, ac.base);
+        b.rect(8 + lx, y + 4, 7, 1, ac.base);
+        break;
+      case 'lab_coat':
+        // Jaleco: gola clara, lapela na frente e bolso com caneta.
+        b.set(9 + lx, y, t.hi);
+        b.vline(9 + lx, y + 1, y + 2, t.dk);
+        b.set(8 + lx, y + 3, t.dd);
+        b.rect(10 + lx, y + 3, 3, 1, t.dk);
+        b.set(10 + lx, y + 3, ac.base);
+        b.rect(8 + lx, y + 5, 7, 1, t.dk);
+        b.rect(8 + lx, y + 6, 2, 1, t.base);
+        break;
+      case 'tuxedo':
+        // Smoking: camisa no peito, lapela acetinada e lenço no bolso.
+        b.hline(8 + lx, 10 + lx, y, ac.lt);
+        b.set(8 + lx, y + 1, ac.dk);
+        b.vline(9 + lx, y + 1, y + 2, t.lt);
+        b.set(9 + lx, y + 3, ac.base);
+        b.rect(8 + lx, y + 5, 7, 1, t.dd);
+        break;
+      case 'gown':
+        // Toga: faixa dourada no ombro, caimento reto e barra larga.
+        b.hline(8 + lx, 10 + lx, y, ac.base);
+        b.set(9 + lx, y + 3, t.dk);
+        b.set(11 + lx, y + 2, t.dk);
+        b.rect(8 + lx, y + 5, 7, 1, t.dk);
+        b.rect(8 + lx, y + 6, 3, 1, t.base);
+        break;
+      case 'kimono':
+        // Quimono: gola cruzada na frente e obi com nó nas costas.
+        b.set(9 + lx, y, t.lt);
+        b.set(9 + lx, y + 1, t.lt);
+        b.set(9 + lx, y + 2, t.dk);
+        b.rect(8 + lx, y + 3, 7, 2, ac.base);
+        b.hline(8 + lx, 14 + lx, y + 4, ac.dk);
+        b.rect(13 + lx, y + 3, 1, 2, ac.dk);
+        break;
+      case 'overalls':
+        // Macacão: camiseta no ombro e peitoral com alça.
+        b.set(9 + lx, y, ac.base);
+        b.set(10 + lx, y, t.base);
+        b.vline(8 + lx, y + 1, y + 3, t.base);
+        b.set(8 + lx, y + 1, t.lt);
+        b.hline(8 + lx, 14 + lx, y + 4, t.dk);
+        break;
+      case 'pajamas':
+        // Pijama: listras horizontais, gola e botão.
+        b.rect(9 + lx, y, 4, 1, t.lt);
+        b.hline(8 + lx, 14 + lx, y + 2, t.dk);
+        b.hline(8 + lx, 14 + lx, y + 4, t.dk);
+        b.set(8 + lx, y + 1, ac.lt);
+        break;
+      case 'raincoat':
+        // Capa de chuva: capuz caído atrás do pescoço, botões e brilho do plástico.
+        b.rect(12 + lx, y - 1, 3, 1, t.dk);
+        b.rect(12 + lx, y, 2, 1, t.dk);
+        b.set(8 + lx, y + 2, ac.base);
+        b.set(8 + lx, y + 4, ac.base);
+        b.vline(9 + lx, y + 1, y + 2, t.hi);
+        break;
+      case 'life_vest':
+        // Colete: duas faixas refletivas e zíper na frente.
+        b.hline(8 + lx, 14 + lx, y + 2, ac.lt);
+        b.hline(8 + lx, 14 + lx, y + 4, ac.lt);
+        b.vline(8 + lx, y + 1, y + 5, ac.dk);
+        b.set(9 + lx, y, t.dd);
+        break;
+      case 'jersey':
+        // Uniforme: gola e faixa no peito.
+        b.hline(9 + lx, 10 + lx, y, ac.base);
+        b.hline(8 + lx, 14 + lx, y + 2, ac.base);
+        b.set(8 + lx, y + 5, t.dd);
+        break;
+      case 'armor':
+        // Armadura: ombreira, peitoral e cinto de perfil.
+        b.rect(10 + lx, y, 3, 1, t.lt);
+        b.set(9 + lx, y + 1, t.hi);
+        b.rect(8 + lx, y + 2, 6, 2, t.base);
+        b.set(8 + lx, y + 2, t.hi);
+        b.rect(8 + lx, y + 5, 7, 1, ac.dk);
+        b.set(9 + lx, y + 5, ac.lt);
+        break;
+      case 'wetsuit':
+        // Fato de mergulho: faixa viva no ombro e zíper nas costas.
+        b.hline(8 + lx, 14 + lx, y, ac.base);
+        b.set(8 + lx, y, ac.lt);
+        b.vline(13 + lx, y + 1, y + 4, ac.dk);
+        b.set(13 + lx, y + 2, ac.lt);
+        break;
     }
+    drawApronBib(dc);
     drawLanyard(dc);
     return;
   }
@@ -1202,8 +1809,294 @@ function drawTorso(dc: Dc): void {
         b.set(11, y + 2, ac.lt);
       } else b.rect(9, y, 6, 1, ac.base);
       break;
+    case 'vader':
+      if (front) {
+        // Ombros em degrau, placa peitoral com botões e cinto com fivela.
+        b.rect(8, y, 1, 2, t.dd);
+        b.rect(15, y, 1, 2, t.dd);
+        b.rect(10, y, 4, 1, ac.dk);
+        b.set(10, y, ac.lt);
+        b.rect(11, y + 1, 3, 2, ac.dk);
+        b.set(11, y + 1, ac.lt);
+        b.set(12, y + 1, '#e2604f');
+        b.set(13, y + 2, '#4a86d8');
+        b.rect(8, y + 4, 8, 2, t.dd);
+        b.rect(11, y + 4, 2, 2, ac.base);
+        b.set(11, y + 4, ac.hi);
+        b.set(10, y + 3, t.dk);
+        b.set(13, y + 3, t.dk);
+      } else {
+        // De costas, a capa cobre o tronco: dobras e fecho no pescoço.
+        b.rect(8, y, 8, 6, shade(t.base, -0.3));
+        b.vline(10, y + 1, y + 5, t.dk);
+        b.vline(13, y + 1, y + 5, t.dk);
+        b.rect(10, y, 4, 1, ac.dk);
+        b.set(11, y, ac.hi);
+        b.set(12, y, ac.base);
+      }
+      break;
+    case 'aloha':
+      if (front) {
+        // Gola aberta, botões e estampa de folhas/flores.
+        b.set(9, y, ac.lt);
+        b.set(10, y, ac.lt);
+        b.set(13, y, ac.lt);
+        b.set(14, y, ac.lt);
+        b.vline(11, y + 1, y + 5, t.dk);
+        b.set(11, y + 1, ac.base);
+        b.set(11, y + 3, ac.base);
+        b.set(9, y + 2, ac.base);
+        b.set(13, y + 1, ac.base);
+        b.set(10, y + 4, ac.base);
+        b.set(14, y + 3, ac.base);
+        b.set(9, y + 4, t.dk);
+      } else {
+        // Estampa nas costas.
+        for (const [cx, cy] of [[9, y + 1], [13, y + 2], [10, y + 4], [14, y + 4]] as const) b.set(cx, cy, ac.base);
+        b.set(11, y + 2, t.dk);
+        b.set(12, y + 3, t.dk);
+        b.rect(9, y, 6, 1, ac.lt);
+      }
+      break;
+    case 'tank':
+      // Ombros e decote à mostra; alças finas na cor do detalhe.
+      b.rect(8, y, 2, 1, p.skin.base);
+      b.rect(14, y, 2, 1, p.skin.base);
+      b.rect(11, y, 2, 1, p.skin.base);
+      b.set(10, y, ac.base);
+      b.set(13, y, ac.base);
+      if (front) {
+        b.set(10, y + 4, ac.base);
+        b.set(12, y + 4, ac.base);
+      } else {
+        b.hline(10, 13, y, ac.dk);
+      }
+      break;
+    case 'lab_coat':
+      // Jaleco: gola em V, botões, bolso com caneta e barra sobre o quadril.
+      if (front) {
+        b.set(9, y, t.dk);
+        b.set(10, y + 1, t.dk);
+        b.set(14, y, t.dk);
+        b.set(13, y + 1, t.dk);
+        b.rect(11, y, 2, 1, t.dk);
+        b.set(12, y + 2, t.dd);
+        b.set(12, y + 4, t.dd);
+        b.rect(9, y + 3, 2, 1, t.dk);
+        b.set(9, y + 3, ac.base);
+      } else {
+        b.rect(9, y, 6, 1, t.hi);
+        b.vline(11, y + 1, y + 4, t.dk);
+      }
+      b.rect(7, y + 5, 10, 1, t.dk);
+      b.set(7, y + 5, t.base);
+      b.rect(8, y + 6, 8, 1, t.base);
+      b.set(8, y + 6, t.dk);
+      b.set(15, y + 6, t.dk);
+      break;
+    case 'tuxedo':
+      // Smoking: lapela acetinada, camisa branca, gravata borboleta e lenço no bolso.
+      if (front) {
+        b.set(10, y, t.hi);
+        b.set(13, y, t.hi);
+        b.rect(11, y, 2, 1, ac.lt);
+        b.rect(9, y + 1, 2, 1, ac.dk);
+        b.rect(13, y + 1, 2, 1, ac.dk);
+        b.rect(11, y + 1, 2, 1, ac.base);
+        b.rect(11, y + 2, 2, 1, ac.lt);
+        b.set(9, y + 4, ac.base);
+      } else {
+        b.rect(9, y, 6, 1, t.lt);
+        b.vline(11, y + 1, y + 4, t.dk);
+      }
+      b.rect(8, y + 5, 8, 1, t.dd);
+      break;
+    case 'gown':
+      // Toga: gola em V com faixa dourada e caimento reto.
+      if (front) {
+        b.set(9, y, ac.base);
+        b.set(10, y + 1, ac.base);
+        b.set(11, y + 2, ac.base);
+        b.set(14, y, ac.base);
+        b.set(13, y + 1, ac.base);
+        b.set(12, y + 2, ac.base);
+        b.vline(11, y + 3, y + 5, t.dk);
+      } else {
+        b.rect(9, y, 6, 1, ac.base);
+        b.vline(10, y + 1, y + 5, t.dk);
+        b.vline(13, y + 1, y + 5, t.dk);
+      }
+      b.rect(7, y + 5, 10, 1, t.dk);
+      b.set(7, y + 5, t.base);
+      b.rect(8, y + 6, 8, 1, t.base);
+      b.set(8, y + 6, t.dk);
+      b.set(15, y + 6, t.dk);
+      break;
+    case 'kimono':
+      // Quimono: gola cruzada em V e obi na cintura.
+      if (front) {
+        b.set(9, y, t.lt);
+        b.set(10, y + 1, t.lt);
+        b.set(11, y + 2, t.lt);
+        b.set(14, y, t.dk);
+        b.set(13, y + 1, t.dk);
+        b.set(12, y + 2, t.dk);
+        b.rect(8, y + 3, 8, 2, ac.base);
+        b.hline(8, 15, y + 4, ac.dk);
+        b.vline(11, y + 3, y + 4, ac.lt);
+      } else {
+        b.rect(9, y, 6, 1, t.lt);
+        b.set(11, y + 1, t.lt);
+        b.rect(8, y + 3, 8, 2, ac.base);
+        b.hline(8, 15, y + 4, ac.dk);
+        b.rect(11, y + 2, 2, 1, ac.dk);
+      }
+      break;
+    case 'overalls':
+      // Macacão: alças, peitoral com bolso, por cima da camiseta.
+      b.rect(8, y, 8, 1, ac.base);
+      b.rect(9, y + 1, 6, 2, ac.base);
+      b.set(10, y, t.base);
+      b.set(13, y, t.base);
+      b.rect(10, y + 1, 4, 2, t.base);
+      b.set(10, y + 1, t.dk);
+      b.set(13, y + 1, t.dk);
+      b.set(10, y + 3, ac.lt);
+      b.set(13, y + 3, ac.lt);
+      b.rect(8, y + 4, 8, 2, t.base);
+      b.hline(8, 15, y + 4, t.dk);
+      if (front) b.rect(11, y + 2, 2, 1, t.lt);
+      else {
+        b.set(11, y + 2, t.base);
+        b.set(12, y + 2, t.base);
+      }
+      break;
+    case 'pajamas':
+      // Pijama: listras horizontais finas, gola e botões.
+      b.rect(9, y, 6, 1, t.lt);
+      b.set(11, y, t.base);
+      b.set(12, y, t.base);
+      b.hline(8, 15, y + 2, t.dk);
+      b.hline(8, 15, y + 4, t.dk);
+      if (front) {
+        b.vline(11, y + 1, y + 5, t.dk);
+        b.set(11, y + 1, ac.lt);
+        b.set(11, y + 3, ac.lt);
+      }
+      break;
+    case 'raincoat':
+      // Capa de chuva: capuz nos ombros, botões e brilho do plástico.
+      b.rect(8, y - 1, 2, 3, t.dk);
+      b.rect(14, y - 1, 2, 3, t.dk);
+      b.set(8, y, t.lt);
+      b.rect(9, y, 6, 1, t.dk);
+      b.set(11, y, ac.base);
+      b.set(12, y, ac.base);
+      if (front) {
+        b.set(10, y + 2, ac.base);
+        b.set(10, y + 4, ac.base);
+        b.vline(13, y + 1, y + 2, t.hi);
+      } else {
+        b.rect(9, y + 1, 6, 1, t.dd);
+        b.hline(8, 15, y + 4, t.dk);
+      }
+      break;
+    case 'life_vest':
+      // Colete salva-vidas: duas faixas refletivas e zíper.
+      b.rect(9, y, 6, 1, ac.dk);
+      b.hline(8, 15, y + 2, ac.lt);
+      b.hline(8, 15, y + 4, ac.lt);
+      b.vline(9, y + 1, y + 3, t.dd);
+      b.vline(14, y + 1, y + 3, t.dd);
+      if (front) {
+        b.vline(11, y + 1, y + 5, ac.dk);
+        b.set(12, y + 2, ac.hi);
+      } else {
+        b.vline(11, y + 1, y + 5, t.dd);
+      }
+      break;
+    case 'jersey':
+      // Uniforme de time: gola, faixa no peito e número nas costas.
+      b.rect(9, y, 6, 1, ac.base);
+      if (front) {
+        b.set(11, y, t.base);
+        b.set(12, y, t.base);
+        b.hline(8, 15, y + 2, ac.base);
+        b.set(10, y + 1, ac.dk);
+        b.set(10, y + 4, ac.dk);
+      } else {
+        // Número 7.
+        b.hline(10, 12, y + 1, ac.lt);
+        b.set(12, y + 2, ac.lt);
+        b.set(11, y + 3, ac.lt);
+        b.set(11, y + 4, ac.lt);
+      }
+      break;
+    case 'armor':
+      // Armadura: ombreiras, peitoral em duas partes e cinto com fivela.
+      b.rect(8, y, 2, 2, t.lt);
+      b.rect(14, y, 2, 2, t.lt);
+      b.set(9, y + 1, t.dk);
+      b.set(14, y + 1, t.dk);
+      b.rect(10, y, 4, 1, t.dk);
+      if (front) {
+        b.hline(9, 14, y + 2, t.hi);
+        b.hline(9, 14, y + 4, t.dk);
+        b.vline(11, y + 2, y + 4, t.dk);
+      } else {
+        b.hline(9, 14, y + 2, t.dk);
+        b.set(10, y + 2, ac.lt);
+        b.set(13, y + 2, ac.lt);
+        b.vline(11, y + 3, y + 4, t.dk);
+      }
+      b.rect(8, y + 5, 8, 1, ac.dk);
+      b.rect(11, y + 5, 2, 1, ac.lt);
+      break;
+    case 'wetsuit':
+      // Fato de mergulho: faixa viva nos ombros e zíper.
+      b.rect(8, y, 8, 1, ac.base);
+      b.set(8, y, ac.lt);
+      if (front) {
+        b.vline(11, y + 1, y + 4, ac.dk);
+        b.set(11, y + 2, ac.lt);
+      } else {
+        b.vline(12, y + 1, y + 4, ac.dk);
+        b.set(12, y + 1, ac.lt);
+      }
+      b.hline(8, 15, y + 5, t.dd);
+      break;
   }
+  drawApronBib(dc);
   drawLanyard(dc);
+}
+
+/** Avental: peitoral com bolso e alça no pescoço; de costas, só as alças cruzadas. */
+function drawApronBib(dc: Dc): void {
+  const { b, r, p, a } = dc;
+  if (a.bottomStyle !== 'apron') return;
+  const cloth = p.bottom;
+  const y = 18 + r.ub;
+  if (r.view === 'side') {
+    // De perfil, o peitoral é uma tira clara na frente do tronco.
+    b.vline(8 + r.lean, y + 3, y + 5, cloth.base);
+    b.set(8 + r.lean, y + 3, cloth.lt);
+    b.set(8 + r.lean, y + 5, cloth.dk);
+    return;
+  }
+  if (r.view === 'up') {
+    b.set(10, y, cloth.base);
+    b.set(13, y, cloth.base);
+    b.set(11, y + 1, cloth.dk);
+    b.set(12, y + 1, cloth.dk);
+    return;
+  }
+  b.hline(11, 12, y, cloth.dk);
+  b.rect(11, y + 1, 2, 1, cloth.dk);
+  b.rect(10, y + 2, 4, 4, cloth.base);
+  b.set(10, y + 2, cloth.lt);
+  b.set(13, y + 5, cloth.dk);
+  b.set(11, y + 3, cloth.dk);
+  b.hline(10, 13, y + 5, cloth.dk);
 }
 
 function drawLanyard(dc: Dc): void {
@@ -1483,6 +2376,25 @@ function itemPos(dc: Dc): Pt | null {
 
 // ---------------------------------------------------------------- composição
 
+/** Capa da armadura sombria: desenhada atrás de tudo, aparece nas laterais (e nas costas). */
+function drawCapeBack(dc: Dc): void {
+  const { b, r } = dc;
+  const y = 18 + r.ub;
+  const cape = '#1b1f29';
+  const edge = '#2b3140';
+  if (r.view === 'side') {
+    b.rect(14 + r.lean, y, 3, 9, cape);
+    b.vline(16 + r.lean, y + 1, y + 8, edge);
+    b.set(14 + r.lean, y + 9, cape);
+    return;
+  }
+  b.rect(4, y, 16, 9, cape);
+  b.hline(4, 19, y, edge);
+  for (const cx of [6, 12, 17]) b.vline(cx, y + 1, y + 8, edge);
+  b.set(4, y + 9, cape);
+  b.set(19, y + 9, cape);
+}
+
 /** Usa o mesmo rig da cabeça para acompanhar quique, cochilo e poses sentadas. */
 function drawCostume(dc: Dc, costume: CharacterFrameRequest['costume']): void {
   if (!costume) return;
@@ -1521,6 +2433,147 @@ function drawCostume(dc: Dc, costume: CharacterFrameRequest['costume']): void {
     b.hline(x + 4, x + 10, y + 5, '#1b8fa8');
     b.set(x + 10, y + 4, '#ff4fd8');
     b.rect(x + 12, y + 4, 1, 3, '#4c3a6b');
+  } else if (costume === 'helmet') {
+    // Capacete de estação: cúpula clara, aro metálico e reflexo; o rosto continua à vista.
+    b.hline(x + 2, x + 10, y - 1, '#cfe3f5');
+    b.rect(x, y, 13, 2, '#cfe3f5');
+    b.rect(x + 1, y + 1, 1, 4, '#a9c2d8');
+    b.rect(x + 11, y + 1, 1, 4, '#a9c2d8');
+    b.hline(x, x + 12, y + 4, '#5b7590');
+    b.set(x + 3, y, '#ffffff');
+    b.set(x + 4, y, '#eaf6ff');
+    b.set(x + 10, y + 2, '#8fb0c9');
+    b.rect(x - 1, y + 4, 2, 2, '#5b7590');
+    b.rect(x + 11, y + 4, 3, 2, '#5b7590');
+  } else if (costume === 'ghost') {
+    // Fantasma: o lençol cobre cabeça, tronco e braços (as pernas nem são desenhadas) e a barra ondulada
+    // flutua 1px. O balanço sai do quadro da animação (o sprite é cacheado por quadro, nunca por relógio).
+    const bob = Math.sin(dc.frame * 1.9) > 0.3 ? -1 : 0;
+    const pan = '#f1f0e9';
+    const panLt = '#ffffff';
+    const panDk = '#d5d3c8';
+    const ink = '#37313f';
+    const side = r.view === 'side';
+    const top = y + 2;
+    const chin = y + 14;
+    const rowR = side ? 12 : 13;
+    const hem = 30 + bob;
+    // Cabeça do lençol: cúpula que cobre cabelo, orelhas e rosto.
+    b.hline(x + 3, x + 10, top, panLt);
+    b.hline(x + 1, x + 12, top + 1, pan);
+    b.rect(x, top + 2, rowR + 1, chin - top - 1, pan);
+    b.vline(x + 1, top + 2, chin, panLt);
+    b.vline(x + rowR - 1, top + 3, chin, panDk);
+    // Corpo: ombros, tronco e barra ondulada que roça o chão.
+    const torsoTop = chin + 3;
+    b.rect(x + 1, chin + 1, rowR - 1, 2, pan);
+    if (hem - 2 > torsoTop) b.rect(x + 1, torsoTop, rowR - 1, hem - 2 - torsoTop, pan);
+    b.vline(x + 2, torsoTop, hem - 2, panLt);
+    b.vline(x + rowR - 1, torsoTop, hem - 2, panDk);
+    // Barra ondulada: dentes de 2px que descem alternadamente.
+    for (let c = 0; c <= rowR; c++) {
+      b.set(x + c, hem - 2, pan);
+      b.set(x + c, hem - 1, pan);
+      if (((c >> 1) & 1) === 0) b.set(x + c, hem, pan);
+    }
+    b.set(x + rowR, hem - 2, panDk);
+    b.set(x + rowR, hem - 1, panDk);
+    // Dois olhos escuros (um só de perfil; de costas o lençol é liso).
+    if (r.view === 'down') {
+      b.rect(x + 4, top + 7, 2, 2, ink);
+      b.rect(x + 8, top + 7, 2, 2, ink);
+    } else if (side) {
+      b.rect(x + 3, top + 7, 2, 2, ink);
+    }
+  } else if (costume === 'robot') {
+    // Robô: a cabeça vira uma caixa metálica quadrada, com antena de LED e dois olhos acesos; cobre
+    // cabelo e rosto (este desenho vem depois de drawHead).
+    const shell = '#b7c1ce';
+    const shellLt = '#e2e9f1';
+    const shellDk = '#7c8896';
+    const shellDd = '#4a5563';
+    const led = '#59f0e0';
+    const ledDk = '#1d8a96';
+    if (r.view === 'side') {
+      // De perfil: caixa com o visor virado para a frente (esquerda) e a antena atrás.
+      b.set(x + 8, y, led);
+      b.set(x + 8, y + 1, shellDd);
+      b.rect(x, y + 2, 14, 13, shell);
+      b.hline(x + 1, x + 12, y + 2, shellLt);
+      b.vline(x, y + 3, y + 13, shellLt);
+      b.vline(x + 13, y + 3, y + 14, shellDk);
+      b.hline(x, x + 13, y + 14, shellDd);
+      b.hline(x + 1, x + 12, y + 5, shellDk);
+      b.rect(x + 2, y + 8, 4, 3, shellDd);
+      b.rect(x + 3, y + 9, 2, 2, led);
+      b.set(x + 3, y + 9, '#d9fffb');
+      b.hline(x + 2, x + 5, y + 12, shellDd);
+      b.set(x + 9, y + 9, shellDk);
+      b.set(x + 10, y + 10, shellDk);
+    } else if (r.view === 'up') {
+      // De costas: sem olhos, só as frestas de ventilação e a antena.
+      b.rect(x + 6, y, 2, 1, shellDk);
+      b.set(x + 6, y + 1, shellDd);
+      b.rect(x, y + 2, 14, 13, shell);
+      b.hline(x + 1, x + 12, y + 2, shellLt);
+      b.vline(x, y + 3, y + 13, shellLt);
+      b.vline(x + 13, y + 3, y + 14, shellDk);
+      b.hline(x, x + 13, y + 14, shellDd);
+      b.rect(x, y + 6, 1, 3, shellDk);
+      b.rect(x + 13, y + 6, 1, 3, shellDk);
+      b.hline(x + 3, x + 10, y + 6, shellDd);
+      for (const cx of [4, 6, 8, 10]) b.set(x + cx, y + 9, shellDd);
+      b.hline(x + 3, x + 10, y + 12, shellDd);
+    } else {
+      // De frente: caixa, antena com bola de LED e dois olhos acesos.
+      b.rect(x + 6, y, 2, 1, led);
+      b.set(x + 6, y + 1, shellDd);
+      b.rect(x, y + 2, 14, 13, shell);
+      b.hline(x + 1, x + 12, y + 2, shellLt);
+      b.vline(x, y + 3, y + 13, shellLt);
+      b.vline(x + 13, y + 3, y + 14, shellDk);
+      b.hline(x, x + 13, y + 14, shellDd);
+      b.rect(x, y + 6, 1, 3, shellDk);
+      b.rect(x + 13, y + 6, 1, 3, shellDk);
+      b.hline(x + 1, x + 12, y + 5, shellDk);
+      b.rect(x + 3, y + 8, 3, 2, led);
+      b.rect(x + 8, y + 8, 3, 2, led);
+      b.set(x + 3, y + 8, '#d9fffb');
+      b.set(x + 8, y + 8, '#d9fffb');
+      b.set(x + 5, y + 9, ledDk);
+      b.set(x + 10, y + 9, ledDk);
+      b.hline(x + 4, x + 9, y + 12, shellDd);
+      b.hline(x + 4, x + 9, y + 13, shellDk);
+    }
+  } else if (costume === 'blossom') {
+    // Primavera: flor no cabelo, do lado direito, com duas folhinhas.
+    b.set(x + 10, y - 1, '#f28fb0');
+    b.set(x + 9, y - 2, '#f7b7cc');
+    b.set(x + 11, y - 2, '#f7b7cc');
+    b.set(x + 10, y - 3, '#ffffff');
+    b.set(x + 10, y - 2, '#f7d154');
+    b.set(x + 12, y - 1, '#6aa956');
+    b.set(x + 8, y - 1, '#6aa956');
+    b.set(x + 12, y, '#4f8a45');
+  } else if (costume === 'scarf') {
+    // Outono: cachecol âmbar no pescoço, com a ponta caída no ombro.
+    b.hline(x + 1, x + 11, y + 5, '#c96a2e');
+    b.rect(x + 1, y + 6, 11, 2, '#d9783c');
+    b.hline(x + 1, x + 11, y + 7, '#a4501f');
+    b.rect(x + 9, y + 8, 3, 5, '#d9783c');
+    b.vline(x + 10, y + 8, y + 12, '#b85a2c');
+    b.set(x + 9, y + 8, '#f0a647');
+    b.set(x + 3, y + 6, '#f0a647');
+    b.set(x + 7, y + 6, '#f0a647');
+  } else if (costume === 'strawhat') {
+    // Festa Junina: chapéu de palha com fita colorida.
+    b.hline(x - 1, x + 13, y + 1, '#c9a45c');
+    b.hline(x, x + 12, y + 2, '#a8843f');
+    b.rect(x + 2, y - 3, 9, 4, '#d8b76a');
+    b.rect(x + 3, y - 2, 7, 2, '#e8cb8a');
+    b.hline(x + 2, x + 10, y, '#e8574a');
+    b.hline(x + 2, x + 10, y - 1, '#c9a45c');
+    b.set(x + 11, y - 2, '#f2c94c');
   } else {
     // Fones retrô: arco na cabeça e conchas âmbar nas laterais.
     b.hline(x + 3, x + 9, y - 1, '#3b2a22');
@@ -1542,7 +2595,7 @@ export function renderCharacter(req: CharacterFrameRequest): BufSprite {
   const view: HeadView = req.dir === 'up' ? 'up' : req.dir === 'down' ? 'down' : 'side';
   const b = new PixelBuf(CHAR_W, CHAR_H);
   const a = req.appearance;
-  const dc: Dc = { b, a, p: paletteOf(a), r: makeRig(req, view) };
+  const dc: Dc = { b, a, p: paletteOf(a), r: makeRig(req, view), frame: Math.floor(req.frame) || 0, costume: req.costume };
   const r = dc.r;
   const sleeve = sleeveLength(a);
   const sr = dc.p.top;
@@ -1554,6 +2607,7 @@ export function renderCharacter(req: CharacterFrameRequest): BufSprite {
     b.rect(6 + r.lean, 19 + r.ub, 12, 6, '#702743');
   }
   drawHair(dc, 'back');
+  if (a.topStyle === 'vader') drawCapeBack(dc);
   if (ip && r.itemBehind) drawItem(dc, ip[0], ip[1]);
 
   const headStack = () => {
@@ -1567,7 +2621,7 @@ export function renderCharacter(req: CharacterFrameRequest): BufSprite {
   if (view !== 'side' && r.itemAt) {
     // Item em posição fixa (pipoca na pose 'wait'). De costas: balde e braços antes da cabeça (a mão
     // que vai à boca some atrás dela). De frente: cabeça, balde, braço que abraça e a mão por cima.
-    drawLegs(dc);
+    if (req.costume !== 'ghost') drawLegs(dc);
     drawTorso(dc);
     if (view === 'up') {
       if (ip) drawItem(dc, ip[0], ip[1]);
@@ -1582,7 +2636,7 @@ export function renderCharacter(req: CharacterFrameRequest): BufSprite {
     }
   } else if (view === 'side') {
     drawArm(dc, r.armA, sr, sleeve, 0.08);
-    drawLegs(dc);
+    if (req.costume !== 'ghost') drawLegs(dc);
     drawTorso(dc);
     drawHead(dc);
     drawFacialHair(dc);
@@ -1590,9 +2644,10 @@ export function renderCharacter(req: CharacterFrameRequest): BufSprite {
     drawAccessory(dc);
     drawCostume(dc, req.costume);
     if (ip && !r.itemBehind) drawItem(dc, ip[0], ip[1]);
-    drawArm(dc, r.armB, sr, sleeve, 0, true);
+    // Fantasma: o braço de perto sairia por cima do lençol (é desenhado depois da fantasia); o pano cobre os braços.
+    if (req.costume !== 'ghost') drawArm(dc, r.armB, sr, sleeve, 0, true);
   } else {
-    drawLegs(dc);
+    if (req.costume !== 'ghost') drawLegs(dc);
     const armsBehindHead = r.view === 'up' && (req.pose === 'type' || req.pose === 'use' || req.pose === 'drink');
     drawTorso(dc);
     if (armsBehindHead) {

@@ -3,7 +3,7 @@
 import { access, remoteLogout } from '../net/access';
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, setAttr, setHidden, setText } from './dom';
-import { ICONS } from './icons';
+import { ICONS, scenarioIcon, themeIcon } from './icons';
 import { notificationState, type Notifier } from './notify';
 import type { UiPrefs } from './prefs';
 import { SoundSettingsGroup } from './settings-sound';
@@ -51,10 +51,25 @@ export function switchRow(label: string, hintText: string, onToggle: () => void)
   return { row, btn, hint };
 }
 
-export function segmented<T extends string>(label: string, options: readonly [T, string][], onPick: (v: T) => void): { row: HTMLElement; set(v: T): void } {
-  const group = h('div', { class: 'ui-seg', role: 'radiogroup', attrs: { 'aria-label': label } });
-  const buttons = options.map(([value, text]) => {
-    const b = h('button', { class: 'ui-seg__opt', type: 'button', role: 'radio', text, attrs: { 'aria-checked': 'false' } });
+export function segmented<T extends string>(
+  label: string,
+  options: readonly [T, string, string?][],
+  onPick: (v: T) => void,
+  opts: { tiles?: boolean } = {},
+): { row: HTMLElement; set(v: T): void } {
+  const group = h('div', {
+    class: opts.tiles ? 'ui-seg ui-seg--tiles' : 'ui-seg',
+    role: 'radiogroup',
+    attrs: { 'aria-label': label },
+  });
+  const buttons = options.map(([value, text, icon]) => {
+    const b = h('button', { class: 'ui-seg__opt', type: 'button', role: 'radio', attrs: { 'aria-checked': 'false' } });
+    if (icon) {
+      const glyph = h('span', { class: 'ui-seg__icon' });
+      glyph.innerHTML = icon;
+      b.append(glyph);
+    }
+    b.append(h('span', { class: 'ui-seg__opt-label', text }));
     b.addEventListener('click', () => onPick(value));
     b.addEventListener('keydown', (e) => {
       // Setas navegam entre as opções (padrão de radiogroup).
@@ -145,29 +160,39 @@ export class SettingsPopover implements UiComponent {
     this.theme = segmented<UiPrefs['theme']>(
       tr('Tema do escritório'),
       [
-        ['auto', tr('Automático')],
-        ['none', tr('Nenhum')],
-        ['christmas', tr('Natal')],
-        ['halloween', tr('Halloween')],
-        ['cyberpunk', tr('Cyberpunk')],
-        ['retro', tr('Retrô')],
+        ['auto', tr('Automático'), themeIcon('auto')],
+        ['seasons', tr('Estações'), themeIcon('seasons')],
+        ['none', tr('Nenhum'), themeIcon('none')],
+        ['christmas', tr('Natal'), themeIcon('christmas')],
+        ['halloween', tr('Halloween'), themeIcon('halloween')],
+        ['spring', tr('Primavera'), themeIcon('spring')],
+        ['autumn', tr('Outono'), themeIcon('autumn')],
+        ['junina', tr('Festa Junina'), themeIcon('junina')],
+        ['cyberpunk', tr('Cyberpunk'), themeIcon('cyberpunk')],
+        ['retro', tr('Retrô'), themeIcon('retro')],
+        ['orbital', tr('Estação Orbital'), themeIcon('orbital')],
       ],
       (v) => {
         ctx.updatePrefs({ theme: v });
         // Com o World ligado e a conta aprovada, o tema também vai para o prédio (clicar de novo reenvia).
         void this.world.onThemePicked(v);
       },
+      { tiles: true },
     );
-    this.theme.row.append(h('span', { class: 'ui-set__hint', text: tr('Automático: Halloween em outubro e Natal de 1º de novembro a 26 de dezembro; no resto do ano, o visual original. Nenhum: sempre o original. Cyberpunk e Retrô são temas só deste escritório: o prédio do World mantém o tema sazonal.') }));
+    this.theme.row.append(h('span', { class: 'ui-set__hint', text: tr('Automático: Halloween em outubro e Natal de 1º de novembro a 26 de dezembro; no resto do ano, o visual original. Estações: primavera de setembro a fevereiro, outono de março a maio e festa junina em junho e julho. Nenhum: sempre o original. Os temas locais ficam só neste escritório: o prédio do World mantém o tema sazonal.') }));
     this.scenario = segmented<UiPrefs['scenario']>(
       tr('Cenário externo'),
       [
-        ['city', tr('Cidade')],
-        ['forest', tr('Floresta')],
-        ['cyberpunk', tr('Cyberpunk')],
-        ['retro', tr('Retrô')],
+        ['city', tr('Cidade'), scenarioIcon('city')],
+        ['forest', tr('Floresta'), scenarioIcon('forest')],
+        ['cyberpunk', tr('Cyberpunk'), scenarioIcon('cyberpunk')],
+        ['retro', tr('Retrô'), scenarioIcon('retro')],
+        ['orbital', tr('Estação Orbital'), scenarioIcon('orbital')],
+        ['snow', tr('Neve'), scenarioIcon('snow')],
+        ['beach', tr('Praia'), scenarioIcon('beach')],
       ],
       (v) => ctx.updatePrefs({ scenario: v }),
+      { tiles: true },
     );
     this.scenario.row.append(
       h('span', { class: 'ui-set__hint', text: tr('Altera o cenário e arredores do prédio (rua, árvores e janelas) sem modificar o interior do escritório.') }),

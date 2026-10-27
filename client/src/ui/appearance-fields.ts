@@ -1,10 +1,10 @@
 // Peças do personagem (pele, cabelo e estilo, olhos, roupa, calça, sapato, acessório, barba) com a prévia de corpo
 // inteiro: o miolo do editor de personagem, usado na gaveta do agente (character-editor.ts) e no personagem do Habblaud
 // World (world/settings-world.ts). Quem usa guarda o nome, salva e decide o que mandar; aqui só se escolhe a aparência.
-import type { PartKey } from '../../../shared/appearance';
-import { characterSprite, editorConflict, editorOptions, fitToOptions } from '../art';
+import { ACCESSORIES, BOTTOM_STYLES, TOP_STYLES, type AppearanceParts, type PartKey } from '../../../shared/appearance';
+import { characterSprite, editorConflict, editorOptions, fitToOptions, type EditorOptions } from '../art';
 import type { Appearance } from '../art/api';
-import { EDITOR_GROUPS, rowVisible, styleLabel, type EditorRow } from './character-model';
+import { CHARACTER_PRESETS, EDITOR_GROUPS, rowVisible, styleLabel, type EditorRow } from './character-model';
 import { h } from './dom';
 import { tr } from '../../../shared/i18n';
 
@@ -18,7 +18,11 @@ export class AppearanceFields {
   readonly groups: HTMLElement;
   private draft: Appearance | null = null;
 
-  constructor(private readonly onChange: (a: Appearance) => void = () => {}) {
+  constructor(
+    private readonly onChange: (a: Appearance) => void = () => {},
+    /** `false` no personagem do Habblaud World: só os estilos que o protocolo de lá conhece. */
+    private readonly officeStyles = true,
+  ) {
     this.preview = h('canvas', { class: 'ui-char__preview', role: 'img', attrs: { 'aria-label': tr('Prévia do personagem') } });
     this.groups = h('div', { class: 'ui-char__groups' });
   }
@@ -41,13 +45,22 @@ export class AppearanceFields {
     this.onChange(this.draft);
   }
 
+  /** Veste um modelo pronto, mantendo pele e cabelo atuais. */
+  private applyPreset(parts: Partial<AppearanceParts>): void {
+    if (!this.draft) return;
+    this.draft = fitToOptions({ ...this.draft, ...parts });
+    this.paint();
+    this.onChange(this.draft);
+  }
+
   /** Redesenha a prévia e as opções; `focusKey` devolve o foco à opção marcada daquela linha. */
   paint(focusKey?: PartKey): void {
     const a = this.draft;
     if (!a) return;
     this.drawPreview(a);
-    const options = editorOptions(a);
+    const options = this.officeStyles ? editorOptions(a) : classicOptions(a);
     this.groups.replaceChildren(
+      ...(this.officeStyles ? [this.presetGroup()] : []),
       ...EDITOR_GROUPS.map((g) =>
         h(
           'fieldset',
@@ -58,6 +71,25 @@ export class AppearanceFields {
       ),
     );
     if (focusKey) this.groups.querySelector<HTMLElement>(`[data-key="${focusKey}"] [aria-checked="true"]`)?.focus();
+  }
+
+  /** "Modelos": atalhos que vestem o personagem inteiro de uma vez (Vader, praia, regata...). */
+  private presetGroup(): HTMLElement {
+    const buttons = CHARACTER_PRESETS.map((p) =>
+      h('button', {
+        class: 'ui-char__chip',
+        type: 'button',
+        text: p.label,
+        title: tr('Vestir o modelo {0}', [p.label]),
+        on: { click: () => this.applyPreset(p.parts) },
+      }),
+    );
+    return h(
+      'fieldset',
+      { class: 'ui-char__group' },
+      h('legend', { text: tr('Modelos') }),
+      h('div', { class: 'ui-char__opts ui-char__opts--presets' }, ...buttons),
+    );
   }
 
   private row(group: string, r: EditorRow, a: Appearance, values: readonly string[]): HTMLElement {
@@ -117,4 +149,16 @@ export class AppearanceFields {
       console.warn('[ui] falha ao desenhar a prévia do personagem', err);
     }
   }
+}
+
+/** Opções só com os estilos clássicos (os que o protocolo do Habblaud World aceita). */
+function classicOptions(a: Appearance): EditorOptions {
+  const o = editorOptions(a);
+  const only = (list: readonly string[], allowed: readonly string[]): readonly string[] => list.filter((v) => allowed.includes(v));
+  return {
+    ...o,
+    topStyle: only(o.topStyle, TOP_STYLES),
+    bottomStyle: only(o.bottomStyle, BOTTOM_STYLES),
+    accessory: only(o.accessory, ACCESSORIES),
+  };
 }

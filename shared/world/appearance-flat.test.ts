@@ -74,4 +74,13 @@ describe('flattenAppearance', () => {
   it('look feminino nunca leva barba', () => {
     for (let i = 0; i < 200; i++) expect(flattenAppearance(hash32(`a_${i}`), undefined, 'f').facialHair).toBe('none');
   });
+
+  it('estilos só do escritório sobem como o clássico mais próximo', () => {
+    const flat = flattenAppearance(7, { topStyle: 'vader', bottomStyle: 'swim', accessory: 'helmet' });
+    expect(flat.topStyle).toBe('jacket');
+    expect(flat.bottomStyle).toBe('shorts');
+    expect(flat.accessory).toBe('none');
+    // O resultado continua válido no protocolo (que não conhece os estilos locais).
+    expect(parseAppearanceParts(flat)).toEqual(flat);
+  });
 });

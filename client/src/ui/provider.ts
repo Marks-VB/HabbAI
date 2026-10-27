@@ -1,8 +1,9 @@
 // De qual ferramenta é cada coisa (Claude Code ou Codex) e os textos que mudam com ela. Puro (sem DOM): testado em
 // ui/provider.test.ts. No protocolo, `provider` ausente quer dizer Claude Code (shared/types.ts); aqui tudo cai nisso.
 //
-// Identidade visual do Codex (sem logotipo de ninguém): o chip da conta fica "vazado" (fundo escuro, borda e letra na
-// cor da conta, cantos em degrau) e, onde há espaço, um selo de texto "Codex" ao lado do nome.
+// Identidade visual das ferramentas (sem os logotipos oficiais): o chip da conta fica "vazado" (fundo escuro, borda e
+// letra na cor da conta, cantos em degrau) nas ferramentas que não são o Claude Code e, onde há espaço, um selo com o
+// ícone em pixel art e o nome da ferramenta aparece ao lado do nome da conta.
 import type { AccountInfo, OfficeSnapshot, Provider } from '../../../shared/types';
 import { shortcutHint } from './model';
 import { tr } from '../../../shared/i18n';

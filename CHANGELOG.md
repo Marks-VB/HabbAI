@@ -12,18 +12,82 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Roupas novas no editor do personagem: armadura sombria, camisa havaiana, regata, calção de banho e capacete.**
+  - **Armadura sombria** (parte de cima) desenha o peitoral com botões, o cinto com fivela e uma capa que aparece nas
+    laterais e nas costas. Com o **capacete sombrio** (acessório), o bonequinho vira um lord espacial de capa preta.
+  - **Camisa havaiana** e **regata** para o calor, com o **calção de banho** (parte de baixo) mais curto que a bermuda,
+    cordão na cintura e paleta de cores viva.
+  - **Modelos prontos** no editor: **Lorde sombrio**, **Dia de praia**, **Regata e bermuda**, **Detetive** e
+    **Astronauta** vestem o personagem inteiro com um clique (pele e cabelo continuam os seus).
+  - Os estilos novos são só do escritório: no Habblaud World eles sobem como a roupa clássica mais parecida (jaqueta,
+    camiseta, bermuda, sem capacete), para o protocolo continuar compatível.
+- **Modelos prontos novos no editor do personagem: Músico, Estagiário, Inverno e Festa.** Como os anteriores, um clique
+  veste o bonequinho inteiro e a pele e o cabelo continuam os seus.
+  - **Músico:** moletom escuro com fone de ouvido colorido e tênis claro.
+  - **Estagiário:** polo azul, calça cáqui e óculos.
+  - **Inverno:** suéter vinho, calça escura, gorro de lã e bota.
+  - **Festa:** blusa roxa, saia escura, brincos dourados e sapato vermelho.
+- **Guarda-roupa novo no editor do personagem: 14 roupas e 11 acessórios.**
+  - **Acessórios de cabeça:** coroa, cartola, chapéu de pirata, touca de chef, elmo de cavaleiro, capuz, orelhas de
+    gato, gravata borboleta, monóculo, máscara de dormir e óculos de natação — cada um com paleta própria de cor.
+  - **Partes de cima:** jaleco de laboratório, smoking, toga de formatura, quimono, macacão, pijama, capa de chuva,
+    colete salva-vidas, uniforme de futebol, armadura medieval e fato de mergulho.
+  - **Partes de baixo:** bermuda jeans, saia longa e avental.
+  - **Modelos prontos:** **Cientista**, **Chef**, **Pirata**, **Cavaleiro**, **Monarca**, **Mergulhador**, **Gala** e
+    **Soneca** vestem as peças novas de uma vez, mantendo pele e cabelo.
+  - Tudo é só do escritório: no Habblaud World sobe como a peça clássica mais parecida, sem mudar o protocolo.
+- **Duas fantasias novas nos temas: fantasma e robô.** Não são escolhidas no editor — entram pelo tema, como o Papai
+  Noel e a bruxa já entravam.
+  - **Fantasma:** lençol branco com barra ondulada e olhos escuros; as pernas, os braços e o cabelo somem dentro do
+    pano e o bonequinho flutua. Sorteado no **Halloween**, junto da bruxa, da abóbora e do vampiro.
+  - **Robô:** a cabeça vira uma caixa metálica com antena, LEDs e grade na boca; de costas aparecem as frestas de
+    ventilação. Aparece no tema **Estação Orbital**, alternando com o capacete espacial.
+- **Ícone de cada ferramenta de agente (Claude Code, Codex, Gemini CLI, Antigravity, opencode e Aider).** O ícone em
+  pixel art aparece no selo ao lado do nome da conta (gaveta, dica, terminal, cartões de uso, histórico de sessões e
+  barra lateral) e no selo da etiqueta de cada personagem no escritório, com a cor da ferramenta — dá para saber de
+  relance quem é do Claude Code, do Codex, do Gemini, do Antigravity, do opencode ou do Aider, sem abrir o painel.
+  - O selo da etiqueta agora vale para todas as ferramentas (antes era só o texto "CODEX"), e o chip da conta continua
+    vazado fora do Claude Code.
+  - O histórico de sessões passa a mostrar o selo de qualquer ferramenta, não só o do Codex.
 - **Cenário externo configurável (ao redor do escritório).** Em **Configurações › Aparência › Cenário externo**,
-  agora é possível alternar entre **Cidade** (padrão), **Floresta**, **Cyberpunk** e **Retrô**.
+  agora é possível alternar entre **Cidade** (padrão), **Floresta**, **Cyberpunk**, **Retrô**, **Orbital**, **Neve** e
+  **Praia**.
   - O cenário afeta exclusivamente os arredores do prédio (rua, calçadas, árvores, postes e vista das janelas), sem alterar nenhuma parede, piso, móvel ou visual interior do escritório.
   - No modo **Floresta**, o asfalto dá lugar a trilhas suaves de terra e pedra em meio à natureza sem tráfego de carros.
   - No modo **Cyberpunk**, o exterior ganha iluminação neon ciano e magenta com asfalto tecnológico.
   - No modo **Retrô**, os arredores e as árvores ganham folhagens outonais douradas e quentes.
-- **Dois temas novos no escritório: Cyberpunk e Retrô.** Em **Configurações › Aparência › Tema do escritório**,
+  - No modo **Orbital**, o jardim vira o convés de uma estação espacial: placas de metal, plataformas de pouso, tiras
+    de luz, tubulações, torres de comunicação e antenas no lugar de árvores, caixas de carga nos canteiros e o vazio
+    estrelado ao fundo. O canal da rua vira um trilho de transporte, sem carros.
+  - No modo **Neve**, a grama e as calçadas ficam cobertas de neve, os pinheiros acumulam neve nas pontas, aparecem
+    bonecos de neve e pegadas saindo da entrada; a rua segue limpa, com faixas discretas.
+  - No modo **Praia**, a grama vira areia, a calçada vira deck de madeira e o canal da rua vira o mar, com espuma na
+    arrebentação, ondas, conchas, pedras e guarda-sóis. Palmeiras substituem as árvores e não há carros.
+- **Temas novos no escritório: Cyberpunk, Retrô, Estação Orbital, Primavera, Outono e Festa Junina.** Em
+  **Configurações › Aparência › Tema do escritório**,
   - **Cyberpunk:** paredes escuras com cornijas de neon ciano e magenta, letreiros luminosos, terminais holográficos no
     lugar das plantas, tapetes de circuito, chuva de neon nas janelas e viseiras nos personagens.
   - **Retrô:** paredes quentes, bandeirinhas de lanchonete, fliperamas e televisões de tubo no lugar das plantas,
     tapetes com galões setentistas, entardecer nas janelas e fones nos personagens.
-  - Os dois temas são locais: o prédio do Habblaud World continua com os temas sazonais.
+  - **Estação Orbital:** paredes em tom de convés com luzes indicadoras e grades de ventilação, cápsulas hidropônicas e
+    consoles no lugar das plantas, tapetes de placas metálicas, divisórias de vidro azulado, vista de nebulosas,
+    estrelas e um planeta com anel nas janelas e capacetes nos personagens.
+  - **Primavera:** paredes claras com cornijas rosadas, vasos de tulipas e arbustos floridos no lugar das plantas,
+    tapetes de pétalas, ramos floridos nas paredes, arco de flores no elevador, sol e árvores em flor nas janelas e uma
+    flor no cabelo dos personagens.
+  - **Outono:** paredes quentes em tom de âmbar, arvorezinhas douradas e cestos de folhas secas no lugar das plantas,
+    tapetes de folhas, varal de folhas nas paredes, grinalda no elevador, entardecer alaranjado nas janelas e cachecóis
+    nos personagens.
+  - **Festa Junina:** paredes claras com cornijas verdes, fogueiras e pés de milho no lugar das plantas, tapetes com
+    varal de bandeirinhas, bandeirinhas e balões nas paredes, decoração no elevador, céu de fim de tarde nas janelas e
+    chapéus de palha nos personagens.
+  - **Estações:** camada automática que segue o calendário do hemisfério sul — Primavera de setembro a fevereiro,
+    Outono de março a maio e Festa Junina em junho e julho (agosto volta ao visual original).
+  - Os temas são locais: o prédio do Habblaud World continua com os temas sazonais.
+- **Seletor de tema e cenário em cartões com ícones.** Em **Configurações › Aparência**, o tema do escritório e o
+  cenário externo agora aparecem numa grade de cartões (ícone em pixel art em cima, nome embaixo), em vez de uma
+  fileira de botões que quebrava em linhas irregulares. Cada tema e cada cenário tem o seu ícone (calendário, sol,
+  árvore de Natal, abóbora, flor, folha, bandeirinhas, raio, televisão, planeta, prédios, floco de neve, ondas).
 - **Suporte ao Gemini CLI, Antigravity e opencode no escritório virtual.**
   - **Google Gemini CLI (`gemini`):** detecção automática de conversas em `~/.gemini/tmp/*/chats/`, hooks de comando em `~/.gemini/settings.json` (`npm run gemini:install`), atividades, ferramentas e leitor de terminal.
   - **Antigravity (`antigravity`):** suporte completo ao Antigravity Desktop/IDE (`~/.gemini/antigravity/brain`) e Antigravity CLI (`~/.gemini/antigravity-cli/brain`), com parsing de transcript JSONL, pensamento, ferramentas, subagentes e histórico de conversas.

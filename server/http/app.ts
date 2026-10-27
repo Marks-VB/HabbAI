@@ -1,6 +1,6 @@
 // Rotas da API (/api/*). Respostas JSON; rotas desconhecidas -> 404 JSON.
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { NAME_MAX, parseAppearanceParts, parseCharacterName, parseSeed } from '../../shared/appearance';
+import { NAME_MAX, parseCharacterName, parseOfficeAppearanceParts, parseSeed } from '../../shared/appearance';
 import type { AccessInfo, AgentInfo, ModSummary, OfficeSnapshot, SourceInfo, UpdateStatus } from '../../shared/types';
 import type { AccountsService } from '../accounts/service';
 import { handleCodexEvent } from '../codex/http';
@@ -298,7 +298,7 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
     const body = (await readJson(req)) as { name?: unknown; seed?: unknown; parts?: unknown } | null;
     const name = parseCharacterName(body?.name);
     const seed = parseSeed(body?.seed);
-    const parts = parseAppearanceParts(body?.parts);
+    const parts = parseOfficeAppearanceParts(body?.parts);
     if (!name || seed === null || !parts) {
       throw new HttpError(400, tr('esperado {name: texto de 1 a {0} caracteres, seed: inteiro de 0 a 4294967295, parts: peças da aparência}', [NAME_MAX]));
     }

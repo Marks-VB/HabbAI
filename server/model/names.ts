@@ -3,7 +3,7 @@
 // com a sessão dona dele, para que um reinício não o entregue a outra sessão aberta.
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { parseAppearanceParts, parseCharacterName, parseSeed, type AppearanceParts } from '../../shared/appearance';
+import { parseCharacterName, parseOfficeAppearanceParts, parseSeed, type AppearanceParts } from '../../shared/appearance';
 import { pickName, type PersonName } from '../../shared/names';
 import { errMsg, log } from '../log';
 import { tr } from '../../shared/i18n';
@@ -41,7 +41,7 @@ function parseStoredCharacter(raw: unknown): StoredCharacter | null {
   const v = raw as Record<string, unknown>;
   const name = parseCharacterName(v.name);
   const seed = parseSeed(v.seed);
-  const parts = v.parts === undefined ? {} : parseAppearanceParts(v.parts);
+  const parts = v.parts === undefined ? {} : parseOfficeAppearanceParts(v.parts);
   if (!name || seed === null || (v.look !== 'f' && v.look !== 'm') || !parts) return null;
   const c: StoredCharacter = { name, look: v.look, seed, at: typeof v.at === 'number' ? v.at : 0 };
   if (Object.keys(parts).length) c.parts = parts;

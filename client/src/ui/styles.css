@@ -365,10 +365,11 @@
   --step: 3px;
 }
 
-/* Selo de texto "Codex" ao lado do nome da conta (fonte do sistema: na Pixelify o "C" parece "O"). */
+/* Selo da ferramenta ao lado do nome da conta (fonte do sistema: na Pixelify o "C" parece "O"). */
 .ui-prov {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   flex: none;
   height: 15px;
   padding: 0 5px;
@@ -382,6 +383,16 @@
   white-space: nowrap;
 }
 
+/* Ícone da ferramenta: mapa de 9×9 pixels desenhado a 1 px de tela por pixel, nítido no selo. */
+.ui-prov__icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.ui-prov__glyph {
+  display: block;
+}
+
 .ui-prov[hidden] {
   display: none;
 }
@@ -389,7 +400,20 @@
 .ui-prov--xs {
   height: 13px;
   padding: 0 4px;
+  gap: 3px;
   font-size: 8.5px;
+}
+
+/* Só o ícone, para linhas apertadas (barra lateral): quadradinho do tamanho do chip de conta. */
+.ui-prov--icon {
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  justify-content: center;
+}
+
+.ui-prov--claude {
+  color: #f2b39a;
 }
 
 .ui-prov--gemini {
@@ -401,11 +425,15 @@
 }
 
 .ui-prov--opencode {
-  color: #6ee7b7;
+  color: #5eead4;
 }
 
 .ui-prov--codex {
   color: #a7f3d0;
+}
+
+.ui-prov--aider {
+  color: #fca5a5;
 }
 
 .ui-status-dot {
@@ -2937,6 +2965,50 @@
   color: var(--ui-accent);
   font-weight: 600;
   box-shadow: inset 0 0 0 1px rgba(124, 200, 255, 0.35);
+}
+
+/* Temas e cenários: grade uniforme de cartões (ícone em cima, nome embaixo), sem linhas irregulares. */
+.ui-seg--tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  gap: 6px;
+  padding: 6px;
+}
+
+.ui-seg--tiles .ui-seg__opt {
+  flex: none;
+  min-width: 0;
+  height: auto;
+  min-height: 62px;
+  padding: 7px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1.15;
+}
+
+.ui-seg--tiles .ui-seg__icon {
+  display: grid;
+  place-items: center;
+  color: var(--ui-muted);
+  opacity: 0.9;
+  transition:
+    color 0.15s,
+    opacity 0.15s;
+}
+
+.ui-seg--tiles .ui-seg__opt:hover .ui-seg__icon,
+.ui-seg--tiles .ui-seg__opt[aria-checked='true'] .ui-seg__icon {
+  color: inherit;
+  opacity: 1;
+}
+
+.ui-seg--tiles .ui-seg__opt-label {
+  font-size: 11.5px;
+  text-align: center;
+  text-wrap: balance;
 }
 
 /* ------------------------------------------------------------------ ajuda */

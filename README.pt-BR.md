@@ -409,12 +409,40 @@ Em **Configurações → Aparência → Tema do escritório**, escolha:
   janelas e viseiras nos personagens.
 - **Retrô**: paredes quentes, bandeirinhas, fliperamas e televisões de tubo no lugar das plantas, tapetes com galões setentistas,
   entardecer nas janelas e fones nos personagens.
+- **Estação Orbital**: paredes de convés com luzes indicadoras, cápsulas hidropônicas e consoles no lugar das plantas,
+  tapetes de placas metálicas, divisórias de vidro azulado, nebulosas e um planeta com anel nas janelas e capacetes nos
+  personagens.
+- **Estações**: camada automática pelo calendário do hemisfério sul — Primavera de setembro a fevereiro, Outono de março
+  a maio e Festa Junina em junho e julho (agosto volta ao visual original).
+- **Primavera**: paredes claras com cornijas rosadas, vasos de tulipas e arbustos floridos no lugar das plantas, tapetes
+  de pétalas, ramos floridos nas paredes, sol e árvores em flor nas janelas e uma flor no cabelo dos personagens.
+- **Outono**: paredes âmbar, arvorezinhas douradas e cestos de folhas secas no lugar das plantas, tapetes de folhas,
+  varal de folhas nas paredes, entardecer alaranjado nas janelas e cachecóis nos personagens.
+- **Festa Junina**: fogueiras e pés de milho no lugar das plantas, tapetes com varal de bandeirinhas, bandeirinhas e
+  balões nas paredes, céu de fim de tarde nas janelas e chapéus de palha nos personagens.
 
-Cyberpunk e Retrô valem só para o escritório desta página: o prédio do Habblaud World continua com os temas sazonais
-(Automático, Nenhum, Natal e Halloween).
+Cyberpunk, Retrô, Estação Orbital, Estações, Primavera, Outono e Festa Junina valem só para o escritório desta página: o
+prédio do Habblaud World continua com os temas sazonais (Automático, Nenhum, Natal e Halloween).
 
 A troca é imediata e a escolha fica salva neste navegador. Os temas preservam os caminhos,
 as atividades e as animações dos agentes. O ciclo dia/noite continua sendo uma opção independente.
+
+### Cenário externo
+
+Em **Configurações → Aparência → Cenário externo**, escolha o que fica ao redor do prédio (rua, calçadas, árvores,
+postes e a vista das janelas). Nada muda dentro das salas.
+
+- **Cidade** (padrão): rua asfaltada com carros, calçadas e árvores.
+- **Floresta**: trilhas de terra e pedra, árvores densas e nenhum carro.
+- **Cyberpunk**: asfalto tecnológico com luzes neon ciano e magenta.
+- **Retrô**: folhagens outonais douradas e ar mais quente.
+- **Estação Orbital**: convés metálico com plataformas de pouso, tubulações, torres e antenas no lugar das árvores, e o
+  canal da rua vira um trilho de transporte, sem carros.
+- **Neve**: grama e calçadas cobertas de neve, pinheiros nevados, bonecos de neve e pegadas; a rua segue limpa.
+- **Praia**: areia no lugar da grama, deck de madeira na calçada e o mar no lugar da rua, com espuma, ondas, conchas,
+  pedras, guarda-sóis e palmeiras. Sem carros.
+
+O cenário combina com qualquer tema do escritório e também fica salvo neste navegador.
 
 <table>
   <tr>

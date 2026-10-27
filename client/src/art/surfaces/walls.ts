@@ -92,7 +92,7 @@ export function wallFaceTile(style: WallStyle, variant: number, col: number): Pi
     case 'glass': {
       // Parede de vidro: face translúcida com montantes; o mundo vê através.
       b.clearRect(0, fy, TILE, fh);
-      b.rect(0, fy, TILE, fh, 'rgba(175,215,238,0.38)');
+      b.rect(0, fy, TILE, fh, style.glassTint ?? 'rgba(175,215,238,0.38)');
       b.vline(0, fy, fy + fh - 1, 'rgba(195,202,212,0.95)');
       b.hline(0, TILE - 1, fy, 'rgba(255,255,255,0.45)');
       for (let i = 0; i < fh; i++) {

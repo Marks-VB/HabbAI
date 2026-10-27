@@ -2,17 +2,17 @@
 // contas (GET /api/sessions/recent), agrupadas por dia, com busca por título, projeto ou conta. Clicar abre a
 // conversa no terminal (modo "sessão encerrada"); uma sessão ainda aberta abre o terminal ao vivo
 // do agente. Só existe com o terminal ligado (acesso local). O agrupamento, a busca e a validação da resposta são
-// puros e testados em ui/history.test.ts; a montagem usa só textContent. Sessões do Codex vêm com o selo "Codex" e a
-// busca acha "codex".
+// puros e testados em ui/history.test.ts; a montagem usa só textContent. Sessões de outras ferramentas vêm com o selo
+// (ícone + nome) delas e a busca acha "codex", "gemini", "antigravity", "opencode" e "aider".
 import { access } from '../net/access';
 import type { RecentSession } from '../../../shared/types';
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, setAttr, setHidden, setText, setTitle } from './dom';
 import { calendarDayDiff, formatClock, formatDateTime, normalizeSearch, plural, shortPath } from './format';
 import { ICONS } from './icons';
-import { isCodex } from './provider';
+import { accountProvider, isCodex, PROVIDER_NAME } from './provider';
 import { sessionProjectName, TERMINAL_UNAVAILABLE_HINT, type TerminalControl } from './terminal';
-import { createAccountChip, updateAccountChip } from './widgets';
+import { createAccountChip, createProviderTag, updateAccountChip, updateProviderTag } from './widgets';
 import { intlLocale, tr } from '../../../shared/i18n';
 
 export const HISTORY_URL = '/api/sessions/recent';
@@ -317,11 +317,13 @@ export class HistoryPopover implements UiComponent {
     const title = s.title?.trim() || tr('Sessão sem título');
     const project = sessionProjectName(s);
     const live = s.open && !!s.agentId && !!this.ctx.agent(s.agentId);
-    const codex = isCodex(s);
+    const provider = accountProvider(account, s.account, s.provider);
+    const prov = createProviderTag('ui-prov--xs');
+    updateProviderTag(prov, provider);
     const meta = h(
       'span',
       { class: 'ui-hist__meta' },
-      codex ? h('span', { class: 'ui-prov ui-prov--xs', text: 'Codex' }) : null,
+      prov,
       h('span', { class: 'ui-hist__project', text: project }),
       h('span', { class: 'ui-hist__time', text: formatClock(s.lastAt, false) }),
     );
@@ -329,11 +331,12 @@ export class HistoryPopover implements UiComponent {
     const btn = h('button', { class: `ui-hist__item${live ? ' is-live' : ''}`, type: 'button' }, chip, h('span', { class: 'ui-hist__text' }, h('span', { class: 'ui-hist__title', text: title }), meta));
     btn.dataset.session = `${s.account}:${s.sessionId}`;
     const when = s.firstAt !== undefined && calendarDayDiff(s.firstAt, s.lastAt) !== 0 ? `${formatDateTime(s.firstAt)} → ${formatDateTime(s.lastAt)}` : s.firstAt !== undefined ? `${formatDateTime(s.firstAt)} → ${formatClock(s.lastAt, false)}` : formatDateTime(s.lastAt);
+    const tool = provider !== 'claude' ? ` (${PROVIDER_NAME[provider]})` : '';
     setTitle(
       btn,
-      [title, shortPath(s.project ?? s.projectDir), `${account?.name ?? s.account}${codex ? ' (Codex)' : ''} · ${when} · ${formatSize(s.size)}`, live ? tr('Ainda aberta: abre o terminal ao vivo do agente') : tr('Encerrada: abre a conversa no terminal')].join('\n'),
+      [title, shortPath(s.project ?? s.projectDir), `${account?.name ?? s.account}${tool} · ${when} · ${formatSize(s.size)}`, live ? tr('Ainda aberta: abre o terminal ao vivo do agente') : tr('Encerrada: abre a conversa no terminal')].join('\n'),
     );
-    setAttr(btn, 'aria-label', `${title}, ${project}, ${account?.name ?? s.account}${codex ? ', Codex' : ''}, ${live ? tr('aberta') : tr('última atividade {0} às {1}', [dayLabel(s.lastAt, now).toLowerCase(), formatClock(s.lastAt, false)])}`);
+    setAttr(btn, 'aria-label', `${title}, ${project}, ${account?.name ?? s.account}${tool}, ${live ? tr('aberta') : tr('última atividade {0} às {1}', [dayLabel(s.lastAt, now).toLowerCase(), formatClock(s.lastAt, false)])}`);
     btn.addEventListener('click', () => {
       this.hide();
       this.terminal.openSession(s, this.button);

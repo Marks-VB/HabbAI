@@ -127,6 +127,14 @@ function treeSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
     ['#1d2440', '#25355e', '#365394', '#4d7ae0'],
     ['#2d1b45', '#482773', '#6f3aa8', '#a85ff0'],
     ['#15333a', '#1e4f57', '#2e7a82', '#45b8bd'],
+  ] : scenario === 'snow' ? [
+    ['#c3d7e6', '#d6e5f1', '#e7f2fa', '#ffffff'],
+    ['#b6cfe0', '#cfe0ee', '#e2eff8', '#ffffff'],
+    ['#cddff0', '#e0ecf7', '#eff7fd', '#ffffff'],
+  ] : scenario === 'beach' ? [
+    ['#2c6b4a', '#3a8a57', '#4fa96b', '#79c98a'],
+    ['#2f7a52', '#3f9a63', '#5fbf7a', '#8fdb9a'],
+    ['#377a4a', '#479a58', '#5fb46a', '#8fd07f'],
   ] : [
     ['#2f6a43', '#3f8550', '#5aa45d', '#86c873'],
     ['#356b3c', '#4b8a45', '#6aa956', '#9fcf74'],
@@ -134,7 +142,7 @@ function treeSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
   ];
   const radius = isTall ? 14 + Math.floor(rng() * 3) : 11 + Math.floor(rng() * 3);
   const canopyY = isTall ? 22 : 18;
-  const outline = scenario === 'forest' ? '#0d2b1b' : '#25463a';
+  const outline = scenario === 'forest' ? '#0d2b1b' : scenario === 'snow' ? '#8aa6bb' : '#25463a';
   canopy(p, rng, midX, canopyY, radius, variants[Math.floor(rng() * variants.length)], outline);
   p.flush();
   return { canvas: c, ax: midX, ay: baseAy };
@@ -164,8 +172,10 @@ function pineSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
     ? ['#6e4125', '#8c542e', '#b8753d', '#df9a56'] // Retrô: outonal
     : scenario === 'cyberpunk'
     ? ['#162540', '#1f3c66', '#2b5894', '#4288d4'] // Cyberpunk: ciano/azul
+    : scenario === 'snow'
+    ? ['#1d4a38', '#28624a', '#3a7f5f', '#4f9a75'] // Neve: verde escuro sob a neve
     : ['#24533f', '#2f6b4f', '#3f8a5f', '#62ab79'];
-  const outline = scenario === 'forest' ? '#0f291d' : scenario === 'retro' ? '#4a2b18' : scenario === 'cyberpunk' ? '#0f1a2e' : '#1d3f33';
+  const outline = scenario === 'forest' ? '#0f291d' : scenario === 'retro' ? '#4a2b18' : scenario === 'cyberpunk' ? '#0f1a2e' : scenario === 'snow' ? '#133326' : '#1d3f33';
   const layers = isTall ? 5 : 4;
   const layerStep = isTall ? 9 : 8;
   const layerH = isTall ? 16 : 14;
@@ -178,6 +188,14 @@ function pineSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
         const edge = x === midX - half || x === midX + half || y === bottom - 1;
         const light = (midX - x) / (half + 1) - (y - top) / (bottom - top) + (rng() - 0.5) * 0.5;
         p.set(x, y, edge ? outline : tones[light > 0.5 ? 3 : light > -0.1 ? 2 : light > -0.6 ? 1 : 0]);
+      }
+    }
+    if (scenario === 'snow') {
+      // Neve acumulada nas pontas de cada camada.
+      const half = Math.round(layerH / (bottom - top) * (isTall ? 6 + l * 2.4 : 5 + l * 2.2));
+      for (let x = midX - half + 1; x <= midX + half - 1; x++) {
+        if (rng() < 0.55) p.set(x, top, '#f4f8fc');
+        if (rng() < 0.3) p.set(x, top + 1, '#e4eff8');
       }
     }
   }
@@ -196,8 +214,12 @@ function bushSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite 
     ? ['#854625', '#a85f31', '#d48344', '#f5b06e']
     : scenario === 'cyberpunk'
     ? ['#1f2a4a', '#2a3d6d', '#3d599c', '#5e86de']
+    : scenario === 'snow'
+    ? ['#b9cede', '#cde0ee', '#e2eef8', '#ffffff']
+    : scenario === 'beach'
+    ? ['#2c6b4a', '#3a8a57', '#4fa96b', '#79c98a']
     : ['#34663f', '#47864c', '#62a45a', '#8cc66f'];
-  const outline = scenario === 'forest' ? '#163b26' : scenario === 'retro' ? '#5a2e16' : scenario === 'cyberpunk' ? '#141c30' : '#264a36';
+  const outline = scenario === 'forest' ? '#163b26' : scenario === 'retro' ? '#5a2e16' : scenario === 'cyberpunk' ? '#141c30' : scenario === 'snow' ? '#8aa6bb' : '#264a36';
   canopy(p, rng, 11, 9, 6, tones, outline);
   // florzinhas / cogumelos na floresta
   if (rng() < 0.75) {
@@ -232,35 +254,128 @@ function flowersSprite(seed: number): PropSprite {
   return { canvas: c, ax: 15, ay: 13 };
 }
 
-function hedgeSprite(seed: number): PropSprite {
+function hedgeSprite(seed: number, scenario: ScenarioTheme = 'city'): PropSprite {
   const rng = mulberry32(seed);
   const [c, ctx] = makeCanvas(34, 16);
   shadowEllipse(ctx, 17, 14, 15, 2, 0.2);
   const p = new Painter(ctx, 34, 16);
+  const snow = scenario === 'snow';
+  const pal = snow
+    ? { edge: '#9db6c8', hi: '#f2f8fd', mid: '#dbe8f3', lo: '#c3d6e6' }
+    : { edge: '#264a36', hi: '#6aa956', mid: '#4b8a45', lo: '#356b3c' };
   for (let y = 3; y < 14; y++) {
     for (let x = 1; x < 33; x++) {
       const r = y === 3 ? 2 : y === 4 ? 1 : 0;
       if (x < 1 + r || x > 32 - r) continue;
       const edge = y === 3 || y === 13 || x === 1 + r || x === 32 - r;
       const light = -(y - 3) / 10 + (rng() - 0.5) * 0.6;
-      p.set(x, y, edge ? '#264a36' : light > 0 ? '#6aa956' : light > -0.4 ? '#4b8a45' : '#356b3c');
+      p.set(x, y, edge ? pal.edge : light > 0 ? pal.hi : light > -0.4 ? pal.mid : pal.lo);
     }
   }
   p.flush();
   return { canvas: c, ax: 17, ay: 14 };
 }
 
+/** Palmeira de praia: tronco curvado, folhas em leque e dois cocos. */
+function palmSprite(seed: number): PropSprite {
+  const rng = mulberry32(seed);
+  const [c, ctx] = makeCanvas(40, 60);
+  shadowEllipse(ctx, 20, 57, 9, 3, 0.24);
+  const p = new Painter(ctx, 40, 60);
+  const lean = (rng() - 0.5) * 0.6;
+  const topX = 20 + lean * 10;
+  const topY = 16;
+  // tronco com anéis
+  for (let y = topY; y < 57; y++) {
+    const t = (y - topY) / (57 - topY);
+    const x = Math.round(topX + (20 - topX) * t);
+    p.set(x - 1, y, '#8a6243');
+    p.set(x, y, '#a87a4f');
+    p.set(x + 1, y, '#6b4a32');
+    if (y % 5 === 0) p.set(x, y, '#5b3c25');
+  }
+  // folhas: leques longos em volta do topo
+  const frond = ['#2f7a52', '#3f9a63', '#5fbf7a', '#8fdb9a'];
+  for (let i = 0; i < 9; i++) {
+    const a = Math.PI + (i / 8) * Math.PI;
+    for (let d = 2; d < 18; d++) {
+      const x = Math.round(topX + Math.cos(a) * d);
+      const y = Math.round(topY + Math.sin(a) * d * 0.5 + d * d * 0.02);
+      const k = d < 5 ? 3 : d < 9 ? 2 : d < 13 ? 1 : 0;
+      p.set(x, y, frond[k]);
+      if (d % 3 === 0) p.set(x, y + 1, frond[Math.max(0, k - 1)]);
+      // folíolos pendentes nas pontas
+      if (d > 11 && d % 2 === 0) p.set(x, y + 2, frond[0]);
+    }
+  }
+  // cocos
+  p.set(Math.round(topX) - 2, topY + 2, '#6b4a32');
+  p.set(Math.round(topX) + 1, topY + 3, '#8a6243');
+  p.flush();
+  return { canvas: c, ax: 20, ay: 57 };
+}
+
+/** Boneco de neve: três bolas, cartola, cenoura e braços de graveto. */
+function snowmanSprite(seed: number): PropSprite {
+  const rng = mulberry32(seed);
+  const [c, ctx] = makeCanvas(28, 40);
+  shadowEllipse(ctx, 14, 37, 10, 3, 0.22);
+  const p = new Painter(ctx, 28, 40);
+  const hrect = (x: number, y: number, w: number, h: number, col: string) => {
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) p.set(xx, yy, col);
+  };
+  const ball = (cx: number, cy: number, r: number) => {
+    for (let y = -r; y <= r; y++) {
+      for (let x = -r; x <= r; x++) {
+        if (x * x + y * y > r * r) continue;
+        const edge = x * x + y * y > (r - 1) * (r - 1);
+        const lit = (-x - y) / (r * 1.6);
+        // Contorno azulado forte: sem ele o boneco some no branco da neve.
+        p.set(cx + x, cy + y, edge ? '#8fa9c4' : lit > 0.55 ? '#ffffff' : lit > -0.1 ? '#f4faff' : '#dcebf6');
+      }
+    }
+  };
+  ball(14, 32, 6);
+  ball(14, 23, 5);
+  ball(14, 15, 4);
+  // braços de graveto
+  hrect(2, 21, 7, 1, '#6b4a32');
+  hrect(19, 20, 7, 1, '#6b4a32');
+  hrect(3, 19, 1, 3, '#6b4a32');
+  hrect(24, 18, 1, 3, '#6b4a32');
+  // cachecol vermelho entre a cabeça e o tronco
+  hrect(8, 19, 13, 2, '#cf4a42');
+  hrect(8, 19, 13, 1, '#e86a60');
+  hrect(8, 21, 4, 4, '#cf4a42');
+  hrect(8, 21, 1, 4, '#a8382f');
+  // olhos, cenoura e botões
+  p.set(12, 15, '#2a3140');
+  p.set(16, 15, '#2a3140');
+  p.set(14, 16, '#e0872f');
+  p.set(14, 17, '#c96a2e');
+  p.set(15, 16, '#c96a2e');
+  for (const y of [23, 26, 29]) p.set(14, y, '#2a3140');
+  // cartola assentada na cabeça
+  hrect(8, 10, 13, 2, '#2a3140');
+  hrect(10, 4, 9, 6, '#2a3140');
+  hrect(10, 4, 9, 1, '#4a5468');
+  hrect(11, 8, 7, 1, rng() < 0.5 ? '#c9453f' : '#3f4a5c');
+  p.flush();
+  return { canvas: c, ax: 14, ay: 37 };
+}
+
 function lampSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   const [c, ctx] = makeCanvas(10, 36);
   shadowEllipse(ctx, 5, 34, 4, 1, 0.25);
-  ctx.fillStyle = scenario === 'cyberpunk' ? '#121526' : '#2e3648';
+  const orbital = scenario === 'orbital';
+  ctx.fillStyle = scenario === 'cyberpunk' ? '#121526' : orbital ? '#2b3346' : '#2e3648';
   ctx.fillRect(4, 6, 2, 28);
-  ctx.fillStyle = scenario === 'cyberpunk' ? '#39e6f0' : '#4a5468';
+  ctx.fillStyle = scenario === 'cyberpunk' ? '#39e6f0' : orbital ? '#7fe3ff' : '#4a5468';
   ctx.fillRect(4, 6, 1, 28);
-  ctx.fillStyle = scenario === 'cyberpunk' ? '#1b1b36' : '#2e3648';
+  ctx.fillStyle = scenario === 'cyberpunk' ? '#1b1b36' : orbital ? '#33456b' : '#2e3648';
   ctx.fillRect(1, 2, 8, 5);
-  const glowCol = scenario === 'cyberpunk' ? '#39e6f0' : scenario === 'retro' ? '#ff9a42' : '#ffe9a8';
-  const glowHi = scenario === 'cyberpunk' ? '#a6f8ff' : scenario === 'retro' ? '#ffe08a' : '#fff6d6';
+  const glowCol = scenario === 'cyberpunk' ? '#39e6f0' : scenario === 'retro' ? '#ff9a42' : orbital ? '#bfe9ff' : '#ffe9a8';
+  const glowHi = scenario === 'cyberpunk' ? '#a6f8ff' : scenario === 'retro' ? '#ffe08a' : orbital ? '#eaf6ff' : '#fff6d6';
   ctx.fillStyle = glowCol;
   ctx.fillRect(2, 4, 6, 2);
   ctx.fillStyle = glowHi;
@@ -273,14 +388,15 @@ function lampSprite(scenario: ScenarioTheme = 'city'): PropSprite {
 function benchSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   const [c, ctx] = makeCanvas(26, 14);
   shadowEllipse(ctx, 13, 12, 11, 2, 0.22);
-  const legCol = scenario === 'forest' ? '#4a3222' : scenario === 'cyberpunk' ? '#121526' : '#2e3648';
+  const orbital = scenario === 'orbital';
+  const legCol = scenario === 'forest' ? '#4a3222' : scenario === 'cyberpunk' ? '#121526' : orbital ? '#2b3346' : '#2e3648';
   ctx.fillStyle = legCol;
   ctx.fillRect(3, 8, 2, 4);
   ctx.fillRect(21, 8, 2, 4);
   // encosto e assento em ripas
-  const woodMain = scenario === 'forest' ? '#5a381e' : '#7a5232';
-  const woodHi = scenario === 'forest' ? '#82532e' : '#a0703f';
-  const woodDk = scenario === 'forest' ? '#3d2514' : '#5b3c25';
+  const woodMain = scenario === 'forest' ? '#5a381e' : orbital ? '#465571' : '#7a5232';
+  const woodHi = scenario === 'forest' ? '#82532e' : orbital ? '#5d7699' : '#a0703f';
+  const woodDk = scenario === 'forest' ? '#3d2514' : orbital ? '#2b3346' : '#5b3c25';
   ctx.fillStyle = woodMain;
   ctx.fillRect(1, 1, 24, 3);
   ctx.fillRect(1, 6, 24, 3);
@@ -356,9 +472,10 @@ function parasolSprite(seed: number): PropSprite {
 function totemSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   const [c, ctx] = makeCanvas(14, 34);
   shadowEllipse(ctx, 7, 32, 6, 1.5, 0.25);
-  const mainCol = scenario === 'forest' ? '#4a3222' : '#141b30';
-  const bodyCol = scenario === 'forest' ? '#6b4a32' : '#1c2541';
-  const trimCol = scenario === 'forest' ? '#8a6243' : '#2a355a';
+  const orbital = scenario === 'orbital';
+  const mainCol = scenario === 'forest' ? '#4a3222' : orbital ? '#1a2438' : '#141b30';
+  const bodyCol = scenario === 'forest' ? '#6b4a32' : orbital ? '#232f4a' : '#1c2541';
+  const trimCol = scenario === 'forest' ? '#8a6243' : orbital ? '#33456b' : '#2a355a';
   ctx.fillStyle = mainCol;
   ctx.fillRect(2, 2, 10, 30);
   ctx.fillStyle = bodyCol;
@@ -366,21 +483,134 @@ function totemSprite(scenario: ScenarioTheme = 'city'): PropSprite {
   ctx.fillStyle = trimCol;
   ctx.fillRect(3, 3, 1, 28);
   // faixa no topo, "H" claro e "b" entalhado
-  ctx.fillStyle = scenario === 'forest' ? '#2f7a45' : '#f2a33a';
+  ctx.fillStyle = scenario === 'forest' ? '#2f7a45' : orbital ? '#7fe3ff' : '#f2a33a';
   ctx.fillRect(3, 5, 8, 2);
   ctx.fillStyle = '#f5f1e6';
   ctx.fillRect(4, 11, 1, 6);
   ctx.fillRect(8, 11, 1, 6);
   ctx.fillRect(5, 13, 3, 1);
-  ctx.fillStyle = scenario === 'forest' ? '#a4d97e' : '#f2a33a';
+  ctx.fillStyle = scenario === 'forest' ? '#a4d97e' : orbital ? '#bfe9ff' : '#f2a33a';
   ctx.fillRect(5, 19, 1, 6);
   ctx.fillRect(6, 21, 2, 1);
   ctx.fillRect(8, 22, 1, 2);
   ctx.fillRect(6, 24, 2, 1);
   // base
-  ctx.fillStyle = scenario === 'forest' ? '#3d2b1f' : '#8d96a3';
+  ctx.fillStyle = scenario === 'forest' ? '#3d2b1f' : orbital ? '#3a4658' : '#8d96a3';
   ctx.fillRect(1, 31, 12, 2);
   return { canvas: c, ax: 7, ay: 32 };
+}
+
+/** Torre de comunicação: mastro de treliça com farol vermelho e antenas. */
+function towerSprite(): PropSprite {
+  const [c, ctx] = makeCanvas(16, 46);
+  shadowEllipse(ctx, 8, 44, 6, 2, 0.3);
+  ctx.fillStyle = '#2b3346';
+  ctx.fillRect(5, 3, 6, 41);
+  ctx.fillStyle = '#465571';
+  ctx.fillRect(6, 3, 4, 41);
+  ctx.fillStyle = '#5d7699';
+  ctx.fillRect(6, 3, 1, 41);
+  // treliça
+  ctx.fillStyle = '#25324a';
+  for (let y = 8; y < 42; y += 4) {
+    ctx.fillRect(5, y, 6, 1);
+    ctx.fillRect(7, y + 1, 2, 1);
+  }
+  // base e topo
+  ctx.fillStyle = '#3a4658';
+  ctx.fillRect(3, 40, 10, 4);
+  ctx.fillStyle = '#33456b';
+  ctx.fillRect(4, 2, 8, 4);
+  ctx.fillStyle = '#7fe3ff';
+  ctx.fillRect(5, 3, 6, 1);
+  // farol
+  ctx.fillStyle = '#c9453f';
+  ctx.fillRect(7, 0, 2, 2);
+  ctx.fillStyle = '#ff8a6b';
+  ctx.fillRect(7, 0, 1, 1);
+  // antenas
+  ctx.fillStyle = '#8fa7c4';
+  ctx.fillRect(1, 12, 4, 1);
+  ctx.fillRect(11, 16, 4, 1);
+  ctx.fillStyle = '#bfe9ff';
+  ctx.fillRect(1, 11, 1, 1);
+  ctx.fillRect(14, 15, 1, 1);
+  return { canvas: c, ax: 8, ay: 44 };
+}
+
+/** Antena parabólica sobre base metálica. */
+function dishSprite(seed: number): PropSprite {
+  const rng = mulberry32(seed);
+  const [c, ctx] = makeCanvas(24, 28);
+  shadowEllipse(ctx, 12, 26, 8, 2, 0.28);
+  ctx.fillStyle = '#2b3346';
+  ctx.fillRect(10, 15, 4, 11);
+  ctx.fillStyle = '#465571';
+  ctx.fillRect(11, 15, 2, 11);
+  ctx.fillStyle = '#3a4658';
+  ctx.fillRect(6, 24, 12, 2);
+  // prato: elipse inclinada em tons de metal
+  const p = new Painter(ctx, 24, 28);
+  const cx = 12 + (rng() - 0.5) * 2;
+  const cy = 9;
+  for (let y = -8; y <= 8; y++) {
+    for (let x = -9; x <= 9; x++) {
+      const d = Math.hypot(x / 9, y / 7.5);
+      if (d > 1) continue;
+      const lit = y < -1 ? 3 : y < 2 ? 2 : y < 5 ? 1 : 0;
+      p.set(Math.round(cx + x), Math.round(cy + y), ['#25324a', '#33456b', '#465571', '#6d87a8'][lit]);
+    }
+  }
+  // haste central
+  for (let y = 6; y < 15; y++) p.set(Math.round(cx), y, '#1c2333');
+  p.set(Math.round(cx), 4, '#bfe9ff');
+  p.flush();
+  // brilho na borda superior
+  ctx.fillStyle = '#8fb0c9';
+  ctx.fillRect(10, 2, 4, 1);
+  return { canvas: c, ax: 12, ay: 26 };
+}
+
+/** Caixa de carga metálica com faixa de atenção. */
+function crateSprite(seed: number): PropSprite {
+  const rng = mulberry32(seed);
+  const [c, ctx] = makeCanvas(18, 16);
+  shadowEllipse(ctx, 9, 14, 8, 2, 0.26);
+  ctx.fillStyle = '#1c2333';
+  ctx.fillRect(1, 3, 16, 11);
+  ctx.fillStyle = '#3a4658';
+  ctx.fillRect(2, 4, 14, 9);
+  ctx.fillStyle = '#4d5b76';
+  ctx.fillRect(2, 4, 14, 2);
+  ctx.fillStyle = '#2b3346';
+  ctx.fillRect(2, 11, 14, 2);
+  // faixa de atenção
+  ctx.fillStyle = '#e0a93e';
+  for (let x = 3; x < 15; x += 4) ctx.fillRect(x, 7, 2, 2);
+  ctx.fillStyle = '#8a6a24';
+  for (let x = 5; x < 15; x += 4) ctx.fillRect(x, 7, 1, 2);
+  // marca de carga
+  ctx.fillStyle = rng() < 0.5 ? '#7fe3ff' : '#c9453f';
+  ctx.fillRect(12, 5, 3, 1);
+  return { canvas: c, ax: 9, ay: 14 };
+}
+
+/** Guarda-corpo de convés: dois postes e duas travessas. */
+function railSprite(): PropSprite {
+  const [c, ctx] = makeCanvas(34, 14);
+  shadowEllipse(ctx, 17, 12, 15, 1.5, 0.2);
+  ctx.fillStyle = '#2b3346';
+  ctx.fillRect(2, 3, 2, 9);
+  ctx.fillRect(30, 3, 2, 9);
+  ctx.fillStyle = '#465571';
+  ctx.fillRect(2, 3, 1, 9);
+  ctx.fillRect(30, 3, 1, 9);
+  ctx.fillStyle = '#5d7699';
+  ctx.fillRect(1, 3, 32, 1);
+  ctx.fillRect(1, 6, 32, 1);
+  ctx.fillStyle = '#7fe3ff';
+  ctx.fillRect(16, 3, 2, 1);
+  return { canvas: c, ax: 17, ay: 12 };
 }
 
 export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city'): PropSprite {
@@ -401,7 +631,7 @@ export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city')
       s = flowersSprite(prop.seed % 7);
       break;
     case 'hedge':
-      s = hedgeSprite(prop.seed % 7);
+      s = hedgeSprite(prop.seed % 7, scenario);
       break;
     case 'lamp':
       s = lampSprite(scenario);
@@ -417,6 +647,24 @@ export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city')
       break;
     case 'totem':
       s = totemSprite(scenario);
+      break;
+    case 'tower':
+      s = towerSprite();
+      break;
+    case 'dish':
+      s = dishSprite(prop.seed % 7);
+      break;
+    case 'crate':
+      s = crateSprite(prop.seed % 7);
+      break;
+    case 'rail':
+      s = railSprite();
+      break;
+    case 'palm':
+      s = palmSprite(prop.seed % 7);
+      break;
+    case 'snowman':
+      s = snowmanSprite(prop.seed % 7);
       break;
     default:
       // 'paving' e outros tipos desenhados pelo próprio renderer

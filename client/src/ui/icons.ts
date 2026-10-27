@@ -24,10 +24,11 @@ function pixelPaths(rows: readonly string[], palette: Readonly<Record<string, st
   return out;
 }
 
-export function pixelIcon(rows: readonly string[], palette: Readonly<Record<string, string>> = { '#': 'currentColor' }, cls = 'ui-px-icon'): string {
+/** `scale` = pixels de tela por pixel do mapa (2 por padrão; 1 para ícones pequenos, como o selo da ferramenta). */
+export function pixelIcon(rows: readonly string[], palette: Readonly<Record<string, string>> = { '#': 'currentColor' }, cls = 'ui-px-icon', scale = 2): string {
   const h = rows.length;
   const w = Math.max(...rows.map((r) => r.length));
-  return `<svg class="${cls}" width="${w * 2}" height="${h * 2}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${pixelPaths(rows, palette)}</svg>`;
+  return `<svg class="${cls}" width="${w * scale}" height="${h * scale}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${pixelPaths(rows, palette)}</svg>`;
 }
 
 export const ICONS = {
@@ -306,6 +307,222 @@ export const ICONS = {
 } as const;
 
 export type IconKey = keyof typeof ICONS;
+
+/**
+ * Ícones dos temas do escritório e dos cenários externos, no mesmo estilo de pixels dos demais (currentColor).
+ * São decorativos: o nome da opção continua no texto do botão.
+ */
+const THEME_ICONS: Record<string, string> = {
+  auto: pixelIcon([
+    '..#####..',
+    '..#...#..',
+    '#########',
+    '#.......#',
+    '#.#.#.#.#',
+    '#.......#',
+    '#.#.#.#.#',
+    '#########',
+    '.........',
+  ]),
+  seasons: pixelIcon([
+    '...##....',
+    '.#.##.#..',
+    '..####...',
+    '########.',
+    '..####...',
+    '.#.##.#..',
+    '...##....',
+    '.........',
+    '.........',
+  ]),
+  none: pixelIcon([
+    '..#####..',
+    '.#.....#.',
+    '#..#....#',
+    '#...#...#',
+    '#....#..#',
+    '#.....#.#',
+    '.#.....#.',
+    '..#####..',
+    '.........',
+  ]),
+  christmas: pixelIcon([
+    '....#....',
+    '...###...',
+    '..#####..',
+    '....#....',
+    '...###...',
+    '..#####..',
+    '.#######.',
+    '....#....',
+    '....#....',
+  ]),
+  halloween: pixelIcon([
+    '....#....',
+    '..#####..',
+    '.#.#.#.#.',
+    '#########',
+    '#.#.#.#.#',
+    '#########',
+    '.#.#.#.#.',
+    '..#####..',
+    '.........',
+  ]),
+  spring: pixelIcon([
+    '...#....',
+    '.#.#.#..',
+    '..###...',
+    '#######.',
+    '..###...',
+    '.#.#.#..',
+    '...#....',
+    '........',
+    '........',
+  ]),
+  autumn: pixelIcon([
+    '......##.',
+    '....####.',
+    '..######.',
+    '.######..',
+    '.#####...',
+    '.####....',
+    '..##.....',
+    '.#.......',
+    '.........',
+  ]),
+  junina: pixelIcon([
+    '.........',
+    '#.#.#.#.#',
+    '#.#.#.#.#',
+    '.#.#.#.#.',
+    '..#.#.#..',
+    '...#.#...',
+    '....#....',
+    '.........',
+    '.........',
+  ]),
+  cyberpunk: pixelIcon([
+    '.....##..',
+    '....##...',
+    '...##....',
+    '..######.',
+    '.....##..',
+    '....##...',
+    '...##....',
+    '..##.....',
+    '.........',
+  ]),
+  retro: pixelIcon([
+    '#########',
+    '#.......#',
+    '#.#####.#',
+    '#.#...#.#',
+    '#.#...#.#',
+    '#.#####.#',
+    '#.......#',
+    '#########',
+    '....#....',
+  ]),
+  orbital: pixelIcon([
+    '...###...',
+    '..#####..',
+    '.#######.',
+    '#########',
+    '#########',
+    '#########',
+    '.#######.',
+    '..#####..',
+    '...###...',
+  ]),
+};
+
+const SCENARIO_ICONS: Record<string, string> = {
+  city: pixelIcon([
+    '..#...#..',
+    '.##.#.#..',
+    '.##.#.#..',
+    '.###.#.#.',
+    '#####.#.#',
+    '#####.###',
+    '#####.###',
+    '#########',
+    '.........',
+  ]),
+  forest: pixelIcon([
+    '....#....',
+    '...###...',
+    '..#####..',
+    '.#######.',
+    '...###...',
+    '....#....',
+    '....#....',
+    '....#....',
+    '.........',
+  ]),
+  cyberpunk: pixelIcon([
+    '.....##..',
+    '....##...',
+    '...##....',
+    '..######.',
+    '.....##..',
+    '....##...',
+    '...##....',
+    '..##.....',
+    '.........',
+  ]),
+  retro: pixelIcon([
+    '#########',
+    '#.......#',
+    '#.#.#.#.#',
+    '#.......#',
+    '#.#####.#',
+    '#.......#',
+    '#########',
+    '.........',
+    '.........',
+  ]),
+  orbital: pixelIcon([
+    '....#....',
+    '...###...',
+    '..#.#.#..',
+    '.#######.',
+    '....#....',
+    '....#....',
+    '...###...',
+    '.........',
+    '.........',
+  ]),
+  snow: pixelIcon([
+    '#..#.#..#',
+    '.#.#.#.#.',
+    '..#####..',
+    '#########',
+    '..#####..',
+    '.#.#.#.#.',
+    '#..#.#..#',
+    '.........',
+    '.........',
+  ]),
+  beach: pixelIcon([
+    '...###...',
+    '..#####..',
+    '.#######.',
+    '.........',
+    '#.#.#.#.#',
+    '.#.#.#.#.',
+    '#.#.#.#.#',
+    '.........',
+    '.........',
+  ]),
+};
+
+export function themeIcon(id: string): string {
+  return THEME_ICONS[id] ?? '';
+}
+
+export function scenarioIcon(id: string): string {
+  return SCENARIO_ICONS[id] ?? '';
+}
 
 /** Marca do Habblaud em pixels (usada quando /assets/brand/logo-mark.png não existe): prédio com janelas acesas. */
 export const FALLBACK_MARK = pixelIcon(

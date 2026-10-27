@@ -19,14 +19,23 @@
 //   é exclusivo de um look, exceto barba ('m').
 // - `flattenAppearance`: o que sobe ao World (`WorldAgent.parts`): só as 13 peças de PART_KEYS, sem `lanyard`, `look`
 //   nem a semente. No mundo a semente é `hash32(id aleatório do mundo)`, nunca a do escritório (docs/world/privacidade.md).
-import { ACCESSORIES, BOTTOM_STYLES, FACIAL_HAIR, HAIR_STYLES, PART_KEYS, TOP_STYLES, type AppearanceParts } from '../appearance';
+import {
+  FACIAL_HAIR,
+  HAIR_STYLES,
+  OFFICE_ACCESSORIES,
+  OFFICE_BOTTOM_STYLES,
+  OFFICE_TOP_STYLES,
+  PART_KEYS,
+  type AppearanceParts,
+} from '../appearance';
 import { mulberry32 } from '../hash';
+import type { AppearanceParts as WorldAppearanceParts } from './protocol';
 
 export type HairStyle = (typeof HAIR_STYLES)[number];
-export type TopStyle = (typeof TOP_STYLES)[number];
-export type Accessory = (typeof ACCESSORIES)[number];
+export type TopStyle = (typeof OFFICE_TOP_STYLES)[number];
+export type Accessory = (typeof OFFICE_ACCESSORIES)[number];
 export type FacialHair = (typeof FACIAL_HAIR)[number];
-export type BottomStyle = (typeof BOTTOM_STYLES)[number];
+export type BottomStyle = (typeof OFFICE_BOTTOM_STYLES)[number];
 
 /** Aparência completa (o mesmo formato de `Appearance` em client/src/art/api.ts; o cliente confere que não se separam). */
 export interface SeedAppearance {
@@ -90,6 +99,18 @@ export const ACC_COLORS: Record<Accessory, readonly string[]> = {
   beanie: ['#e2604f', '#efb54a', '#4bab72', '#8d66cf', '#3d4352', '#36b0b0'],
   earrings: ['#f2c14e', '#d9dde3'],
   bow: ['#e2604f', '#e47aa8', '#efb54a', '#4a86d8', '#8d66cf'],
+  helmet: ['#22242c', '#3a3140', '#2f3b55', '#5b2a2a', '#e8e6e1', '#7d8592'],
+  crown: ['#f2d16b', '#d9a42e', '#c9ced6', '#b08a5e', '#8a96a3'],
+  top_hat: ['#22242c', '#2b2b33', '#3d4352', '#3a3140', '#2f4c7d'],
+  pirate_hat: ['#22242c', '#2b2b33', '#3d4352', '#5b2a2a', '#6b4a35'],
+  chef_hat: ['#f7f7f4', '#f4f4f0', '#e8e3d6', '#dfe7ef', '#e2ded5'],
+  knight_helm: ['#8a96a3', '#c9ced6', '#5b7590', '#6d7480', '#a8b2bd'],
+  hood: ['#3d4352', '#2b2530', '#5b2a2a', '#2f4c7d', '#3c7a52'],
+  cat_ears: ['#2b2530', '#3f2c22', '#d6ae68', '#e47aa8', '#8f6ad8', '#d9dbe0'],
+  bow_tie: ['#c0392b', '#2f4c7d', '#7b2d44', '#2e7d4f', '#d9a42e', '#5b3a8c'],
+  monocle: ['#f2d16b', '#d9a42e', '#c9ced6', '#8a96a3', '#2b2b33'],
+  sleep_mask: ['#2b2236', '#3d4352', '#4a3a6a', '#2f4c7d', '#7b2d44'],
+  goggles: ['#36b0b0', '#4a86d8', '#e2604f', '#2b2b33', '#efb54a', '#5bc0de'],
 };
 const LANYARDS = ['#f2b33d', '#e2604f', '#4a86d8', '#4bab72', '#8d66cf', '#36b0b0'] as const;
 
@@ -107,19 +128,35 @@ const HAIR_W: Record<'f' | 'm', Weights<HairStyle>> = {
 };
 
 const TOP_W: Record<'f' | 'm', Weights<TopStyle>> = {
-  m: { tshirt: 20, hoodie: 16, shirt_tie: 10, sweater: 13, jacket: 13, blouse: 2, polo: 14 },
-  f: { tshirt: 17, hoodie: 14, shirt_tie: 5, sweater: 14, jacket: 12, blouse: 20, polo: 8 },
+  m: {
+    tshirt: 20, hoodie: 16, shirt_tie: 10, sweater: 13, jacket: 13, blouse: 2, polo: 14, vader: 0, aloha: 0, tank: 0,
+    lab_coat: 0, tuxedo: 0, gown: 0, kimono: 0, overalls: 0, pajamas: 0, raincoat: 0, life_vest: 0, jersey: 0, armor: 0,
+    wetsuit: 0,
+  },
+  f: {
+    tshirt: 17, hoodie: 14, shirt_tie: 5, sweater: 14, jacket: 12, blouse: 20, polo: 8, vader: 0, aloha: 0, tank: 0,
+    lab_coat: 0, tuxedo: 0, gown: 0, kimono: 0, overalls: 0, pajamas: 0, raincoat: 0, life_vest: 0, jersey: 0, armor: 0,
+    wetsuit: 0,
+  },
 };
 
 const ACC_W: Record<'f' | 'm', Weights<Accessory>> = {
-  m: { none: 40, glasses: 18, sunglasses: 4, headphones: 13, cap: 7, beanie: 6, earrings: 2, bow: 0.3 },
-  f: { none: 36, glasses: 16, sunglasses: 4, headphones: 11, cap: 4, beanie: 5, earrings: 13, bow: 7 },
+  m: {
+    none: 40, glasses: 18, sunglasses: 4, headphones: 13, cap: 7, beanie: 6, earrings: 2, bow: 0.3, helmet: 0,
+    crown: 0, top_hat: 0, pirate_hat: 0, chef_hat: 0, knight_helm: 0, hood: 0, cat_ears: 0, bow_tie: 0, monocle: 0,
+    sleep_mask: 0, goggles: 0,
+  },
+  f: {
+    none: 36, glasses: 16, sunglasses: 4, headphones: 11, cap: 4, beanie: 5, earrings: 13, bow: 7, helmet: 0,
+    crown: 0, top_hat: 0, pirate_hat: 0, chef_hat: 0, knight_helm: 0, hood: 0, cat_ears: 0, bow_tie: 0, monocle: 0,
+    sleep_mask: 0, goggles: 0,
+  },
 };
 
 const FACIAL_W: Weights<FacialHair> = { none: 62, stubble: 12, beard: 13, mustache: 7, goatee: 6 };
 const BOTTOM_W: Record<'f' | 'm', Weights<BottomStyle>> = {
-  m: { pants: 88, shorts: 12, skirt: 0 },
-  f: { pants: 62, shorts: 10, skirt: 28 },
+  m: { pants: 88, shorts: 12, skirt: 0, swim: 0, jeans: 0, long_skirt: 0, apron: 0 },
+  f: { pants: 62, shorts: 10, skirt: 28, swim: 0, jeans: 0, long_skirt: 0, apron: 0 },
 };
 
 /** Mistura a semente (sementes consecutivas viram sequências bem diferentes). */
@@ -223,13 +260,35 @@ export function appearanceFromSeed(seed: number, opts: { look?: 'f' | 'm'; sub?:
  * Aparência achatada para o World: as 13 peças de PART_KEYS, nessa ordem, sorteadas pela semente (com o `look` do
  * personagem, para os estilos e a barba baterem com a dica visual) e com as peças escolhidas no editor por cima. Sem
  * `lanyard`, `look` nem a semente.
+ *
+ * Os estilos que só existem no escritório (as roupas temáticas, as peças de fantasia e os acessórios novos) viram o
+ * equivalente mais próximo do protocolo do World, que não os conhece: o visível lá é o mesmo personagem com uma roupa
+ * parecida, nunca um estilo inválido. Acessório sem equivalente clássico sobe como 'none'.
  */
-export function flattenAppearance(seed: number, parts?: AppearanceParts, look?: 'f' | 'm'): AppearanceParts {
+const WORLD_TOP: Readonly<Record<string, string>> = {
+  vader: 'jacket', aloha: 'tshirt', tank: 'tshirt', lab_coat: 'jacket', tuxedo: 'shirt_tie', gown: 'blouse',
+  kimono: 'blouse', overalls: 'jacket', pajamas: 'shirt_tie', raincoat: 'jacket', life_vest: 'tshirt', jersey: 'tshirt',
+  armor: 'jacket', wetsuit: 'tshirt',
+};
+const WORLD_BOTTOM: Readonly<Record<string, string>> = { swim: 'shorts', jeans: 'shorts', long_skirt: 'skirt', apron: 'shorts' };
+const WORLD_ACCESSORY: Readonly<Record<string, string>> = {
+  helmet: 'none', crown: 'none', top_hat: 'cap', pirate_hat: 'cap', chef_hat: 'cap', knight_helm: 'none', hood: 'none',
+  cat_ears: 'none', bow_tie: 'none', monocle: 'glasses', sleep_mask: 'sunglasses', goggles: 'glasses',
+};
+
+function worldValue(key: string, value: string): string {
+  if (key === 'topStyle') return WORLD_TOP[value] ?? value;
+  if (key === 'bottomStyle') return WORLD_BOTTOM[value] ?? value;
+  if (key === 'accessory') return WORLD_ACCESSORY[value] ?? value;
+  return value;
+}
+
+export function flattenAppearance(seed: number, parts?: AppearanceParts, look?: 'f' | 'm'): WorldAppearanceParts {
   const a = appearanceFromSeed(seed, { look, parts });
   const out: Record<string, string> = {};
   for (const k of PART_KEYS) {
     const v = a[k];
-    if (v !== undefined) out[k] = v;
+    if (v !== undefined) out[k] = worldValue(k, v);
   }
-  return out as AppearanceParts;
+  return out as WorldAppearanceParts;
 }

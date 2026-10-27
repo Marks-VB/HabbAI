@@ -950,7 +950,7 @@ export class WorldSettingsGroup {
     const player = this.status?.player;
     let look: 'f' | 'm' = player?.look ?? (randomSeed() % 2 ? 'm' : 'f');
     let traits: TraitId[] = player ? player.traits.filter((t): t is TraitId => (TRAIT_IDS as readonly string[]).includes(t)) : [];
-    const fields = new AppearanceFields();
+    const fields = new AppearanceFields(undefined, false);
     fields.set(player ? draftAppearance(look, player.parts) : draftAppearance(look, undefined, randomSeed()));
 
     const name = h('input', { class: 'ui-char__name', type: 'text', attrs: { maxlength: PLAYER_NAME_LIMITS.max * 2, autocomplete: 'nickname', spellcheck: 'false', 'aria-describedby': 'ui-world-name-hint' } });

@@ -32,6 +32,42 @@ const enum K {
   Car,
 }
 
+/** Ladrilho do vazio ao redor da estação orbital: fundo escuro, estrelas e uma nebulosa tênue. */
+let starPatternTile: HTMLCanvasElement | null = null;
+function starTile(): HTMLCanvasElement {
+  if (starPatternTile) return starPatternTile;
+  const size = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = '#070b18';
+  ctx.fillRect(0, 0, size, size);
+  // nebulosa: manchas bem apagadas, para o vazio não ficar chapado
+  for (const [x, y, r, a] of [[46, 52, 58, 0.1], [188, 152, 74, 0.08], [120, 220, 44, 0.07]] as const) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(84,120,196,${a})`);
+    g.addColorStop(1, 'rgba(84,120,196,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // estrelas determinísticas (o ladrilho se repete sem emendas visíveis)
+  let h = 0x9e3779b1;
+  const rnd = () => {
+    h = Math.imul(h ^ (h >>> 15), 0x85ebca77);
+    h ^= h >>> 13;
+    return (h >>> 0) / 4294967296;
+  };
+  for (let i = 0; i < 120; i++) {
+    const x = Math.floor(rnd() * size);
+    const y = Math.floor(rnd() * size);
+    const k = rnd();
+    ctx.fillStyle = k > 0.94 ? '#eaf6ff' : k > 0.7 ? '#bfe9ff' : '#7d8fb8';
+    ctx.fillRect(x, y, k > 0.97 ? 2 : 1, 1);
+  }
+  starPatternTile = c;
+  return c;
+}
+
 interface Ent {
   k: K;
   y: number;
@@ -190,22 +226,35 @@ export class Renderer {
     ctx.translate(-this.baseX, -this.baseY);
     paintShell(this.art, ctx, this.exterior.floors, []);
     // faixas da rua (apenas em cenários com tráfego urbano/tecnológico)
-    if (this.scenario !== 'forest') {
+    if (this.scenario !== 'forest' && this.scenario !== 'orbital' && this.scenario !== 'beach') {
       const ly = this.exterior.streetY + Math.round(this.exterior.streetH / 2) - 1;
-      ctx.fillStyle = this.scenario === 'cyberpunk' ? 'rgba(57,230,240,0.85)' : 'rgba(255,236,170,0.75)';
+      ctx.fillStyle = this.scenario === 'cyberpunk' ? 'rgba(57,230,240,0.85)' : this.scenario === 'snow' ? 'rgba(230,240,250,0.55)' : 'rgba(255,236,170,0.75)';
       for (let x = this.baseX + 4; x < this.baseX + c.width; x += 24) ctx.fillRect(x, ly, 12, 2);
+    }
+    if (this.scenario === 'orbital') {
+      // Trilho do transporte: traves ciano no centro do canal e os dois trilhos metálicos.
+      const ly = this.exterior.streetY + Math.round(this.exterior.streetH / 2) - 1;
+      ctx.fillStyle = 'rgba(127,227,255,0.8)';
+      for (let x = this.baseX + 4; x < this.baseX + c.width; x += 22) ctx.fillRect(x, ly, 9, 2);
+      const track = this.exterior.streetY;
+      ctx.fillStyle = 'rgba(143,176,201,0.5)';
+      ctx.fillRect(this.baseX, track + 2, c.width, 1);
+      ctx.fillRect(this.baseX, track + this.exterior.streetH - 3, c.width, 1);
     }
     this.shells = [];
     this.shellWindows = [];
     for (let col = CORE_COLS; col < cols; col++) {
       for (const side of ['north', 'south'] as const) {
-        const sh = slotShell(slotAt(col, side), col === cols - 1);
+        const sh = slotShell(slotAt(col, side), col === cols - 1, this.scenario);
         this.shells.push(sh);
         paintShell(this.art, ctx, sh.floors, sh.walls);
         for (const w of sh.windows) this.shellWindows.push(toWallVis(w, `shell:${sh.slot}`));
       }
     }
     this.desaturate(ctx);
+    if (this.scenario === 'orbital') this.decorateOrbitalDeck(ctx);
+    else if (this.scenario === 'beach') this.decorateBeach(ctx);
+    else if (this.scenario === 'snow') this.decorateSnow(ctx);
     // fundo além da área desenhada: a própria grama (amostra espelhada 2x2, sem emendas), já no
     // tom da borda da vinheta
     const s = 4 * TILE;
@@ -241,14 +290,19 @@ export class Renderer {
       tctx.fillStyle = avg;
       tctx.fillRect(0, 0, 2 * s, 2 * s);
       tctx.globalAlpha = 1;
-      const vigEdge = this.scenario === 'forest' ? 'rgba(12,32,16,0.25)' : this.scenario === 'cyberpunk' ? 'rgba(10,12,24,0.35)' : this.scenario === 'retro' ? 'rgba(40,24,12,0.2)' : VIGNETTE_EDGE;
+      const vigEdge = this.scenario === 'forest' ? 'rgba(12,32,16,0.25)' : this.scenario === 'cyberpunk' ? 'rgba(10,12,24,0.35)' : this.scenario === 'orbital' ? 'rgba(8,12,26,0.36)' : this.scenario === 'snow' ? 'rgba(168,190,210,0.24)' : this.scenario === 'beach' ? 'rgba(90,150,165,0.18)' : this.scenario === 'retro' ? 'rgba(40,24,12,0.2)' : VIGNETTE_EDGE;
       tctx.fillStyle = vigEdge;
       tctx.fillRect(0, 0, 2 * s, 2 * s);
       this.grass = this.ctx.createPattern(tile, 'repeat');
       // cor de fundo (antes do padrão carregar): a média já com o tom da vinheta
       const k = VIGNETTE_ALPHA;
-      const [vr, vg, vb] = this.scenario === 'forest' ? [12, 32, 16] : this.scenario === 'cyberpunk' ? [10, 12, 24] : this.scenario === 'retro' ? [40, 24, 12] : [18, 40, 26];
+      const [vr, vg, vb] = this.scenario === 'forest' ? [12, 32, 16] : this.scenario === 'cyberpunk' ? [10, 12, 24] : this.scenario === 'orbital' ? [8, 12, 26] : this.scenario === 'snow' ? [168, 190, 210] : this.scenario === 'beach' ? [120, 168, 180] : this.scenario === 'retro' ? [40, 24, 12] : [18, 40, 26];
       this.clearColor = `rgb(${Math.round((r / n) * (1 - k) + vr * k)},${Math.round((g / n) * (1 - k) + vg * k)},${Math.round((bl / n) * (1 - k) + vb * k)})`;
+      if (this.scenario === 'orbital') {
+        // Fora do convés é o espaço: estrelas no lugar da grama espelhada.
+        this.grass = this.ctx.createPattern(starTile(), 'repeat');
+        this.clearColor = '#070b18';
+      }
     } catch {
       this.grass = null;
       this.clearColor = '#6f9a5a';
@@ -269,6 +323,128 @@ export class Renderer {
       // navegador sem o modo de mistura: segue sem dessaturar
     }
     ctx.restore();
+  }
+
+  /** Estação orbital: plataformas de pouso, tiras de luz e tubulações sobre o convés. */
+  private decorateOrbitalDeck(ctx: CanvasRenderingContext2D): void {
+    const b = this.exterior.bounds;
+    /** Anel de traços desenhado em pixels (sem suavização), com a cruz de pouso no centro. */
+    const pad = (cx: number, cy: number): void => {
+      const r = 46;
+      ctx.fillStyle = '#37425a';
+      for (let dy = -r; dy <= r; dy += 2) {
+        const half = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
+        ctx.fillRect(Math.round(cx - half), Math.round(cy + dy), half * 2, 2);
+      }
+      for (let i = 0; i < 200; i++) {
+        const a = (i / 200) * Math.PI * 2;
+        if ((i % 25) > 17) continue;
+        const x = Math.round(cx + Math.cos(a) * (r - 4));
+        const y = Math.round(cy + Math.sin(a) * (r - 4));
+        ctx.fillStyle = i % 25 < 2 ? '#eaf6ff' : '#7fe3ff';
+        ctx.fillRect(x, y, 2, 2);
+      }
+      ctx.fillStyle = '#8fd6ff';
+      ctx.fillRect(Math.round(cx - 1), Math.round(cy - 12), 3, 25);
+      ctx.fillRect(Math.round(cx - 12), Math.round(cy - 1), 25, 3);
+    };
+    pad((b.x + 7) * TILE, (b.y + 8) * TILE);
+    pad((b.x + b.w - 7) * TILE, (b.y + 8) * TILE);
+    // tiras de luz ao longo da passarela sul
+    const lightY = (BUILDING_H + 2.2) * TILE;
+    for (let x = b.x + 3; x < b.x + b.w - 2; x += 6) {
+      ctx.fillStyle = '#7fe3ff';
+      ctx.fillRect(Math.round(x * TILE), Math.round(lightY), 7, 2);
+      ctx.fillStyle = '#eaf6ff';
+      ctx.fillRect(Math.round(x * TILE + 2), Math.round(lightY), 3, 1);
+    }
+    // tubulação no convés norte, com abraçadeiras
+    const pipeY = (b.y + 3) * TILE;
+    ctx.fillStyle = '#2b3346';
+    ctx.fillRect(b.x * TILE, pipeY, b.w * TILE, 4);
+    ctx.fillStyle = '#465571';
+    ctx.fillRect(b.x * TILE, pipeY, b.w * TILE, 1);
+    for (let x = b.x + 2; x < b.x + b.w - 1; x += 9) {
+      ctx.fillStyle = '#5d6f8e';
+      ctx.fillRect(Math.round(x * TILE), pipeY - 2, 3, 8);
+    }
+    // faixa de atenção na borda sul do prédio
+    const hazY = (BUILDING_H + 1.6) * TILE;
+    for (let x = b.x + 2; x < b.x + b.w - 2; x += 2) {
+      ctx.fillStyle = Math.floor(x / 2) % 2 === 0 ? '#e0a93e' : '#2a3140';
+      ctx.fillRect(Math.round(x * TILE), Math.round(hazY), TILE * 2, 3);
+    }
+  }
+
+  /** Praia: espuma na beira do mar, conchas na areia e marcas de onda. */
+  private decorateBeach(ctx: CanvasRenderingContext2D): void {
+    const b = this.exterior.bounds;
+    const waterTop = (BUILDING_H + 4) * TILE;
+    const waterH = this.exterior.streetH;
+    const x0 = b.x * TILE;
+    const x1 = (b.x + b.w) * TILE;
+    // espuma na arrebentação (topo e base do mar)
+    for (const [y, off] of [[waterTop, 0], [waterTop + waterH - 4, 3]] as const) {
+      for (let x = x0; x < x1; x += 7) {
+        const k = ((x / 7 + off) % 4) | 0;
+        if (k === 3) continue;
+        ctx.fillStyle = 'rgba(240,252,255,0.85)';
+        ctx.fillRect(Math.round(x), Math.round(y), 5, 1);
+        ctx.fillStyle = 'rgba(200,240,250,0.7)';
+        ctx.fillRect(Math.round(x + 1), Math.round(y) + 1, 3, 1);
+      }
+    }
+    // marcas de onda mais fundo
+    for (let row = 0; row < 4; row++) {
+      const y = waterTop + 10 + row * 9;
+      for (let x = x0 + ((row * 11) % 17); x < x1; x += 23) {
+        ctx.fillStyle = 'rgba(220,248,255,0.35)';
+        ctx.fillRect(Math.round(x), Math.round(y), 10, 1);
+      }
+    }
+    // conchas e estrelinhas na areia da faixa sul
+    const sandTop = (BUILDING_H + 9) * TILE;
+    const sandBottom = (b.y + b.h - 2) * TILE;
+    let hsh = 0x51ed;
+    const rnd = () => {
+      hsh = Math.imul(hsh ^ (hsh >>> 13), 0x5bd1e995);
+      return ((hsh >>> 0) / 4294967296);
+    };
+    for (let i = 0; i < 40; i++) {
+      const x = x0 + 20 + rnd() * (x1 - x0 - 40);
+      const y = sandTop + 6 + rnd() * Math.max(1, sandBottom - sandTop - 8);
+      ctx.fillStyle = ['#f7f1e2', '#f0c6a8', '#fff6e0'][i % 3];
+      ctx.fillRect(Math.round(x), Math.round(y), 2, 1);
+      if (i % 4 === 0) ctx.fillRect(Math.round(x) + 1, Math.round(y) + 1, 1, 1);
+    }
+  }
+
+  /** Neve: bancos de neve nas bordas do passeio e pegadas perto da entrada. */
+  private decorateSnow(ctx: CanvasRenderingContext2D): void {
+    const b = this.exterior.bounds;
+    const x0 = b.x * TILE;
+    const x1 = (b.x + b.w) * TILE;
+    // montinhos irregulares nas bordas do passeio
+    for (const ty of [BUILDING_H + 2, BUILDING_H + 9]) {
+      const y = ty * TILE;
+      for (let x = x0; x < x1; x += 5) {
+        const h = 1 + ((x / 5) % 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(Math.round(x), Math.round(y), 4, h);
+        ctx.fillStyle = 'rgba(205,224,240,0.7)';
+        ctx.fillRect(Math.round(x), Math.round(y) + h, 4, 1);
+      }
+    }
+    // pegadas saindo da entrada oeste
+    const py = (CORRIDOR_Y + 6) * TILE;
+    for (let i = 0; i < 8; i++) {
+      const x = x0 + 12 + i * 9;
+      const y = py + (i % 2) * 3;
+      ctx.fillStyle = 'rgba(176,199,219,0.8)';
+      ctx.fillRect(Math.round(x), Math.round(y), 3, 2);
+      ctx.fillStyle = 'rgba(228,240,250,0.9)';
+      ctx.fillRect(Math.round(x), Math.round(y) - 1, 3, 1);
+    }
   }
 
   /** Acabamento da camada externa: bordas levemente mais escuras (vinheta) e o capacho da entrada. */
@@ -299,9 +475,14 @@ export class Renderer {
           const fx = wx < 0 ? smooth(6, -b.x, -wx) : wx > bwT ? smooth(6, b.x + b.w - bwT, wx - bwT) : 0;
           const fy = wy < 0 ? smooth(5, -b.y, -wy) : wy > BUILDING_H ? smooth(12, b.y + b.h - BUILDING_H, wy - BUILDING_H) : 0;
           const i = (ty * b.w + tx) * 4;
-          img.data[i] = 18;
-          img.data[i + 1] = 40;
-          img.data[i + 2] = 26;
+          // tom da vinheta: acompanha o cenário (o verde padrão não serve no convés orbital, na neve nem na praia)
+          const [tr, tg, tb] = this.scenario === 'orbital' ? [7, 11, 24]
+            : this.scenario === 'snow' ? [168, 190, 210]
+              : this.scenario === 'beach' ? [120, 168, 180]
+                : [18, 40, 26];
+          img.data[i] = tr;
+          img.data[i + 1] = tg;
+          img.data[i + 2] = tb;
           img.data[i + 3] = Math.round(Math.max(fx, fy) * VIGNETTE_ALPHA * 255);
         }
       }
@@ -1147,6 +1328,11 @@ export class Renderer {
   }
 
   private updateCars(now: number, dt: number): void {
+    // Estação orbital: o canal é um trilho de transporte. Praia: o canal é o mar. Nenhum dos dois tem carros.
+    if (this.scenario === 'orbital' || this.scenario === 'beach') {
+      this.cars = [];
+      return;
+    }
     const b = this.exterior.bounds;
     const x0 = b.x * TILE - 40;
     const x1 = (b.x + b.w) * TILE + 40;

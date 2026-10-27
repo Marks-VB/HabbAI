@@ -156,7 +156,7 @@ export interface AreaLayout {
 
 /** Elemento decorativo externo (árvore, arbusto, poste...) desenhado pelo próprio mundo. */
 export interface ExteriorProp {
-  kind: 'tree' | 'pine' | 'bush' | 'flowers' | 'lamp' | 'bench' | 'rock' | 'hedge' | 'parasol' | 'totem' | 'paving';
+  kind: 'tree' | 'pine' | 'bush' | 'flowers' | 'lamp' | 'bench' | 'rock' | 'hedge' | 'parasol' | 'totem' | 'paving' | 'tower' | 'dish' | 'crate' | 'rail' | 'palm' | 'snowman';
   /** px de mundo: ponto central inferior (base). */
   x: number;
   y: number;

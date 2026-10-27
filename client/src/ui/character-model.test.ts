@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ACCESSORIES, BOTTOM_STYLES, FACIAL_HAIR, HAIR_STYLES, PART_KEYS, TOP_STYLES } from '../../../shared/appearance';
-import { appearanceFromSeed } from '../art/character/appearance';
-import { canEditCharacter, changedParts, EDITOR_GROUPS, rowVisible, styleLabel } from './character-model';
+import { appearanceFromSeed, editorOptions } from '../art/character/appearance';
+import { canEditCharacter, changedParts, CHARACTER_PRESETS, EDITOR_GROUPS, rowVisible, styleLabel } from './character-model';
 import { CharacterEditor } from './character-editor';
 import type { UiContext } from './context';
 
@@ -69,6 +69,26 @@ describe('grupos e rótulos do editor', () => {
     const color = EDITOR_GROUPS.flatMap((g) => g.rows).find((r) => r.key === 'accessoryColor')!;
     expect(rowVisible(color, { accessory: 'none' })).toBe(false);
     expect(rowVisible(color, { accessory: 'cap' })).toBe(true);
+  });
+});
+
+describe('modelos prontos', () => {
+  // Um estilo ou uma cor fora das paletas do editor não quebra nada na tela: o `fitToOptions` troca pela primeira
+  // opção, e o modelo sai com outra cara. Aqui a checagem é na fonte, para o erro aparecer no teste.
+  it('cada modelo usa peças e cores que o editor oferece', () => {
+    for (const preset of CHARACTER_PRESETS) {
+      const worn = { ...appearanceFromSeed(7, { look: 'm' }), ...preset.parts };
+      const options = editorOptions(worn);
+      for (const [key, value] of Object.entries(preset.parts)) {
+        expect(options[key as keyof typeof options], `${preset.id}.${key}=${value}`).toContain(value);
+      }
+    }
+  });
+
+  it('cada modelo tem id único e não vazio', () => {
+    const ids = CHARACTER_PRESETS.map((p) => p.id);
+    expect(ids.every(Boolean)).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 

@@ -17,31 +17,42 @@ export interface WorldOptions {
   dayNight: boolean;
   /** (Opcional, aditivo) Ciclo dia/noite: automático, sempre dia ou sempre noite. Vale sobre `dayNight`. */
   daylight?: DaylightMode;
-  /** Tema visual: automático (segue o calendário; ver seasonalThemeFor), nenhum, Natal, Halloween, cyberpunk ou retrô. */
+  /** Tema visual: automático (segue o calendário; ver seasonalThemeFor), estações, nenhum, Natal, Halloween, cyberpunk, retrô, orbital, primavera, outono ou festa junina. */
   theme?: OfficeTheme;
-  /** Cenário do lado de fora do escritório (arredores: rua, árvores, janelas): cidade, floresta, cyberpunk ou retrô. */
+  /** Cenário do lado de fora do escritório (arredores: rua, árvores, janelas): cidade, floresta, cyberpunk, retrô, orbital, neve ou praia. */
   scenario?: ScenarioTheme;
 }
 
-export type ScenarioTheme = 'city' | 'forest' | 'cyberpunk' | 'retro';
+export type ScenarioTheme = 'city' | 'forest' | 'cyberpunk' | 'retro' | 'orbital' | 'snow' | 'beach';
 
 /**
  * Tema que o renderer desenha: o escritório original ('none'), os sazonais do calendário e os temas locais
- * ('cyberpunk' e 'retro'), que só existem no escritório desta página (o prédio do World continua com os sazonais).
+ * ('cyberpunk', 'retro', 'orbital', 'spring', 'autumn' e 'junina'), que só existem no escritório desta página
+ * (o prédio do World continua com os sazonais).
  */
-export type SeasonalTheme = 'none' | 'christmas' | 'halloween' | 'cyberpunk' | 'retro';
-export type OfficeTheme = 'auto' | SeasonalTheme;
+export type SeasonalTheme = 'none' | 'christmas' | 'halloween' | 'cyberpunk' | 'retro' | 'orbital' | 'spring' | 'autumn' | 'junina';
+export type OfficeTheme = 'auto' | 'seasons' | SeasonalTheme;
 
 /** Temas que o prédio do World conhece; os demais ficam só no escritório local. */
 export function isWorldOfficeTheme(theme: OfficeTheme | undefined): theme is 'auto' | 'none' | 'christmas' | 'halloween' {
   return theme === 'auto' || theme === 'none' || theme === 'christmas' || theme === 'halloween';
 }
 
+/** Camada de estações: a arte segue o calendário do hemisfério sul. */
+export function seasonThemeFor(date: Date): SeasonalTheme {
+  const month = date.getMonth();
+  if (month >= 8 || month <= 1) return 'spring'; // set–fev: primavera/verão florido
+  if (month <= 4) return 'autumn'; // mar–mai
+  if (month <= 6) return 'junina'; // jun–jul: festas juninas
+  return 'none'; // agosto
+}
+
 /**
  * Tema desenhado numa data (hora local). No automático: Halloween de 1º a 31 de outubro, Natal de 1º de novembro a
- * 26 de dezembro e, no resto do ano, o escritório original.
+ * 26 de dezembro e, no resto do ano, o escritório original. Em 'seasons', segue a estação do ano.
  */
 export function seasonalThemeFor(theme: OfficeTheme | undefined, date: Date): SeasonalTheme {
+  if (theme === 'seasons') return seasonThemeFor(date);
   if (theme && theme !== 'auto') return theme;
   const month = date.getMonth();
   if (month === 9) return 'halloween';

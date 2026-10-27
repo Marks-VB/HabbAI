@@ -28,7 +28,6 @@
 //   modelo, branch, conta, e-mail, uso, custo, linhas ou semente. Os testes de chaves e de canários garantem.
 // - Limites de UPLINK_LIMITS (64 andares, 64 agentes por andar, 256 no total, 64 KB): acima, corta e avisa em
 //   `truncated` (só para o log local; não vai no pacote).
-import type { AppearanceParts } from '../appearance';
 import { hash32 } from '../hash';
 import { NAME_POOL, pickName } from '../names';
 import { isDemoId } from '../timeline';
@@ -242,7 +241,7 @@ function assignNames(floors: readonly FloorCandidate[], previous: ReadonlyMap<st
 function toWorldAgent(c: Candidate, widOf: ReadonlyMap<string, string>, name: string, input: ProjectionInput): WorldAgent {
   const a = c.a;
   const parent = a.kind === 'sub' && a.parentId ? widOf.get(a.parentId) : undefined;
-  const parts: AppearanceParts = flattenAppearance(hash32(c.wid), a.parts, a.look);
+  const parts = flattenAppearance(hash32(c.wid), a.parts, a.look);
   const out: WorldAgent = {
     id: c.wid,
     kind: a.kind,

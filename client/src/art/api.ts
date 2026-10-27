@@ -70,9 +70,14 @@ export type HairStyle =
   | 'short' | 'buzz' | 'spiky' | 'side_part' | 'curly' | 'afro' | 'bob' | 'long' | 'ponytail' | 'bun' | 'pigtails'
   | 'mohawk' | 'bald' | 'wavy';
 
-export type TopStyle = 'tshirt' | 'hoodie' | 'shirt_tie' | 'sweater' | 'jacket' | 'blouse' | 'polo';
+export type TopStyle =
+  | 'tshirt' | 'hoodie' | 'shirt_tie' | 'sweater' | 'jacket' | 'blouse' | 'polo' | 'vader' | 'aloha' | 'tank'
+  | 'lab_coat' | 'tuxedo' | 'gown' | 'kimono' | 'overalls' | 'pajamas' | 'raincoat' | 'life_vest' | 'jersey' | 'armor' | 'wetsuit';
 
-export type Accessory = 'none' | 'glasses' | 'sunglasses' | 'headphones' | 'cap' | 'beanie' | 'earrings' | 'bow';
+export type Accessory =
+  | 'none' | 'glasses' | 'sunglasses' | 'headphones' | 'cap' | 'beanie' | 'earrings' | 'bow' | 'helmet'
+  | 'crown' | 'top_hat' | 'pirate_hat' | 'chef_hat' | 'knight_helm' | 'hood' | 'cat_ears' | 'bow_tie' | 'monocle'
+  | 'sleep_mask' | 'goggles';
 
 export interface Appearance {
   skin: string;
@@ -92,7 +97,7 @@ export interface Appearance {
   /** (Opcional, aditivo) Barba/bigode — só sorteado para look 'm'. Ausente = sem pelos faciais. */
   facialHair?: 'none' | 'stubble' | 'beard' | 'mustache' | 'goatee';
   /** (Opcional, aditivo) Parte de baixo da roupa. Ausente = calça. */
-  bottomStyle?: 'pants' | 'shorts' | 'skirt';
+  bottomStyle?: 'pants' | 'shorts' | 'skirt' | 'swim' | 'jeans' | 'long_skirt' | 'apron';
 }
 
 export interface Rect {
@@ -134,7 +139,8 @@ export interface CharacterFrameRequest {
   /** Para poses que podem ser em pé ou sentado (raise_hand, read, talk). */
   seated?: boolean;
   /** Acessório temático; ausente mantém a aparência original. */
-  costume?: 'santa' | 'witch' | 'pumpkin' | 'vampire' | 'visor' | 'headphones';
+  costume?: 'santa' | 'witch' | 'pumpkin' | 'vampire' | 'visor' | 'headphones' | 'helmet' | 'blossom' | 'scarf' | 'strawhat'
+    | 'ghost' | 'robot';
 }
 
 export type FurnitureKind =
@@ -274,7 +280,11 @@ export type FloorKind =
   | 'marble' // recepção
   | 'grass' // área externa
   | 'sidewalk' // calçada externa
-  | 'street'; // rua externa (faixas desenhadas pelo render se quiser)
+  | 'street' // rua externa (faixas desenhadas pelo render se quiser)
+  | 'deck' // plataforma de metal da estação orbital (usa tint)
+  | 'snow' // neve (cenário de inverno)
+  | 'sand' // areia (cenário de praia)
+  | 'water'; // mar (cenário de praia)
 
 export type WallPattern = 'plain' | 'stripes' | 'tiles' | 'wood_panel' | 'brick' | 'glass' | 'marble';
 
@@ -286,6 +296,8 @@ export interface WallStyle {
   pattern?: WallPattern;
   /** Parede externa do prédio (tom mais sóbrio, pode ter textura de tijolo/concreto). */
   exterior?: boolean;
+  /** Vidro: cor da face translúcida (padrão azul-claro). */
+  glassTint?: string;
 }
 
 export interface Doorway {
