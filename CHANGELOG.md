@@ -12,6 +12,69 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **"Meu dia" com exportação: o dia inteiro em CSV ou em texto, para levar para uma retro ou um relatório.**
+  - **Exportar CSV** baixa um arquivo com os tempos por status, tarefas concluídas, sessões e subagentes, tokens e
+    custo — uma linha por projeto, uma por conta e uma de total. Vem com BOM UTF-8 e vírgula decimal, para o Excel em
+    português abrir os acentos e os números certos.
+  - **Copiar resumo** põe no clipboard um texto pronto (destaques, por projeto e por conta); se o navegador negar a
+    cópia, o texto aparece numa caixa selecionável.
+  - Os dois botões ficam desabilitados quando o dia não tem dados e anunciam o resultado (sucesso ou erro) para
+    leitores de tela.
+- **O app agora é instalável de verdade e abre offline (PWA).** Um service worker guarda o app shell e os arquivos com
+  hash (`/bundle/*`) e os de nome fixo (`/assets/*`), sempre revalidando em segundo plano. A navegação vai à rede
+  primeiro: o `index.html` em cache só aparece quando a rede falhou, então uma versão nova nunca abre apontando para
+  bundles antigos. Sem nada em cache, uma tela "Sem conexão" no mesmo tema escuro. Nada de `/api/*` entra no cache.
+- **Teste de fumaça no navegador (`npm run test:e2e`).** Sobe o Habblaud real em modo demonstração numa porta livre e
+  num diretório temporário, abre a página num Chromium e confere: HTTP 200, canvas desenhado de verdade (pixels e
+  variedade de cores), barra do topo visível, Ajuda (`?`) e Configurações abrem e fecham com `Escape`, e nenhum erro no
+  console. Sem navegador encontrado, o teste avisa como instalar e passa (pulado) em vez de falhar.
+- **Documentação de comunidade e de arquitetura.**
+  - `SECURITY.md`: versões suportadas, como relatar uma falha em privado (GitHub Security Advisories), o que está e o
+    que não está no escopo, boas práticas para quem expõe a porta remota e o que sai da máquina (só com conta no
+    Habblaud World), com resumo em inglês.
+  - Modelos de issue (bug e sugestão) e de pull request, com o lembrete de usar o modo demonstração e de não colar
+    dados de sessões.
+  - `docs/README.md` (índice) e `docs/arquitetura.md` (mapa de `server/`, `client/`, `shared/`, `scripts/` e o caminho
+    dos dados, dos transcripts ao escritório e ao World).
+
+### Alterado
+
+- **A marca que aparece para quem usa agora é HabbAI, em todo o app**: barra superior, título e prévias de
+  compartilhamento, nome instalado (manifest), avisos de conexão, permissões, mensagens, terminal, contas de uso,
+  versão/atualização, notificações, página de login remota, página offline e a janela do launcher no Windows.
+  - O que é técnico continua chamando Habblaud: variáveis `HABBLAUD_*`, arquivos (`~/.habblaud`, `habblaud-ca.crt`,
+    `Habblaud.exe`), o pacote/URLs, o mod instalado por `npm run mod:install` e o serviço **Habblaud World**.
+  - O README (4 idiomas) informa no topo que este é um fork customizado do Habblaud, com HabbAI como nome exibido.
+  - As traduções (en/es/fr) foram renomeadas junto com as chaves e voltaram a 100% (`npm run i18n:check`).
+- **O cliente saiu de um arquivo único de ~790 kB para chunks por área** (escritório, renderização, arte, World, editor
+  de personagem, terminal e idiomas): o primeiro acesso baixa em paralelo e o aviso de tamanho do Vite sumiu. A cidade
+  do World, o "Meu dia", o terminal (xterm) e os dicionários continuam sob demanda.
+- **O build do servidor usa `node22`** (o alvo `node20` estava abaixo do `engines: >=22.12` e do Node da imagem) e o
+  sourcemap ficou sob controle: ligado por padrão para depurar, desligado com `HABBLAUD_SOURCEMAP=0`. A imagem Docker
+  não leva mais `.map` (~3 MB a menos) e o contexto de build ignora testes e mapas.
+- **Biome no projeto** (`npm run lint`, `npm run format`) e **cobertura de testes com piso** (`npm run test:coverage`),
+  para o estilo e os números pararem de depender de olho humano.
+- **`.gitattributes` com LF**: fim de linha igual em qualquer máquina, sem diff inteiro causado pelo `core.autocrlf` do
+  Windows. Scripts `.ps1`/`.bat`/`.cmd` ficam com CRLF.
+
+### Corrigido
+
+- **Entregas no Windows**: arquivos com caminho do Windows (`C:\...` e UNC) voltam a aparecer na lista e os links de
+  imagem/PDF nas respostas não somem mais. As defesas continuam: `..` barrado, pastas sensíveis (`.ssh` e cia.) e
+  arquivos protegidos recusados nas duas convenções de caminho.
+- **Novo agente no Windows**: o `claude` instalado pelo npm é um atalho `.cmd` e o `execFile` sem shell não o executa,
+  então o "Novo agente em segundo plano" caía sempre em "abrir o app". Agora o atalho é lido e o programa por trás roda
+  direto, **sem shell** — o pedido digitado nunca passa pelo interpretador de comandos (nem `&`, `|`, `%VAR%` ou quebra
+  de linha escapam).
+- **Ditado no Windows**: o Whisper e o `ffmpeg` são encontrados mesmo instalados como `.exe`/`.cmd`, usando o mesmo
+  `PATHEXT` do resto do projeto.
+- **Linha do tempo mais leve**: a pasta é criada uma vez por gravador, não a cada linha gravada (era o que deixava o
+  `npm run demo:timeline` lento em pastas monitoradas por antivírus).
+- **Os testes passam no Windows**, não só no Linux do CI: asserções de permissão POSIX passaram a usar o helper
+  `HAS_POSIX_MODES` (já existia em `server/test/fixtures.ts`), e os testes que montavam `HOME` falso com caminhos
+  POSIX ou dependiam de docker/`/bin/sh` foram ajustados.
+- **O CI ganhou um job `windows-latest`** (typecheck + testes), além de `i18n:check` e `lint` no job do Linux.
+
 - **Roupas novas no editor do personagem: armadura sombria, camisa havaiana, regata, calção de banho e capacete.**
   - **Armadura sombria** (parte de cima) desenha o peitoral com botões, o cinto com fivela e uma capa que aparece nas
     laterais e nas costas. Com o **capacete sombrio** (acessório), o bonequinho vira um lord espacial de capa preta.
