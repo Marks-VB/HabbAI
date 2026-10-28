@@ -1,0 +1,70 @@
+name: Sugerir uma ideia
+description: Uma melhoria, um recurso novo ou uma mudança de comportamento.
+title: "[Ideia] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de abrir, procure nas [issues](https://github.com/marmottajr/habblaud/issues) se a ideia já foi
+        discutida. Mudanças maiores (que alteram o comportamento do Habblaud ou o que sai da máquina) são melhores
+        conversadas aqui antes de virar código — veja o
+        [CONTRIBUTING.md](https://github.com/marmottajr/habblaud/blob/main/CONTRIBUTING.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual é o problema
+      description: O que hoje atrapalha ou falta? Descreva a situação, não só a solução.
+      placeholder: "Ex.: com muitos projetos abertos, não consigo achar rápido quem está esperando uma resposta."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Como você imagina que o Habblaud poderia resolver isso? Se for visual, descreva o comportamento.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Outros jeitos de resolver, ou o que você faz hoje no lugar.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: world
+    attributes:
+      label: A ideia mexe no Habblaud World?
+      description: |
+        O World envia ao servidor do mundo só o que está na lista fechada de
+        [docs/world/privacidade.md](https://github.com/marmottajr/habblaud/blob/main/docs/world/privacidade.md).
+        Campo novo no pacote exige mudanças em
+        `shared/world/`, `schema.json`, `projection.ts`, naquela página e nos testes, no mesmo pull request.
+      options:
+        - Não sei
+        - Não
+        - Sim, muda o que sai da máquina
+        - Sim, mas só a interface da cidade (nada novo sai)
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Capturas (de preferência no modo demonstração, `?mock=1`), exemplos ou links.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmação
+      options:
+        - label: Procurei nas issues existentes e não encontrei a mesma ideia.
+          required: true

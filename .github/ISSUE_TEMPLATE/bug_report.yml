@@ -1,0 +1,141 @@
+name: Relatar um bug
+description: Algo no Habblaud não funcionou como deveria.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar! Antes de abrir, procure nas [issues](https://github.com/marmottajr/habblaud/issues) se o
+        assunto já existe.
+
+        **Não inclua dados sensíveis** (caminhos de projetos, comandos, conversas, tokens, e-mails ou credenciais) em
+        logs, capturas ou exemplos. Para mostrar o escritório, use o **modo demonstração**: `?mock=1` na URL ou
+        `npm run demo` — ele mostra só agentes fictícios.
+
+        Problemas de **segurança** não vão aqui: use o [relato privado](https://github.com/marmottajr/habblaud/security/advisories/new)
+        (veja o [SECURITY.md](https://github.com/marmottajr/habblaud/blob/main/SECURITY.md)).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: O que aconteceu
+      description: Descreva o comportamento que você viu, com o máximo de contexto útil.
+      placeholder: "Ex.: ao abrir o escritório, o agente apareceu na sala errada e o contador de 'precisa de você' não mudou."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que você esperava
+      description: Qual seria o comportamento correto?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Passos em ordem. Se der para reproduzir no modo demonstração, diga como.
+      placeholder: |
+        1. Abrir o Habblaud com `npm run dev`
+        2. Abrir uma sessão do Claude Code em ...
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Versão do Habblaud
+      description: Aparece na barra do topo, em Configurações › Sobre, ou em `GET /api/health`.
+      placeholder: "1.0.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistema operacional
+      options:
+        - macOS
+        - Linux
+        - Windows (WSL)
+        - Windows
+        - Outro (descreva abaixo)
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Versão do Node.js
+      description: Saída de `node --version`. Se estiver no Docker, a versão da imagem.
+      placeholder: "v24.4.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ai-tool
+    attributes:
+      label: Ferramenta de IA e versão
+      description: Claude Code (`claude --version`), Codex, ou outra ferramenta cujas sessões aparecem no escritório.
+      placeholder: "Claude Code 2.1.287"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: Como o Habblaud está rodando
+      options:
+        - Node, sem Docker (`npm run dev` ou `npm start`)
+        - Docker (`npm run docker:up`)
+        - Não sei
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: extras
+    attributes:
+      label: O que está ligado
+      description: Marque o que se aplica. Se não souber, deixe em branco.
+      options:
+        - label: Mod e plugins do Claude Code instalados (`npm run mod:install`)
+        - label: Hooks do Codex instalados (`npm run codex:install`)
+        - label: Porta remota com login (`npm run remote:setup`)
+        - label: Terminal interativo (`HABBLAUD_PTY=1`)
+        - label: Habblaud World com conta (`HABBLAUD_WORLD`)
+        - label: Modo demonstração (`?mock=1`)
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs e mensagens de erro
+      description: |
+        Cole só o trecho relevante, **sem dados sensíveis**. Apague caminhos de projetos, nomes de usuário, comandos,
+        tokens, e-mails e conteúdo de conversas. Se o log vier do modo demonstração, melhor ainda.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Capturas ou gravação
+      description: |
+        Cole links ou descreva o que aparece; se precisar anexar arquivos, faça isso depois de abrir a issue. Faça as
+        capturas no modo demonstração (`?mock=1`) para não expor seus projetos.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmação
+      options:
+        - label: Procurei nas issues existentes e não encontrei o mesmo problema.
+          required: true
+        - label: Removi dados pessoais, credenciais e conteúdo de sessões dos logs e capturas.
+          required: true

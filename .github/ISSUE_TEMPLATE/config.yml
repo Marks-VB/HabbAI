@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Dúvidas e conversas
+    url: https://github.com/marmottajr/habblaud/discussions
+    about: Para perguntas, ideias em aberto e ajuda de uso, use as Discussions.
+  - name: Relatar uma vulnerabilidade (em privado)
+    url: https://github.com/marmottajr/habblaud/security/advisories/new
+    about: Problemas de segurança não devem virar issue pública. Veja o SECURITY.md.
