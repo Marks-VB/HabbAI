@@ -45,6 +45,8 @@ export interface TimelineRecorderOptions {
   /** Dias guardados (contando hoje); 0 ou Infinity = nunca apaga. */
   retentionDays?: number;
   retryMs?: number;
+  /** Cria a pasta da linha do tempo (padrão: mkdirSync recursivo); existe para os testes contarem as chamadas. */
+  mkdir?: (dir: string) => void;
 }
 
 /** Caminho do arquivo do dia, só para chaves AAAA-MM-DD válidas (nunca monta caminho com texto livre). */
@@ -64,6 +66,9 @@ export class TimelineRecorder {
   private readonly slowKeyframeMs: number;
   private readonly retentionDays: number;
   private readonly retryMs: number;
+  private readonly mkdir: (dir: string) => void;
+  /** A pasta já existe nesta execução (mkdir recursivo a cada gravação custa caro no Windows: antivírus). */
+  private dirReady = false;
 
   /** Último estado recebido. */
   private latest: TimelineFrame | null = null;
@@ -94,6 +99,7 @@ export class TimelineRecorder {
     this.slowKeyframeMs = opts.slowKeyframeMs ?? SLOW_KEYFRAME_MS;
     this.retentionDays = opts.retentionDays ?? RETENTION_DAYS;
     this.retryMs = opts.retryMs ?? RETRY_MS;
+    this.mkdir = opts.mkdir ?? ((dir) => void mkdirSync(dir, { recursive: true }));
   }
 
   /** Relógio interno: deltas pendentes (throttle), keyframes periódicos e virada do dia. */
@@ -203,9 +209,14 @@ export class TimelineRecorder {
   private append(rec: TimelineRecord, now: number): boolean {
     const line = `${JSON.stringify(rec)}\n`;
     try {
-      mkdirSync(this.dir, { recursive: true });
+      if (!this.dirReady) {
+        this.mkdir(this.dir);
+        this.dirReady = true;
+      }
       appendFileSync(this.file, line);
     } catch (err) {
+      // A pasta pode ter sumido (faxina): a próxima tentativa cria de novo.
+      this.dirReady = false;
       this.failedAt = now;
       this.needKeyframe = true;
       log.warnOnce('timeline-write', tr('Não foi possível gravar a linha do tempo em {0} ({1}); tento de novo em {2} s.', [this.file, errMsg(err), Math.round(this.retryMs / 1000)]));

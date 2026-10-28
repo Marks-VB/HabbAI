@@ -141,11 +141,11 @@ describe('fonte do Codex: presença pelos locks', () => {
     ctx.source.boot();
     expect(ctx.agent()).toMatchObject({ status: 'idle', title: 'Turno antigo', stats: { toolCalls: 1 } });
     const path = old.replace('.jsonl', `_${C}.jsonl`);
-    writeFileSync(path, [
+    writeFileSync(path, `${[
       R.meta(T, { at }),
       R.taskStarted('t2', ctx.now()),
       R.user(T, 't2', 'u2', 'Turno revertido', ctx.now() + 1),
-    ].join('\n') + '\n');
+    ].join('\n')}\n`);
     ctx.home.touch(path, ctx.now());
     expect(ctx.hook({ hook_event_name: 'SessionStart', session_id: T, transcript_path: path })).toBe(true);
     expect(ctx.source.transcriptPathOf(KEY)).toBe(realpathSync(path));
@@ -192,7 +192,7 @@ describe('fonte do Codex: presença pelos locks', () => {
     expect(ctx.source.transcriptPathOf(KEY)).toBe(old);
     expect(ctx.agent()).toMatchObject({ status: 'idle', title: 'Turno antigo' });
     const path = old.replace('.jsonl', `_${C}.jsonl`);
-    writeFileSync(path, [R.meta(T, { at }), R.taskStarted('t2', ctx.now()), R.user(T, 't2', 'u2', 'Turno revertido', ctx.now() + 1)].join('\n') + '\n');
+    writeFileSync(path, `${[R.meta(T, { at }), R.taskStarted('t2', ctx.now()), R.user(T, 't2', 'u2', 'Turno revertido', ctx.now() + 1)].join('\n')}\n`);
     ctx.home.touch(path, ctx.now());
     // Antes da próxima varredura, o tail atual ainda recebe linhas normalmente.
     ctx.home.append(old, [R.command(T, 't1', 'c1', 'npm test', { at: at + 3 })]);
@@ -213,7 +213,7 @@ describe('fonte do Codex: presença pelos locks', () => {
     ctx.home.lock(T, at);
     ctx.source.boot();
     const other = path.replace('.jsonl', `_${C}.jsonl`);
-    writeFileSync(other, [R.meta(T, { at }), R.user(T, 't2', 'u2', 'Outro rollout', at + 3), R.taskComplete('t2', at + 4)].join('\n') + '\n');
+    writeFileSync(other, `${[R.meta(T, { at }), R.user(T, 't2', 'u2', 'Outro rollout', at + 3), R.taskComplete('t2', at + 4)].join('\n')}\n`);
     ctx.home.touch(other, at + 4);
     ctx.home.append(path, [R.taskStarted('t3', ctx.now())]);
     ctx.home.touch(path, ctx.now());

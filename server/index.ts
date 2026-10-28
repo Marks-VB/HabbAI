@@ -5,7 +5,7 @@ import { GeminiHistory } from './sources/gemini/history';
 import { OpencodeSource } from './sources/opencode/source';
 import { AiderSource } from './sources/aider/source';
 import { createAgentEventRoutes } from './http/agent-events';
-// Servidor do Habblaud: observa as sessões abertas do Claude Code (todas as contas),
+// Servidor do HabbAI: observa as sessões abertas do Claude Code (todas as contas),
 // mantém o modelo do escritório e transmite via SSE. Sem dependências de runtime.
 //   npm run dev    -> tsx server/index.ts --dev (Vite em middleware mode, HMR no mesmo servidor)
 //   npm start      -> node dist/server/index.js (serve dist/client)
@@ -501,7 +501,7 @@ if (config.remote) {
 
 server.listen(config.port, config.host, () => {
   const host = config.host === '0.0.0.0' || config.host === '::' ? 'localhost' : config.host;
-  log.info(tr('🏢 Habblaud {0}{1}{2} em http://{3}:{4}', [config.version, config.dev ? ' (dev)' : '', config.inDocker ? ' (docker)' : '', host, config.port]));
+  log.info(tr('🏢 HabbAI {0}{1}{2} em http://{3}:{4}', [config.version, config.dev ? ' (dev)' : '', config.inDocker ? ' (docker)' : '', host, config.port]));
   const list = accounts.entries();
   if (!list.length) log.warn(tr('Nenhuma pasta do Claude Code encontrada (defina HABBLAUD_CLAUDE_DIRS).'));
   for (const dir of codexDirsRefused(process.env, config.home)) {

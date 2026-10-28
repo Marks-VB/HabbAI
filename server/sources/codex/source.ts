@@ -213,7 +213,7 @@ export class CodexSource implements AgentSource, CodexLive {
         old.configDir = e.detected.configDir;
         return old;
       }
-      return { id: e.id, dir: e.dir, configDir: e.detected.configDir, index: new RolloutIndex(e.dir, this.now), locks: null, recent: new Map(), recentAt: -Infinity };
+      return { id: e.id, dir: e.dir, configDir: e.detected.configDir, index: new RolloutIndex(e.dir, this.now), locks: null, recent: new Map(), recentAt: Number.NEGATIVE_INFINITY };
     });
   }
 
@@ -525,7 +525,7 @@ export class CodexSource implements AgentSource, CodexLive {
         return;
       }
       if (!path && !t.tail && t.acc.index.isCompressedOnly(t.threadId)) {
-        log.warnOnce('codex-zst', tr('Codex: há conversas compactadas (.jsonl.zst) que o Habblaud ainda não lê; elas ficam sem detalhes.'));
+        log.warnOnce('codex-zst', tr('Codex: há conversas compactadas (.jsonl.zst) que o HabbAI ainda não lê; elas ficam sem detalhes.'));
       }
     }
     if (!t.tail) return;

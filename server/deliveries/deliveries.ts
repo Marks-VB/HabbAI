@@ -7,12 +7,11 @@
 // Cada transcript é relido só quando muda (mtime/tamanho). Os anexos ganham ids opacos: o navegador nunca vê caminhos.
 import { createHash } from 'node:crypto';
 import { statSync } from 'node:fs';
-import { isAbsolute, join, normalize } from 'node:path';
 import { tr } from '../../shared/i18n';
 import type { DeliveryAttachment, DeliveryInfo, Provider, RecentSession, TerminalEntry } from '../../shared/types';
 import type { TerminalParser } from '../sources/terminal';
 import { FileTail } from '../sources/tail';
-import { fileType, pathProblem } from './files';
+import { fileType, isAbsolutePath, pathApi, pathProblem } from './files';
 
 /** Quanto do fim de cada transcript entra (os pedidos mais antigos de uma sessão longa ficam de fora). */
 export const TAIL_BYTES = 6 * 1024 * 1024;
@@ -29,6 +28,9 @@ const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'apply
 /** Caminhos de arquivo de ver citados na resposta: em links markdown ou soltos. */
 const LINK_RE = /\]\(\s*<?([^)\s>]+?\.(?:png|jpe?g|gif|webp|svg|pdf|mp4|mov|webm|html?))(?::\d+)?>?\s*\)/gi;
 const BARE_RE = /(?:^|[\s(`"'])(\/[^\s`"'()<>]+?\.(?:png|jpe?g|gif|webp|svg|pdf|mp4|mov|webm|html?))(?=$|[\s`"'),.;:!?])/gim;
+/** Caminho solto do Windows: "C:\..." ou a UNC "\\servidor\...". */
+const BARE_WIN_RE =
+  /(?:^|[\s(`"'])((?:[A-Za-z]:[\\/]|\\\\)[^\s`"'()<>]*?\.(?:png|jpe?g|gif|webp|svg|pdf|mp4|mov|webm|html?))(?=$|[\s`"'),.;:!?])/gim;
 
 export interface SessionSource {
   path: string;
@@ -131,16 +133,21 @@ export function linkedFiles(text: string, project?: string): string[] {
       // fica como veio
     }
     if (p.startsWith('file://')) p = p.slice(7);
-    if (/^[a-z]+:/i.test(p)) return;
-    if (!isAbsolute(p)) {
+    // "file:///C:/..." (link de um caminho do Windows) vira "C:/...".
+    if (/^\/[A-Za-z]:[\\/]/.test(p)) p = p.slice(1);
+    // Um esquema (https:, file:…) não é caminho; "C:\..." é a unidade do Windows, não um esquema.
+    if (/^[a-z][a-z0-9+.-]*:/i.test(p) && !/^[a-z]:[\\/]/i.test(p)) return;
+    if (!isAbsolutePath(p)) {
       if (!project) return;
-      p = join(project, p);
+      p = pathApi(project).join(project, p);
     }
-    p = normalize(p);
+    // Normaliza no formato do próprio caminho: no Windows, "/" e "\" convivem, e o POSIX continua igual.
+    p = pathApi(p).normalize(p);
     if (!pathProblem(p)) out.add(p);
   };
   for (const m of text.matchAll(LINK_RE)) add(m[1]);
   for (const m of text.matchAll(BARE_RE)) add(m[1]);
+  for (const m of text.matchAll(BARE_WIN_RE)) add(m[1]);
   return [...out];
 }
 

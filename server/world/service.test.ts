@@ -258,7 +258,8 @@ describe('WorldService: retomada sem resposta do servidor do mundo', () => {
   it('pausar (ou sair) de novo cancela as tentativas; 4xx não insiste; o Retry-After maior vale', async () => {
     const a = start([down]);
     await a.service.pause();
-    a.service.resume();
+    // Fire-and-forget de propósito: o teste controla a espera pelos timers falsos.
+    void a.service.resume();
     await vi.advanceTimersByTimeAsync(0);
     expect(a.resumeBuilding).toHaveBeenCalledTimes(1);
     await a.service.pause();
@@ -267,13 +268,13 @@ describe('WorldService: retomada sem resposta do servidor do mundo', () => {
     a.service.stop();
 
     const b = start([{ ok: false, status: 409, code: 'conflict' }]);
-    b.service.resume();
+    void b.service.resume();
     await vi.advanceTimersByTimeAsync(120_000);
     expect(b.resumeBuilding).toHaveBeenCalledTimes(1);
     b.service.stop();
 
     const c = start([{ ok: false, status: 429, code: 'rate_limited', retryAfter: 30 }]);
-    c.service.resume();
+    void c.service.resume();
     await vi.advanceTimersByTimeAsync(29_999);
     expect(c.resumeBuilding).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);

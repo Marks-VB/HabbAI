@@ -1,4 +1,4 @@
-// Terminal interativo: o Habblaud abre o Claude Code num pseudo-terminal (node-pty) e o navegador mostra e
+// Terminal interativo: o HabbAI abre o Claude Code num pseudo-terminal (node-pty) e o navegador mostra e
 // controla esse terminal (xterm.js). Saída via SSE em GET /api/pty/:id/stream; entrada, redimensionamento e
 // encerramento via POST (rotas em http/pty.ts).
 //
@@ -107,7 +107,7 @@ const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const MAIN_ID = /^(.+):(\d+)$/;
 
 /**
- * Variáveis que o Claude Code põe no ambiente das próprias ferramentas. Se o Habblaud foi iniciado de dentro
+ * Variáveis que o Claude Code põe no ambiente das próprias ferramentas. Se o HabbAI foi iniciado de dentro
  * de uma sessão, o Claude aberto aqui se acharia uma sessão-filha (e desligaria o transcript).
  */
 const INHERITED_SESSION_VARS = [
@@ -443,13 +443,13 @@ export class PtyManager {
   }
 
   /**
-   * Agente principal aberto fora do Habblaud, confirmado pelo registro de sessões da conta (mesma sessão) e pelo
+   * Agente principal aberto fora do HabbAI, confirmado pelo registro de sessões da conta (mesma sessão) e pelo
    * sistema (o processo com esse PID começou quando o registro diz e é o Claude Code).
    */
   private async external(agentId: string): Promise<ExternalProc> {
     const agent = this.mainAgent(agentId);
     const m = MAIN_ID.exec(agent.id);
-    const pid = m ? Number(m[2]) : NaN;
+    const pid = m ? Number(m[2]) : Number.NaN;
     if (!m || m[1] !== agent.account || !Number.isSafeInteger(pid) || pid <= 0) throw new PtyError(400, tr('agente sem processo conhecido'));
     const account = this.opts.accounts().find((a) => a.id === agent.account);
     if (!account) throw new PtyError(400, tr('conta desconhecida'));

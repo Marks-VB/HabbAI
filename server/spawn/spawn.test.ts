@@ -1,9 +1,10 @@
 import { chmodSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   cliArgs,
+  CLI_TIMEOUT_MS,
   createCliRunner,
   folderProblem,
   HOST_PRESENCE_MS,
@@ -12,6 +13,7 @@ import {
   QUEUED_TIMEOUT_MS,
   SENT_TIMEOUT_MS,
   sessionName,
+  shimTarget,
   SpawnService,
   spawnUrl,
   type Opener,
@@ -127,7 +129,7 @@ describe('SpawnService com anexos', () => {
     s.submit({ folder: '/p', prompt: 'conserte', attachments: ['f1'] });
     await new Promise((ok) => setTimeout(ok, 0));
     expect(written).toEqual(['s2:print.png']);
-    expect(new URL(opened[0]).searchParams.get('q')).toBe('conserte\n\nAnexo enviado pelo Habblaud (leia antes de começar):\n- /h/att/print.png');
+    expect(new URL(opened[0]).searchParams.get('q')).toBe('conserte\n\nAnexo enviado pelo HabbAI (leia antes de começar):\n- /h/att/print.png');
     expect(s.get('s2')?.status).toBe('opened');
   });
 
@@ -154,15 +156,25 @@ describe('SpawnService com anexos', () => {
 
 describe('novo agente em segundo plano (claude --bg)', () => {
   it('nome da sessão e argumentos: o pedido vai depois de `--`', () => {
-    expect(sessionName('  \n rode os testes\nsegunda linha')).toBe('Habblaud: rode os testes');
-    expect(sessionName('')).toBe('Habblaud');
-    expect(sessionName('x'.repeat(100))).toHaveLength('Habblaud: '.length + 48);
-    expect(cliArgs({ folder: '/p', prompt: 'doctor' })).toEqual(['--bg', '-n', 'Habblaud: doctor', '--', 'doctor']);
+    expect(sessionName('  \n rode os testes\nsegunda linha')).toBe('HabbAI: rode os testes');
+    expect(sessionName('')).toBe('HabbAI');
+    expect(sessionName('x'.repeat(100))).toHaveLength('HabbAI: '.length + 48);
+    expect(cliArgs({ folder: '/p', prompt: 'doctor' })).toEqual(['--bg', '-n', 'HabbAI: doctor', '--', 'doctor']);
     expect(cliArgs({ folder: '/p', prompt: '--dangerously-skip-permissions' }).slice(-2)).toEqual(['--', '--dangerously-skip-permissions']);
-    expect(cliArgs({ folder: '/p', prompt: '  ' })).toEqual(['--bg', '-n', 'Habblaud']);
+    expect(cliArgs({ folder: '/p', prompt: '  ' })).toEqual(['--bg', '-n', 'HabbAI']);
   });
 
-  it('createCliRunner roda o binário na pasta, sem shell, e lê o id; erro vira a 1ª linha', async () => {
+  it('runnableClaudeBin: o claude do PATH (com a extensão que o sistema pede) e só o que existe', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hb-bin-'));
+    // No Windows o PATH pede a extensão (PATHEXT): um arquivo sem extensão não é executável.
+    const bin = join(dir, process.platform === 'win32' ? 'claude.exe' : 'claude');
+    writeFileSync(bin, '');
+    expect(runnableClaudeBin({ PATH: `/nao/existe${delimiter}${dir}` })).toBe(bin);
+    expect(runnableClaudeBin({ HABBLAUD_CLAUDE_BIN: join(dir, 'nada'), PATH: dir })).toBeUndefined();
+  });
+
+  // O binário falso é um script de shell: precisa de /bin/sh e do bit de execução, que o Windows não tem.
+  it.skipIf(process.platform === 'win32')('createCliRunner roda o binário na pasta, sem shell, e lê o id; erro vira a 1ª linha', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hb-spawn-'));
     const bin = join(dir, 'claude');
     writeFileSync(
@@ -171,14 +183,62 @@ describe('novo agente em segundo plano (claude --bg)', () => {
     );
     chmodSync(bin, 0o755);
     writeFileSync(join(dir, 'trusted'), '');
-    expect(runnableClaudeBin({ PATH: `/nao/existe:${dir}` })).toBe(bin);
-    expect(runnableClaudeBin({ HABBLAUD_CLAUDE_BIN: join(dir, 'nada'), PATH: dir })).toBeUndefined();
     const run = createCliRunner(bin);
     expect(await run({ folder: dir, prompt: 'faça $(rm -rf x) && y' })).toEqual({ ok: true, id: '7eacc670' });
     const args = readFileSync(join(dir, 'args'), 'utf8').trim().split('\n');
     expect(realpathSync(args[0])).toBe(realpathSync(dir));
-    expect(args.slice(1)).toEqual(['--bg', '-n', 'Habblaud: faça $(rm -rf x) && y', '--', 'faça $(rm -rf x) && y']);
+    expect(args.slice(1)).toEqual(['--bg', '-n', 'HabbAI: faça $(rm -rf x) && y', '--', 'faça $(rm -rf x) && y']);
     expect(await run({ folder: tmpdir(), prompt: 'oi' })).toEqual({ ok: false, error: 'Workspace not trusted. Run claude once' });
+  });
+
+  // O claude do npm no Windows é `claude.cmd` (um shim de script). Antes, o execFile sem shell recusava (EINVAL) e todo
+  // "Novo agente em segundo plano" caía no app. Agora o shim é lido e o .js por trás roda sem shell nenhum: o pedido
+  // chega inteiro (aspas, `%`, `&`, quebra de linha) e nada dele vira comando. Roda em qualquer plataforma: o shim é só
+  // um arquivo de texto e o alvo é um .js que o node daqui executa.
+  it('Windows: o claude.cmd do npm roda pelo programa por trás, sem shell e com o pedido intacto', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hb-cmd-'));
+    const argv = join(dir, 'argv.json');
+    const fake = join(dir, 'cli.js');
+    writeFileSync(
+      fake,
+      [
+        `const { writeFileSync } = require('node:fs');`,
+        `writeFileSync(${JSON.stringify(argv)}, JSON.stringify({ argv: process.argv.slice(2), cwd: process.cwd() }));`,
+        `console.log('backgrounded · 7eacc670 · nome');`,
+      ].join('\n'),
+    );
+    // O mesmo formato que o npm escreve (cmd-shim): %dp0% = a pasta do atalho.
+    const shim = join(dir, 'claude.cmd');
+    writeFileSync(
+      shim,
+      [
+        '@ECHO off',
+        'GOTO start',
+        ':find_dp0',
+        'SET dp0=%~dp0',
+        'EXIT /b',
+        ':start',
+        'SETLOCAL',
+        'CALL :find_dp0',
+        'endLocal & goto #_undefined_# 2>NUL || title %COMSPEC% & "%_prog%"  "%dp0%\\cli.js" %*',
+        '',
+      ].join('\r\n'),
+    );
+    expect(shimTarget(shim)).toBe(fake);
+    // Shim sem alvo (ou arquivo que nem existe): falha explicada, sem rodar nada.
+    writeFileSync(join(dir, 'vazio.cmd'), '@ECHO off\r\n');
+    expect(shimTarget(join(dir, 'vazio.cmd'))).toBeUndefined();
+    expect(shimTarget(join(dir, 'nao-existe.cmd'))).toBeUndefined();
+    expect(await createCliRunner(join(dir, 'vazio.cmd'), CLI_TIMEOUT_MS, 'win32')({ folder: dir, prompt: 'oi' })).toEqual({
+      ok: false,
+      error: 'o claude deste computador é um atalho .cmd e não achei o programa por trás dele',
+    });
+
+    const prompt = 'faça $(rm -rf x) & echo PWNED | "aspas" 100% pronto\nsegunda linha: > c.txt';
+    expect(await createCliRunner(shim, CLI_TIMEOUT_MS, 'win32')({ folder: dir, prompt })).toEqual({ ok: true, id: '7eacc670' });
+    const got = JSON.parse(readFileSync(argv, 'utf8')) as { argv: string[]; cwd: string };
+    expect(got.argv).toEqual(['--bg', '-n', sessionName(prompt), '--', prompt]);
+    expect(realpathSync(got.cwd)).toBe(realpathSync(dir));
   });
 
   it('launch: roda em segundo plano; se não der, abre o app e diz por quê', async () => {

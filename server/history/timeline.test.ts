@@ -206,6 +206,34 @@ describe('gravador da linha do tempo', () => {
     expect(read('2026-10-08')[0]).toMatchObject({ t: 'k' });
   });
 
+  it('cria a pasta uma vez (não a cada gravação) e a recria se ela sumir', () => {
+    const calls: string[] = [];
+    const mkdir = (d: string) => {
+      calls.push(d);
+      mkdirSync(d, { recursive: true });
+    };
+    const rec = recorder({ mkdir });
+    rec.ingest(snap([agent('.claude:1')]));
+    now += 1_500;
+    rec.ingest(snap([agent('.claude:1', { status: 'idle', statusSince: now })]));
+    now += 300_000;
+    rec.tick();
+    expect(read().map((r) => r.t)).toEqual(['k', 'd', 'k']);
+    // Antes: um mkdirSync recursivo por linha gravada (~20 ms cada no Windows, com antivírus).
+    expect(calls).toEqual([dir]);
+    // Pasta apagada por fora (faxina): a próxima gravação cria de novo, depois da espera.
+    rmSync(dir, { recursive: true, force: true });
+    now += 300_000;
+    rec.ingest(snap([agent('.claude:1', { status: 'working', statusSince: now })]));
+    expect(rec.state.failing).toBe(true);
+    expect(calls).toHaveLength(1);
+    now += 61_000;
+    rec.tick();
+    expect(calls).toEqual([dir, dir]);
+    expect(rec.state.failing).toBe(false);
+    expect(read().at(-1)).toMatchObject({ t: 'k', agents: [expect.objectContaining({ status: 'working' })] });
+  });
+
   it('falha de disco não lança: avisa, espera e volta com um keyframe', () => {
     const blocked = join(tmp.dir, 'bloqueado');
     writeFileSync(blocked, 'não sou pasta');

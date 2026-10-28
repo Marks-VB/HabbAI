@@ -5,7 +5,7 @@
 // Node puro e sem dependências: também é importado pelo auxiliar do host (via tsx).
 import { existsSync, realpathSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { posix, win32 } from 'node:path';
 import type { DeliveryAttachmentKind } from '../../shared/types';
 import { tr } from '../../shared/i18n';
 
@@ -49,11 +49,28 @@ export function fileType(path: string): { kind: DeliveryAttachmentKind; type: st
   return TYPES[extensionOf(path)];
 }
 
+/**
+ * A semântica de caminho (`node:path`) de um caminho: letra de unidade ou "\" = Windows; o resto = POSIX. Os
+ * transcripts guardam o caminho do jeito do sistema que gravou, então um mesmo servidor pode ver os dois formatos.
+ */
+export function pathApi(path: string): typeof posix {
+  return /^[A-Za-z]:/.test(path) || path.includes('\\') ? win32 : posix;
+}
+
+/** Caminho absoluto em qualquer das duas convenções: "/x", "C:\x", "C:/x" e a UNC "\\servidor\pasta". */
+export function isAbsolutePath(path: string): boolean {
+  return posix.isAbsolute(path) || win32.isAbsolute(path);
+}
+
 /** Motivo para NÃO mostrar o caminho (só olhando o texto), ou undefined. */
 export function pathProblem(path: string): string | undefined {
-  if (!path || path.includes('\0') || !path.startsWith('/') || /(^|\/)\.\.(\/|$)/.test(path)) return tr('caminho inválido');
+  if (!path || path.includes('\0') || !isAbsolutePath(path)) return tr('caminho inválido');
+  // O ".." que escapa vale nos dois separadores: um caminho do Windows não pode virar saída da pasta.
+  if (/(^|[\\/])\.\.([\\/]|$)/.test(path)) return tr('caminho inválido');
   if (!fileType(path)) return tr('tipo de arquivo que não se mostra aqui');
-  if (SECRET_DIRS.test(path) || SECRET_NAMES.test(path)) return tr('arquivo protegido');
+  // As listas de segredos são escritas com "/": no Windows o caminho chega com "\".
+  const slashed = path.replace(/\\/g, '/');
+  if (SECRET_DIRS.test(slashed) || SECRET_NAMES.test(slashed)) return tr('arquivo protegido');
   return undefined;
 }
 
@@ -93,18 +110,31 @@ export function tempRoots(): string[] {
 /**
  * O arquivo (caminho real) está numa pasta que o auxiliar do host pode ler: uma pasta de projeto que alguma conta do
  * Claude Code conhece (ela, ou uma acima dela, tem <conta>/projects/<pasta codificada>) ou uma das `roots` (pastas
- * temporárias, anexos do Habblaud). Assim um pedido vindo do container não alcança o resto do computador.
+ * temporárias, anexos do HabbAI). Assim um pedido vindo do container não alcança o resto do computador.
  */
 export function insideKnownFolder(
   path: string,
   opts: { accountDirs: readonly string[]; roots: readonly string[]; exists?: (p: string) => boolean },
 ): boolean {
-  if (opts.roots.some((r) => r && path.startsWith(`${r.replace(/\/+$/, '')}/`))) return true;
+  if (opts.roots.some((r) => r && insideOf(path, r))) return true;
   const exists = opts.exists ?? existsSync;
-  // Mesma codificação de sources/watcher.ts (encodeCwd): todo caractere não alfanumérico vira "-".
-  for (let dir = dirname(path); dir.split('/').filter(Boolean).length >= 2; dir = dirname(dir)) {
+  const api = pathApi(path);
+  // Mesma codificação de sources/watcher.ts (encodeCwd): todo caractere não alfanumérico vira "-". O dirname segue o
+  // formato do caminho (não o do sistema): um projeto em "C:\Users\..." também é conhecido no Windows.
+  for (let dir = api.dirname(path); dir.split(/[\\/]+/).filter(Boolean).length >= 2; dir = api.dirname(dir)) {
     const encoded = dir.replace(/[^a-zA-Z0-9]/g, '-');
-    if (opts.accountDirs.some((acc) => exists(join(acc, 'projects', encoded)))) return true;
+    if (opts.accountDirs.some((acc) => exists(api.join(acc, 'projects', encoded)))) return true;
   }
   return false;
+}
+
+/**
+ * `path` está dentro de `root`, comparando por segmentos (os dois separadores valem, e "/tmp" não casa com
+ * "/tmpx"). No Windows a comparação ignora maiúsculas: o sistema também ignora.
+ */
+function insideOf(path: string, root: string): boolean {
+  const fold = /^[A-Za-z]:/.test(path) ? (s: string) => s.toLowerCase() : (s: string) => s;
+  const child = path.split(/[\\/]+/).filter(Boolean).map(fold);
+  const parent = root.split(/[\\/]+/).filter(Boolean).map(fold);
+  return parent.length < child.length && parent.every((seg, i) => seg === child[i]);
 }

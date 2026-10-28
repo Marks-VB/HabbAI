@@ -126,6 +126,13 @@ export const L = {
 /** O sistema guarda os bits de permissão do POSIX? No Windows, o stat devolve 0o666 (ou 0o444, se só leitura). */
 export const HAS_POSIX_MODES = process.platform !== 'win32';
 
+/**
+ * O sistema separa caminhos com "/" (POSIX)? As entregas guardam caminhos vindos dos transcripts do Claude Code sempre
+ * com "/" (`/Users/...`), e no Windows o `node:path` responde `isAbsolute`, `normalize`, `dirname` e `join` à moda dele
+ * (com "\\"), então o que depende dessa forma de caminho não vale lá.
+ */
+export const HAS_POSIX_PATHS = process.platform !== 'win32';
+
 /** Funções do tap de statusline (JavaScript puro, sem tipos). */
 const { originalShell } = (await import(pathToFileURL(resolve(__dirname, '../../scripts/statusline-tap.mjs')).href)) as { originalShell: () => string | true };
 

@@ -2,7 +2,6 @@
 // Monitora os arquivos em ~/.gemini/tmp/<project_hash>/chats/ e eventos dos hooks.
 import type { Activity, ActivityKind, AgentStatus } from '../../../shared/types';
 import { truncate } from '../../../shared/activity';
-import { tr } from '../../../shared/i18n';
 
 export interface GeminiLineResult {
   prompt?: string;

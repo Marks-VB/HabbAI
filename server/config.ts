@@ -22,7 +22,7 @@ export interface ServerConfig {
   home: string;
   /** Config dirs do Claude Code observados (um por conta). */
   claudeDirs: string[];
-  /** Onde o Habblaud guarda o próprio estado (nomes persistidos). */
+  /** Onde o HabbAI guarda o próprio estado (nomes persistidos). */
   dataDir: string;
   /**
    * Pasta com o uso capturado pelo statusline do Claude Code (scripts/statusline-tap.mjs):
@@ -32,7 +32,7 @@ export interface ServerConfig {
   /** Nomes extras aceitos no cabeçalho Host/Origin (HABBLAUD_ALLOWED_HOSTS); localhost e IPs sempre valem. */
   allowedHosts: Set<string>;
   /**
-   * Terminal (GET /api/agents/:id/terminal) ligado: só com bind local, isto é, com o Habblaud acessível apenas
+   * Terminal (GET /api/agents/:id/terminal) ligado: só com bind local, isto é, com o HabbAI acessível apenas
    * pelo próprio computador (ver terminalOffReason). É a trava de tudo o que mostra ou age sobre as sessões.
    */
   terminal: boolean;
@@ -73,7 +73,7 @@ export interface WorldConfig {
   defaultUrl?: true;
   /**
    * `--dev` ou HABBLAUD_WORLD_DEV=1: aceita também `http://` e `ws://` para 127.0.0.1 e host.docker.internal (servidor do
-   * mundo local; do container do Habblaud, o host é host.docker.internal).
+   * mundo local; do container do HabbAI, o host é host.docker.internal).
    */
   dev: boolean;
   /** Por que HABBLAUD_WORLD_URL foi recusada (vai para o log ao iniciar). */
@@ -140,7 +140,7 @@ export function isLoopbackBind(value: string | undefined): boolean {
 
 /**
  * Por que o terminal fica desligado (undefined = ligado). Os transcripts têm a conversa inteira, então ele
- * só liga quando o Habblaud não fica exposto além do próprio computador:
+ * só liga quando o HabbAI não fica exposto além do próprio computador:
  * - Node: o HABBLAUD_HOST precisa ser loopback;
  * - Docker: o processo sempre escuta em 0.0.0.0 dentro do container e quem decide a exposição é a porta
  *   publicada no host, HABBLAUD_BIND (o docker-compose.yml repassa o mesmo valor ao container). Ausente

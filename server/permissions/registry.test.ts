@@ -3,7 +3,7 @@
 // agente que saiu, resposta no terminal (tool_result no transcript), sugestões "sempre permitir" e as
 // perguntas do AskUserQuestion (respostas por posição). Tudo com dados sintéticos.
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { setQuiet } from '../log';
 import { NameStore } from '../model/names';
 import { Office } from '../model/office';
@@ -183,7 +183,7 @@ describe('PermissionRegistry: decisões e esperas do hook', () => {
     expect(a.status).toBe('working');
     expect(registry.wait(id, 10)).toBeUndefined();
     expect(registry.decide(id, { behavior: 'deny' })).toBe('not-found');
-    expect(office.detail(MAIN)!.history.map((h) => h.text)).toContain('Aprovado no Habblaud (sempre permitir)');
+    expect(office.detail(MAIN)!.history.map((h) => h.text)).toContain('Aprovado no HabbAI (sempre permitir)');
   });
 
   it('recusa com motivo e interrupção; decisão sem ninguém esperando fica guardada para a próxima espera', async () => {
@@ -258,7 +258,7 @@ describe('PermissionRegistry: perguntas (AskUserQuestion)', () => {
     const a = snapAgent(office, MAIN)!;
     expect(a.permission).toBeUndefined();
     expect(a.status).toBe('working');
-    const act = office.detail(MAIN)!.history.find((h) => h.text === 'Respondido no Habblaud')!;
+    const act = office.detail(MAIN)!.history.find((h) => h.text === 'Respondido no HabbAI')!;
     expect(act).toMatchObject({ icon: '💬', kind: 'other' });
     expect(act.detail).toBe('Banco: SQLite · Testes: Unidade, E2E, “lint”');
     expect(registry.decide(id, d)).toBe('not-found');

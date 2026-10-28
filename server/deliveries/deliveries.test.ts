@@ -56,13 +56,24 @@ describe('entregas: texto', () => {
     expect(headlineOf(REPLY)).toBe('O relatório está pronto e foi enviado.');
     expect(summaryOf(REPLY, headlineOf(REPLY))).toMatch(/^Em poucas palavras: o relatório de vendas agora mostra/);
     expect(summaryOf('Uma frase só, sem resumo nenhum aqui dentro.', 'x')).toBeUndefined();
-    expect(headlineOf('# Título\n\n' + 'palavra '.repeat(60))).toMatch(/…$/);
+    expect(headlineOf(`# Título\n\n${'palavra '.repeat(60)}`)).toMatch(/…$/);
   });
 
+  // Os caminhos dos transcripts podem vir nas duas convenções: o teste roda as duas em qualquer plataforma (antes, no
+  // Windows, o `node:path` reescrevia "/Users/..." com "\\" e o link sumia).
   it('links para arquivos de ver: absolutos, relativos ao projeto; nada protegido', () => {
     expect(linkedFiles(REPLY, '/Users/ana/proj')).toEqual(['/Users/ana/proj/relatorio.pdf']);
     expect(linkedFiles('veja [a](telas/a.png) e [b](https://x.com/b.png) e /Users/ana/.ssh/k.png', '/Users/ana/proj')).toEqual(['/Users/ana/proj/telas/a.png']);
     expect(linkedFiles('[c](relativo.png)')).toEqual([]);
+  });
+
+  it('links do Windows: "C:\\..." e UNC não perdem o link nem viram caminho misturado', () => {
+    expect(linkedFiles('veja [o PDF](C:\\Users\\ana\\proj\\relatorio.pdf)', 'C:\\Users\\ana\\proj')).toEqual(['C:\\Users\\ana\\proj\\relatorio.pdf']);
+    expect(linkedFiles('e [a tela](telas\\antes.png)', 'C:\\Users\\ana\\proj')).toEqual(['C:\\Users\\ana\\proj\\telas\\antes.png']);
+    expect(linkedFiles('[p](file:///C:/Users/ana/proj/print.png)', 'C:\\Users\\ana\\proj')).toEqual(['C:\\Users\\ana\\proj\\print.png']);
+    expect(linkedFiles('C:\\Users\\ana\\proj\\print.png')).toEqual(['C:\\Users\\ana\\proj\\print.png']);
+    expect(linkedFiles('\\\\servidor\\share\\proj\\tela.png')).toEqual(['\\\\servidor\\share\\proj\\tela.png']);
+    expect(linkedFiles('https://x.com/b.png, C:\\Users\\ana\\.ssh\\k.png')).toEqual([]);
   });
 });
 
@@ -81,7 +92,7 @@ describe('entregas: pedidos do transcript', () => {
   it('DeliveryIndex: monta as entregas, ids opacos e nada de arquivo protegido', async () => {
     const dir = tempDir().dir;
     const path = join(dir, 's.jsonl');
-    writeFileSync(path, transcript().join('\n') + '\n');
+    writeFileSync(path, `${transcript().join('\n')}\n`);
     let busy = true;
     const idx = new DeliveryIndex({
       sessions: async () => [{ account: '.claude', sessionId: 's1', projectDir: 'p', project: '/Users/ana/proj', lastAt: 1, size: 1, open: true, agentId: 'ag' }],
@@ -102,7 +113,7 @@ describe('entregas: pedidos do transcript', () => {
     expect(JSON.stringify(list)).not.toContain('/Users/ana/proj/print.png');
     expect(JSON.stringify(list)).not.toContain('.ssh');
     expect(idx.attachment(d.attachments[0].id)).toMatchObject({ kind: 'file', path: '/Users/ana/proj/print.png', type: 'image/png' });
-    expect(idx.attachment(d.attachments[2].id)).toMatchObject({ kind: 'capture', type: 'image/png' });
+    expect(idx.attachment(d.attachments[3].id)).toMatchObject({ kind: 'capture', type: 'image/png' });
     expect(idx.attachment('nao-existe')).toBeUndefined();
     // "De nada!" sem ferramentas não é entrega; o último pedido conta só quando o agente para.
     busy = false;

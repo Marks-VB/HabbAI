@@ -83,7 +83,7 @@ export interface UpdateCheckerOptions {
 export class UpdateChecker {
   private cache: Cached | null = null;
   private error: string | undefined;
-  private lastAttempt = -Infinity;
+  private lastAttempt = Number.NEGATIVE_INFINITY;
   private inflight: Promise<UpdateStatus> | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private announced: string | undefined;
@@ -204,7 +204,7 @@ export class UpdateChecker {
       const v = parseVersion(tag);
       if (!v) log.warnOnce(`updates:tag:${tag.slice(0, 40)}`, tr('A release mais recente de {0} tem uma tag fora do padrão de versão ({1}): ignorada.', [repo, tag.slice(0, 40)]));
       const latest = v ? `${v.nums.join('.')}${v.pre ? `-${v.pre}` : ''}` : undefined;
-      const published = typeof body.published_at === 'string' ? Date.parse(body.published_at) : NaN;
+      const published = typeof body.published_at === 'string' ? Date.parse(body.published_at) : Number.NaN;
       this.cache = {
         repo,
         checkedAt: now,
@@ -245,7 +245,7 @@ export class UpdateChecker {
     const s = this.status();
     if (!s.available || s.latest === this.announced) return;
     this.announced = s.latest;
-    log.info(tr('⬆️  Nova versão do Habblaud: v{0} (em uso: v{1}). Novidades: {2}', [s.latest, this.opts.current, s.url]));
+    log.info(tr('⬆️  Nova versão do HabbAI: v{0} (em uso: v{1}). Novidades: {2}', [s.latest, this.opts.current, s.url]));
   }
 }
 

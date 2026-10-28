@@ -93,8 +93,8 @@ export class RolloutIndex {
   private paths = new Map<string, Found>();
   /** Threads cujo único rollout está compactado (.jsonl.zst): ainda não dá para ler. */
   private compressedOnly = new Set<string>();
-  private lastRecentScan = -Infinity;
-  private lastFullScan = -Infinity;
+  private lastRecentScan = Number.NEGATIVE_INFINITY;
+  private lastFullScan = Number.NEGATIVE_INFINITY;
 
   constructor(
     readonly home: string,
@@ -157,7 +157,7 @@ export class RolloutIndex {
           try {
             prev.mtimeMs = statSync(prev.path).mtimeMs;
           } catch {
-            prev.mtimeMs = -Infinity;
+            prev.mtimeMs = Number.NEGATIVE_INFINITY;
           }
         }
         if (!prev || mtimeMs >= prev.mtimeMs) this.paths.set(r.threadId, { path, mtimeMs });

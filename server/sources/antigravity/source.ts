@@ -5,13 +5,13 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { AgentStatus, SourceInfo, TaskItem } from '../../../shared/types';
-import type { AccountEntry, AccountsService } from '../../accounts/service';
+import type { AccountsService } from '../../accounts/service';
 import type { Office } from '../../model/office';
 import type { AgentSource } from '../source';
 import { FileTail } from '../tail';
 import type { TerminalParser } from '../terminal';
 import { createAntigravityTerminalParser } from './terminal';
-import { findProjectRoot, parseAntigravityLine, parseMarkdownTasks } from './transcript';
+import { parseAntigravityLine, parseMarkdownTasks } from './transcript';
 
 export interface AntigravitySourceOptions {
   accounts: AccountsService;
@@ -304,7 +304,6 @@ export class AntigravitySource implements AgentSource {
         continue;
       }
 
-      let changedStats = false;
       if (st.mtimeMs > s.lastMtime) {
         s.lastMtime = st.mtimeMs;
         const readResult = s.tail.read();
@@ -314,15 +313,12 @@ export class AntigravitySource implements AgentSource {
 
           if (res.tokensIn) {
             s.tokensIn += res.tokensIn;
-            changedStats = true;
           }
           if (res.tokensOut) {
             s.tokensOut += res.tokensOut;
-            changedStats = true;
           }
           if (res.toolStarts.length) {
             s.toolCalls += res.toolStarts.length;
-            changedStats = true;
           }
           if (res.model) s.model = res.model;
           if (res.title) s.title = res.title;

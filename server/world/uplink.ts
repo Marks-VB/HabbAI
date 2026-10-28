@@ -229,7 +229,7 @@ export class BuildingUplink {
   private refreshTimer?: unknown;
   private observeTimer?: unknown;
   private unsubscribe?: () => void;
-  private lastSentAt = -Infinity;
+  private lastSentAt = Number.NEGATIVE_INFINITY;
   private lastJson?: string;
   private lastMessageAt = 0;
   private forceNext = false;

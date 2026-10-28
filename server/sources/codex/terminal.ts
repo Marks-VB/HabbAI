@@ -299,7 +299,7 @@ class CodexTerminalParser implements TerminalParser {
         return `${head}\n${body}`;
       })
       .join('\n');
-    const input = diff.trim() ? marked(prepare(diff, INPUT_MAX, Infinity, false)) : '';
+    const input = diff.trim() ? marked(prepare(diff, INPUT_MAX, Number.POSITIVE_INFINITY, false)) : '';
     this.tool(id, at, tool, input ? { title: arg ? `${tool}(${arg})` : tool, input, inputKind: 'diff' } : { title: arg ? `${tool}(${arg})` : tool });
     if (status === 'declined') this.result(id, at, tr('Recusado pelo usuário'), true);
     else if (status === 'failed') this.result(id, at, tr('A mudança não foi aplicada'), true);
@@ -319,7 +319,7 @@ class CodexTerminalParser implements TerminalParser {
           const patch = typeof p.input === 'string' ? p.input : '';
           const files = patchFiles(patch).map((f) => f.path);
           const title = files.length ? `Edit(${files.length > 2 ? tr('{0} e mais {1}', [files[0], files.length - 1]) : files.join(', ')})` : 'Edit';
-          const input = patch.trim() ? marked(prepare(patch, INPUT_MAX, Infinity, false)) : '';
+          const input = patch.trim() ? marked(prepare(patch, INPUT_MAX, Number.POSITIVE_INFINITY, false)) : '';
           return this.tool(id, at, 'Edit', input ? { title, input, inputKind: 'diff' } : { title });
         }
         const args = p.type === 'custom_tool_call' ? { input: p.input } : parseArguments(p.arguments);

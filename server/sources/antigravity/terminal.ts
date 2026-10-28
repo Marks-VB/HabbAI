@@ -1,4 +1,4 @@
-// Parser de terminal para o Antigravity: transforma as linhas do transcript.jsonl em blocos do leitor de terminal do Habblaud.
+// Parser de terminal para o Antigravity: transforma as linhas do transcript.jsonl em blocos do leitor de terminal do HabbAI.
 import type { TerminalEntry } from '../../../shared/types';
 import type { TerminalParser } from '../terminal';
 import { parseAntigravityLine } from './transcript';

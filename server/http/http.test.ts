@@ -263,8 +263,8 @@ describe('API HTTP', () => {
     expect((await fetch(`${env.base}/assets/nao-existe.js`)).status).toBe(404);
     expect((await fetch(`${env.base}/bundle/nao-existe.js`)).status).toBe(404);
     // Tentativa de sair da pasta cai no index.html, nunca em arquivos de fora.
-    const escape = await fetch(`${env.base}/..%2F..%2Fetc%2Fpasswd`);
-    expect(await escape.text()).toContain('<title>Habblaud</title>');
+    const traversal = await fetch(`${env.base}/..%2F..%2Fetc%2Fpasswd`);
+    expect(await traversal.text()).toContain('<title>Habblaud</title>');
   });
 });
 

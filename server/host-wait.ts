@@ -7,7 +7,7 @@ export const HOST_WAIT_MS = 20_000;
 
 export class HostWait {
   private readonly waiters = new Set<() => void>();
-  private seenAt = -Infinity;
+  private seenAt = Number.NEGATIVE_INFINITY;
 
   constructor(
     private readonly presenceMs: number,

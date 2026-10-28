@@ -123,7 +123,7 @@ export class WorldService {
   /** Último /v1/me bom, do token atual. */
   private me?: MeResponse;
   private meToken?: string;
-  private lastFetchAt = -Infinity;
+  private lastFetchAt = Number.NEGATIVE_INFINITY;
   private inflight?: Promise<void>;
   /** Só códigos conhecidos (worldLastError): a interface traduz cada um. */
   private lastError?: WorldKnownErrorCode;
@@ -203,7 +203,7 @@ export class WorldService {
     const s = this.o.store.get();
     if (s && (refresh || this.now() - this.lastFetchAt >= this.ttl)) {
       // lastFetchAt -Infinity = algo daqui mudou do outro lado (dispositivo revogado, goodbye): espera a leitura.
-      const cached = !!this.me && this.meToken === s.token && this.lastFetchAt !== -Infinity;
+      const cached = !!this.me && this.meToken === s.token && this.lastFetchAt !== Number.NEGATIVE_INFINITY;
       if (refresh || !cached) await this.refreshMe();
       else void this.refreshMe().catch(() => undefined);
     }
@@ -358,7 +358,7 @@ export class WorldService {
     switch (reason) {
       case 'waiting':
         this.o.store.update({ access: 'waiting' });
-        this.lastFetchAt = -Infinity;
+        this.lastFetchAt = Number.NEGATIVE_INFINITY;
         this.changed();
         this.schedulePoll();
         return;
@@ -373,7 +373,7 @@ export class WorldService {
       case 'banned':
       case 'suspended':
         this.lastError = reason;
-        this.lastFetchAt = -Infinity;
+        this.lastFetchAt = Number.NEGATIVE_INFINITY;
         this.o.onChange?.();
         return;
       case 'deleted':
@@ -542,7 +542,7 @@ export class WorldService {
         const r = await this.o.client!.revokeDevice(s.token, id);
         if (r.ok) {
           if (id === s.deviceId) this.drop(undefined);
-          else this.lastFetchAt = -Infinity; // a lista mudou: o próximo status relê
+          else this.lastFetchAt = Number.NEGATIVE_INFINITY; // a lista mudou: o próximo status relê
         }
         return r;
       }),
@@ -581,7 +581,7 @@ export class WorldService {
     const saved = this.o.store.save({ deviceId: auth.deviceId, token: auth.token, email: email.trim(), access: auth.access });
     this.me = undefined;
     this.meToken = undefined;
-    this.lastFetchAt = -Infinity;
+    this.lastFetchAt = Number.NEGATIVE_INFINITY;
     this.lastError = saved ? undefined : 'storage_failed';
     if (before && before.token !== auth.token) await this.o.client!.logout(before.token).catch(() => undefined);
     this.changed();
@@ -599,7 +599,7 @@ export class WorldService {
     this.o.store.clear();
     this.me = undefined;
     this.meToken = undefined;
-    this.lastFetchAt = -Infinity;
+    this.lastFetchAt = Number.NEGATIVE_INFINITY;
     this.lastError = error === undefined ? undefined : worldLastError(error);
     if (had) this.changed();
   }
@@ -615,7 +615,7 @@ export class WorldService {
     this.o.store.erase();
     this.me = undefined;
     this.meToken = undefined;
-    this.lastFetchAt = -Infinity;
+    this.lastFetchAt = Number.NEGATIVE_INFINITY;
     this.lastError = 'account_deleted';
     if (had) log.info(tr('Habblaud World: conta excluída; a sessão e o world.json foram apagados deste computador.'));
     // Sem sessão o uplink não quer conexão: pause() fecha e espera; o changed() depois esquece a sessão (última remessa).

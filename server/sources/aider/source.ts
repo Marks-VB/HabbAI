@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
-import type { Activity, AgentStatus, SourceInfo } from '../../../shared/types';
+import type { AgentStatus, SourceInfo } from '../../../shared/types';
 import type { AccountsService } from '../../accounts/service';
 import type { Office } from '../../model/office';
 import type { AgentSource } from '../source';

@@ -2,7 +2,7 @@
 // Recebe eventos vindos dos hooks/plugins locais do Antigravity, Gemini CLI e opencode.
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Provider } from '../../shared/types';
-import { HttpError, readJson, sendJson } from './app';
+import { readJson, sendJson } from './app';
 import { isLoopbackHost } from './guard';
 import { tr } from '../../shared/i18n';
 

@@ -105,9 +105,9 @@ function safeText(raw: string, window: number, reminders = true): { text: string
 }
 
 /** Corta um texto já mascarado em `max` caracteres e `maxLines` linhas, preservando as quebras. */
-function clip(s: string, max: number, maxLines = Infinity): { text: string; truncated: boolean } {
+function clip(s: string, max: number, maxLines = Number.POSITIVE_INFINITY): { text: string; truncated: boolean } {
   let end = Math.min(s.length, max);
-  if (maxLines !== Infinity) {
+  if (maxLines !== Number.POSITIVE_INFINITY) {
     let nl = -1;
     for (let n = 0; n < maxLines; n++) {
       nl = s.indexOf('\n', nl + 1);
@@ -131,7 +131,7 @@ export interface Prepared {
  * Texto multilinha pronto para exibir: limpo, mascarado, sem linhas vazias nas pontas e cortado. Também usado pelo
  * terminal do Codex (sources/codex/terminal.ts), como `marked` e `oneLine`.
  */
-export function prepare(raw: string, max: number, maxLines = Infinity, reminders = true): Prepared {
+export function prepare(raw: string, max: number, maxLines = Number.POSITIVE_INFINITY, reminders = true): Prepared {
   const safe = safeText(raw, max * 2 + 1_024, reminders);
   const c = clip(safe.text.replace(/^(?:[ \t]*\n)+/, '').trimEnd(), max, maxLines);
   return { text: c.text, truncated: c.truncated || safe.cut };
@@ -194,7 +194,7 @@ function fitsTitle(v: string): boolean {
 
 function textInput(raw: string | undefined, kind: TerminalInputKind = 'text'): Pick<ToolView, 'input' | 'inputKind'> {
   if (!raw?.trim()) return {};
-  const input = marked(prepare(raw, INPUT_MAX, Infinity, false));
+  const input = marked(prepare(raw, INPUT_MAX, Number.POSITIVE_INFINITY, false));
   return input ? { input, inputKind: kind } : {};
 }
 

@@ -44,7 +44,11 @@ describe('demo-timeline', () => {
 
   it('grava um dia fictício só com agentes marcados como demonstração', () => {
     const opts = { date: '2026-10-07', startMin: 9 * 60, hours: 3, sessions: 4, pace: 0.5, seed: 7, dataDir: tmp.dir, force: false };
-    const r = generateDemoTimeline(opts);
+    // Uma linha por remessa é uma gravação em disco: passo de 5 s no relógio simulado gasta 10× menos (no Windows cada
+    // anexo no arquivo custa ~20 ms com o antivírus ligado) sem mudar o que se grava — keyframe a cada 5 min, e o
+    // simulador é determinístico, então a mesma semente continua gerando o mesmo arquivo.
+    const STEP_MS = 5_000;
+    const r = generateDemoTimeline(opts, STEP_MS);
     const file = join(tmp.dir, 'timeline', '2026-10-07.jsonl');
     expect(r.files).toEqual([file]);
     expect(r.from).toBe(new Date(2026, 9, 7, 9).getTime());
@@ -74,8 +78,8 @@ describe('demo-timeline', () => {
     expect(subs).toBeGreaterThan(0);
     // Mesma semente, mesmo dia; sem --force não sobrescreve.
     expect(() => generateDemoTimeline(opts)).toThrow(/já existe/);
-    const again = generateDemoTimeline({ ...opts, force: true });
+    const again = generateDemoTimeline({ ...opts, force: true }, STEP_MS);
     expect(readFileSync(again.files[0], 'utf8')).toBe(readFileSync(file, 'utf8'));
-    // Duas gravações de 3 h simuladas, uma linha por vez: no Windows passa dos 5 s padrão.
-  }, 30_000);
+    // Duas gravações de 3 h simuladas, uma remessa por linha: no Windows passa de 30 s.
+  }, 120_000);
 });

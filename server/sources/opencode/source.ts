@@ -158,7 +158,7 @@ export class OpencodeSource implements AgentSource {
     try {
       const headers: Record<string, string> = {};
       if (svc.password) {
-        headers['Authorization'] = 'Basic ' + Buffer.from(`opencode:${svc.password}`).toString('base64');
+        headers.Authorization = `Basic ${Buffer.from(`opencode:${svc.password}`).toString('base64')}`;
       }
 
       const res = await fetch(`${svc.url}/api/session`, {
@@ -273,7 +273,7 @@ export class OpencodeSource implements AgentSource {
         Accept: 'text/event-stream',
       };
       if (svc.password) {
-        headers['Authorization'] = 'Basic ' + Buffer.from(`opencode:${svc.password}`).toString('base64');
+        headers.Authorization = `Basic ${Buffer.from(`opencode:${svc.password}`).toString('base64')}`;
       }
 
       const req = reqFn(u, { headers }, (res) => {

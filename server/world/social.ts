@@ -267,7 +267,7 @@ export class OwnerSocial implements OwnerListener {
     const d = this.current();
     if (!d) return { ok: false, status: 401, code: 'not_logged_in' };
     const was = d.summary;
-    if (was) this.dismissed = { summary: was, sentAt: -Infinity };
+    if (was) this.dismissed = { summary: was, sentAt: Number.NEGATIVE_INFINITY };
     d.summary = undefined;
     if (this.link?.sendCity({ t: 'summary.seen' })) {
       this.seenPending = false;

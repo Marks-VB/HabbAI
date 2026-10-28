@@ -572,7 +572,7 @@ export class Office {
         sub.info.status = 'done';
         sub.info.statusSince = now;
       }
-      sub.removeAt = Math.min(sub.removeAt ?? Infinity, rec.removeAt);
+      sub.removeAt = Math.min(sub.removeAt ?? Number.POSITIVE_INFINITY, rec.removeAt);
     }
     this.notice('leave', id, 'info', tr('🚪 {0} encerrou a sessão', [info.name]), info.roomId);
     this.markDirty();

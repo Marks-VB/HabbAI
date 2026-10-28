@@ -12,11 +12,37 @@ describe('arquivos das entregas', () => {
     }
   });
 
+  it('aceita o caminho absoluto do Windows e mantém as defesas (segredo, "..", tipo)', () => {
+    // Antes: só "/..." passava, e NENHUM arquivo de entrega do Windows era mostrado.
+    expect(pathProblem('C:\\Users\\ana\\proj\\relatorio.pdf')).toBeUndefined();
+    expect(pathProblem('C:/Users/ana/proj/relatorio.pdf')).toBeUndefined();
+    expect(pathProblem('\\\\servidor\\share\\proj\\relatorio.pdf')).toBeUndefined();
+    for (const bad of [
+      'C:x.png',
+      'proj\\x.png',
+      'C:\\a\\..\\..\\b.png',
+      'C:\\a\\..\\x.png',
+      'C:/a/../x.png',
+      '\\\\servidor\\share\\..\\x.png',
+      'C:\\Users\\ana\\.ssh\\x.png',
+      'C:\\Users\\ana\\proj\\.env.png',
+      'C:\\Users\\ana\\proj\\api-token.txt',
+      'C:\\Users\\ana\\proj\\server.key',
+      'C:\\Users\\ana\\.habblaud\\remote-tls\\ca.pdf',
+      'C:\\Users\\ana\\proj\\programa.sh',
+      'C:\\Users\\ana\\proj\\id_ed25519',
+    ]) {
+      expect(pathProblem(bad), bad).toBeDefined();
+    }
+  });
+
   it('checkFile: confere o caminho real (link para segredo cai), tamanho e tipo', () => {
     const fs = (real: string, size = 10, file = true) => ({ realpath: () => real, stat: () => ({ isFile: () => file, size }) });
     expect(checkFile('/Users/a/p/x.png', fs('/Users/a/p/x.png'))).toEqual({ path: '/Users/a/p/x.png', size: 10 });
+    expect(checkFile('C:\\Users\\a\\p\\x.png', fs('C:\\Users\\a\\p\\x.png'))).toEqual({ path: 'C:\\Users\\a\\p\\x.png', size: 10 });
     expect(checkFile('/Users/a/p/x.png', fs('/Users/a/.ssh/x.png'))).toEqual({ error: 'arquivo protegido' });
-    expect(checkFile('/Users/a/p/x.png', fs('/Users/a/p/x.png', DELIVERY_FILE_MAX_BYTES + 1))).toHaveProperty('error');
+    expect(checkFile('C:\\Users\\a\\p\\x.png', fs('C:\\Users\\a\\.ssh\\x.png'))).toEqual({ error: 'arquivo protegido' });
+    expect(checkFile('C:\\Users\\a\\p\\x.png', fs('C:\\Users\\a\\p\\x.png', DELIVERY_FILE_MAX_BYTES + 1))).toHaveProperty('error');
     expect(checkFile('/Users/a/p/x.png', fs('/Users/a/p/x.png', 1, false))).toEqual({ error: 'não é um arquivo' });
     expect(checkFile('/nao/existe.png')).toEqual({ error: 'arquivo não encontrado' });
   });
@@ -32,5 +58,20 @@ describe('arquivos das entregas', () => {
     expect(insideKnownFolder('/Users/ana/Documents/extrato.pdf', opts)).toBe(false);
     expect(insideKnownFolder('/Users/ana/lojas/a.png', opts)).toBe(false);
     expect(insideKnownFolder('/tmpx/a.png', opts)).toBe(false);
+  });
+
+  it('insideKnownFolder no Windows: "\\" também vale (o dirname de "C:\\..." não é mais ignorado)', () => {
+    const known = new Set(['C:\\h\\.claude\\projects\\C--Users-ana-loja']);
+    const opts = { accountDirs: ['C:\\h\\.claude'], roots: ['C:\\Users\\ana\\AppData\\Local\\Temp'], exists: (p: string) => known.has(p) };
+    // Antes: o laço usava split('/') e o dirname de um caminho Windows nunca iterava → false para qualquer projeto.
+    expect(insideKnownFolder('C:\\Users\\ana\\loja\\docs\\print.png', opts)).toBe(true);
+    expect(insideKnownFolder('C:\\Users\\ana\\loja\\print.png', opts)).toBe(true);
+    expect(insideKnownFolder('C:/Users/ana/loja/print.png', opts)).toBe(true);
+    // Raízes (temporárias, anexos) com o separador do Windows.
+    expect(insideKnownFolder('C:\\Users\\ana\\AppData\\Local\\Temp\\claude\\tela.png', opts)).toBe(true);
+    // Fora: outro projeto, o resto da pasta pessoal e um nome que só começa igual ("Tempx").
+    expect(insideKnownFolder('C:\\Users\\ana\\lojas\\a.png', opts)).toBe(false);
+    expect(insideKnownFolder('C:\\Users\\ana\\Documents\\extrato.pdf', opts)).toBe(false);
+    expect(insideKnownFolder('C:\\Users\\ana\\AppData\\Local\\Tempx\\a.png', opts)).toBe(false);
   });
 });

@@ -237,7 +237,7 @@ export async function readRolloutSummary(path: string, size: number): Promise<Ro
     if (tailStart > 0) tail.shift(); // cortada
     for (const line of tail) {
       const at = /"timestamp":"([^"]+)"/.exec(line.slice(0, 200))?.[1];
-      const ms = at ? Date.parse(at) : NaN;
+      const ms = at ? Date.parse(at) : Number.NaN;
       if (!Number.isNaN(ms) && (summary.lastAt === undefined || ms > summary.lastAt)) summary.lastAt = ms;
     }
     const first = meta?.startedAt ?? state.firstAt;

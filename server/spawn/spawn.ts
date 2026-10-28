@@ -1,6 +1,6 @@
 // Novo agente pelo escritório. Do jeito que roda sozinho: uma sessão em segundo plano do Claude Code
 // (`claude --bg -n <nome> -- <pedido>`, na pasta escolhida), que começa na hora, aparece no escritório como qualquer
-// sessão e recebe mensagens e pedidos de permissão pelo Habblaud (`claude attach <id>` abre no terminal do Mac).
+// sessão e recebe mensagens e pedidos de permissão pelo HabbAI (`claude attach <id>` abre no terminal do Mac).
 // O Claude Code só faz isso numa pasta que já é confiável para ele (o aviso de confiança foi aceito no terminal); se
 // a pasta não é, ou o `claude` não está aqui, cai no link `claude://code/new?folder=<pasta>&q=<pedido>` (o do "New
 // Claude Code Session Here" do Finder), que abre a tela de sessão nova do app preenchida: aí ela começa quando a
@@ -13,8 +13,8 @@
 // Node puro e sem dependências: também é importado pelo auxiliar do host (via tsx).
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { statSync } from 'node:fs';
-import { isAbsolute } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
+import { dirname, isAbsolute, join } from 'node:path';
 import { tr } from '../../shared/i18n';
 import { attachmentsRoot, promptWithAttachments, writeAttachments, type Attachment, type AttachmentStore } from './attachments';
 
@@ -88,11 +88,11 @@ export function spawnUrl(req: SpawnRequest): string {
   return `claude://code/new?${q.toString().replace(/\+/g, '%20')}`;
 }
 
-/** Nome da sessão em segundo plano: "Habblaud: " + começo da 1ª linha do pedido. */
+/** Nome da sessão em segundo plano: "HabbAI: " + começo da 1ª linha do pedido. */
 export function sessionName(prompt: string): string {
   const line = prompt.split('\n').map((l) => l.trim()).find(Boolean) ?? '';
   const cut = line.length > NAME_MAX ? `${line.slice(0, NAME_MAX - 1)}…` : line;
-  return cut ? `Habblaud: ${cut}` : 'Habblaud';
+  return cut ? `HabbAI: ${cut}` : 'HabbAI';
 }
 
 /** Argumentos do `claude`: o pedido depois de `--` (um pedido "doctor" ou "-x" continua sendo pedido). */
@@ -101,11 +101,43 @@ export function cliArgs(req: SpawnRequest): string[] {
   return req.prompt.trim() ? [...args, '--', req.prompt] : args;
 }
 
+/** Extensões do shim de script do Windows (o npm põe `claude.cmd` ao lado do `claude`). */
+const SHIM_EXT = /\.(cmd|bat)$/i;
+
+/**
+ * O programa de verdade atrás de um shim .cmd/.bat: o `%dp0%\<algo>.js` que ele chama (o npm escreve assim). Lê o
+ * shim, sem executar nada; undefined se não for um shim conhecido.
+ */
+export function shimTarget(bin: string, read: (p: string) => string = (p) => readFileSync(p, 'utf8')): string | undefined {
+  let text: string;
+  try {
+    text = read(bin);
+  } catch {
+    return undefined;
+  }
+  const base = dirname(bin);
+  for (const m of text.matchAll(/%(?:~)?dp0%?[\\/]([^%\r\n"]+?\.(?:js|mjs|cjs))/gi)) {
+    const target = join(base, ...m[1].split(/[\\/]+/));
+    try {
+      if (statSync(target).isFile()) return target;
+    } catch {
+      // outro alvo do shim
+    }
+  }
+  return undefined;
+}
+
 /** `claude --bg` na pasta do pedido; devolve o id curto que ele imprime ("backgrounded · 7eacc670 · nome"). */
-export function createCliRunner(bin: string, timeoutMs = CLI_TIMEOUT_MS): CliRunner {
+export function createCliRunner(bin: string, timeoutMs = CLI_TIMEOUT_MS, platform: NodeJS.Platform = process.platform): CliRunner {
+  // No Windows, o `claude` do npm é um shim .cmd: o execFile (sem shell) não roda script de shell. Quem roda é o
+  // programa por trás dele (o .js), com o pedido intacto — aspas, `%` e quebras de linha não podem passar por um shell.
+  const shim = platform === 'win32' && SHIM_EXT.test(bin);
+  const script = shim ? shimTarget(bin) : undefined;
+  if (shim && !script) return async () => ({ ok: false, error: tr('o claude deste computador é um atalho .cmd e não achei o programa por trás dele') });
+  const [file, pre] = script ? [process.execPath, [script]] : [bin, []];
   return (req) =>
     new Promise((ok) => {
-      const child = execFile(bin, cliArgs(req), { cwd: req.folder, timeout: timeoutMs, windowsHide: true, encoding: 'utf8' }, (err, out, stderr) => {
+      const child = execFile(file, [...pre, ...cliArgs(req)], { cwd: req.folder, timeout: timeoutMs, windowsHide: true, encoding: 'utf8' }, (err, out, stderr) => {
         const id = /backgrounded\s*·\s*([\w-]+)/.exec(out ?? '')?.[1];
         if (!err && id) return ok({ ok: true, id });
         const line = [stderr, out, err?.message].map((t) => (t ?? '').split('\n').map((l) => l.trim()).find(Boolean)).find(Boolean);
@@ -189,7 +221,7 @@ export type SpawnSubmit = { spawn: SpawnInfo } | { error: 'invalid' | 'unavailab
 
 export class SpawnService {
   private readonly entries = new Map<string, Entry>();
-  private hostSeenAt = -Infinity;
+  private hostSeenAt = Number.NEGATIVE_INFINITY;
   private readonly now: () => number;
 
   constructor(private readonly opts: SpawnServiceOptions = {}) {
@@ -210,7 +242,7 @@ export class SpawnService {
     const req = parseSpawn(raw);
     if ('error' in req) return { error: 'invalid', reason: req.error };
     if (!this.available()) {
-      return { error: 'unavailable', reason: tr('o auxiliar do computador não está rodando: deixe npm run codex:bridge no ar (o Habblaud está no Docker)') };
+      return { error: 'unavailable', reason: tr('o auxiliar do computador não está rodando: deixe npm run codex:bridge no ar (o HabbAI está no Docker)') };
     }
     let open = 0;
     for (const e of this.entries.values()) if (e.info.status === 'queued' || e.info.status === 'sent') open++;
