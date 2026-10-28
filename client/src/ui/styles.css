@@ -1,4 +1,4 @@
-/* Interface do Habblaud: painéis escuros translúcidos sobre o escritório em pixel art.
+/* Interface do HabbAI: painéis escuros translúcidos sobre o escritório em pixel art.
    Tipografia: logotipo em pixels (SVG); Pixelify Sans só em rótulos fixos de painel sem "C" maiúsculo nem
    dígitos (na Pixelify o "C" parece "O" e o "5" parece "S"); system-ui para o corpo, nomes, letras de conta e números.
    Identidade: detalhes "em pixel" (pontos de status quadrados, barras segmentadas de uso, ícones em pixels). */
@@ -3503,7 +3503,7 @@
   animation: ui-blink 1s steps(2, jump-none) infinite;
 }
 
-/* Aviso de versão nova (página aberta antes de uma atualização do Habblaud). */
+/* Aviso de versão nova (página aberta antes de uma atualização do HabbAI). */
 .ui-banner--update {
   z-index: 46;
   border-color: rgba(74, 168, 232, 0.55);
@@ -7667,7 +7667,7 @@ html.is-replay #world {
   opacity: 0.94;
 }
 
-/* Terminal expandido na tela toda do Habblaud (botão ao lado do fechar). */
+/* Terminal expandido na tela toda do HabbAI (botão ao lado do fechar). */
 .ui-term.is-max {
   z-index: 46;
   inset: calc(var(--top-h) + var(--gap)) var(--gap) var(--gap) !important;
@@ -11323,4 +11323,87 @@ html.is-replay #world {
 @keyframes ui-watermark-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* ---------------------------------------------------------------- meu dia: exportar (CSV e resumo) */
+
+/* Dois botões pequenos no cabeçalho, no mesmo tom dos demais .ui-btn; desabilitados enquanto não há o que exportar. */
+.ui-day__export {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ui-day__export .ui-btn {
+  height: 30px;
+}
+
+.ui-day__export .ui-btn:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.ui-day__export .ui-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.ui-day__export .ui-btn:disabled:hover {
+  background: var(--ui-bg-soft);
+  border-color: var(--ui-line-strong);
+}
+
+/* "CSV baixado"/"resumo copiado": uma linha discreta, verde no sucesso e avermelhada no erro. */
+.ui-day__export-status {
+  font-size: 11.5px;
+  color: var(--ui-faint);
+}
+
+.ui-day__export-status:empty {
+  display: none;
+}
+
+.ui-day__export-status.is-ok {
+  color: var(--st-working);
+}
+
+.ui-day__export-status.is-error {
+  color: #ffb4a8;
+}
+
+.ui-day__export-extra:empty {
+  display: none;
+}
+
+/* Fallback da cópia: o resumo em texto selecionável, já selecionado, para o Ctrl+C manual. */
+.ui-day__export-fallback {
+  width: 100%;
+  min-height: 120px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--ui-line-strong);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ui-text);
+  font: 11.5px/1.5 var(--font-mono, ui-monospace, monospace);
+  resize: vertical;
+}
+
+.ui-day__export-fallback:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* Celular: os dois botões ficam numa linha própria, alinhados à direita (abaixo do seletor de dia). */
+@media (max-width: 600px) {
+  .ui-day__export {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-day__export .ui-btn {
+    transition: none;
+  }
 }

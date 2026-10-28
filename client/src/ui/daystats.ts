@@ -20,7 +20,8 @@ import {
 import { seedDemoHistory } from '../../../shared/demo/daystats';
 import type { OfficeStore } from '../net/store';
 import type { UiComponent, UiContext } from './context';
-import { h, iconButton, setAttr, setHidden, setStyleVar, setText } from './dom';
+import { copyText, h, iconButton, setAttr, setHidden, setStyleVar, setText } from './dom';
+import { buildCsv, csvFileName, toSummary } from './daystats-export';
 import {
   accountCards,
   ALL_VISIBLE,
@@ -47,10 +48,12 @@ import { accountProvider } from './provider';
 import { tr } from '../../../shared/i18n';
 
 const REFRESH_MS = 30_000;
+/** Quanto tempo o aviso de "CSV baixado"/"resumo copiado" fica na tela. */
+const EXPORT_STATUS_MS = 8_000;
 const NOTE =
   tr('Tempo de agentes é a soma de todos eles: dois agentes trabalhando por 1 hora contam 2 horas. ') +
   tr('“Esperando você” é o tempo de mão levantada no escritório (permissão, pergunta ou escolha). ') +
-  tr('O Habblaud só conta o que acontece enquanto ele está rodando.');
+  tr('O HabbAI só conta o que acontece enquanto ele está rodando.');
 
 /** De onde vêm os números: o servidor ou, no ?mock=1, o acumulador local. */
 interface DaySource {
@@ -143,6 +146,12 @@ export class DayPanel implements UiComponent {
   private retry: HTMLButtonElement;
   private content: HTMLElement;
   private tip: HTMLElement;
+  private exportBtn: HTMLButtonElement;
+  private copyBtn: HTMLButtonElement;
+  private exportStatus: HTMLElement;
+  private exportStatusText: HTMLElement;
+  private exportExtra: HTMLElement;
+  private exportTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** `button` = o botão "Meu dia" da barra superior (ui/daystats-launcher.ts), que reflete se a janela está aberta. */
   constructor(
@@ -165,6 +174,30 @@ export class DayPanel implements UiComponent {
     this.content = h('div', { class: 'ui-day__content' });
     this.tip = h('div', { class: 'ui-day__tip', role: 'tooltip', hidden: true, attrs: { 'aria-hidden': 'true' } });
 
+    // Exportar: o número do dia para uma retro ou planilha (CSV) e um resumo de texto para colar (role="status"
+    // anuncia o resultado de cada botão; o texto de erro traz uma caixa para copiar à mão).
+    this.exportBtn = h('button', {
+      class: 'ui-btn ui-btn--sm ui-day__export-btn',
+      type: 'button',
+      text: tr('Exportar CSV'),
+      title: tr('Baixar os números deste dia em CSV'),
+      attrs: { 'aria-label': tr('Exportar os números deste dia em CSV') },
+      on: { click: () => this.exportCsv() },
+    });
+    this.copyBtn = h('button', {
+      class: 'ui-btn ui-btn--sm ui-day__export-btn',
+      type: 'button',
+      text: tr('Copiar resumo'),
+      title: tr('Copiar um resumo do dia em texto'),
+      attrs: { 'aria-label': tr('Copiar um resumo do dia em texto') },
+      on: { click: () => void this.copySummary() },
+    });
+    this.exportBtn.disabled = true;
+    this.copyBtn.disabled = true;
+    this.exportStatusText = h('span', {});
+    this.exportStatus = h('p', { class: 'ui-day__export-status', role: 'status' }, this.exportStatusText);
+    this.exportExtra = h('div', { class: 'ui-day__export-extra' });
+
     this.el = h(
       'dialog',
       { class: 'ui-dialog ui-day', attrs: { 'aria-labelledby': 'ui-day-title' } },
@@ -172,10 +205,29 @@ export class DayPanel implements UiComponent {
         'div',
         { class: 'ui-dialog__head ui-day__head' },
         h('div', { class: 'ui-day__title' }, h('h2', { text: tr('Meu dia'), attrs: { id: 'ui-day-title' } }), this.badge),
-        h('div', { class: 'ui-day__controls' }, this.select, this.seg),
+        h(
+          'div',
+          { class: 'ui-day__controls' },
+          this.select,
+          this.seg,
+          h(
+            'div',
+            { class: 'ui-day__export', role: 'group', attrs: { 'aria-label': tr('Exportar o dia') } },
+            this.exportBtn,
+            this.copyBtn,
+          ),
+        ),
         close,
       ),
-      h('div', { class: 'ui-day__body' }, this.status, this.content, h('p', { class: 'ui-day__note', text: NOTE })),
+      h(
+        'div',
+        { class: 'ui-day__body' },
+        this.status,
+        this.exportStatus,
+        this.exportExtra,
+        this.content,
+        h('p', { class: 'ui-day__note', text: NOTE }),
+      ),
       this.tip,
     );
     // Clique no fundo fecha; o teclado fica dentro da janela (os atalhos do escritório não disparam por baixo).
@@ -223,6 +275,7 @@ export class DayPanel implements UiComponent {
     this.seq++;
     this.stopTimer();
     this.hideTip();
+    this.clearExport();
     this.button.setAttribute('aria-expanded', 'false');
     if (this.opener?.isConnected) this.opener.focus({ preventScroll: true });
     this.opener = null;
@@ -230,6 +283,7 @@ export class DayPanel implements UiComponent {
 
   private pickDay(day: string): void {
     this.day = day;
+    this.clearExport();
     // Trocar de dia não troca de fonte: quem olha o demo continua no demo.
     this.sourcePref ??= this.data?.source;
     void this.load(false);
@@ -238,6 +292,7 @@ export class DayPanel implements UiComponent {
   private pickSource(src: StatsSource): void {
     if (this.data?.source === src) return;
     this.sourcePref = src;
+    this.clearExport();
     const list = src === 'demo' ? this.days?.demoDays : this.days?.days;
     if (this.day && list && !list.includes(this.day)) this.day = null;
     void this.load(false);
@@ -301,6 +356,80 @@ export class DayPanel implements UiComponent {
       const today = this.data.stats.day === this.data.today;
       setText(this.statusText, today ? tr('Atualizado às {0} · atualiza a cada 30 s', [formatClock(this.data.serverTime)]) : '');
     }
+    this.renderExport();
+  }
+
+  // ---------------------------------------------------------------- exportar
+
+  /** Os botões só valem com dados do dia na tela (e sem dia vazio não há o que exportar). */
+  private renderExport(): void {
+    const has = !!this.data && !isEmptyDay(this.data.stats);
+    this.exportBtn.disabled = !has;
+    this.copyBtn.disabled = !has;
+  }
+
+  private setExportStatus(text: string, state: 'ok' | 'error' | null): void {
+    this.clearExportTimer();
+    setText(this.exportStatusText, text);
+    this.exportStatus.classList.toggle('is-ok', state === 'ok');
+    this.exportStatus.classList.toggle('is-error', state === 'error');
+    // Sucesso some sozinho; o erro fica até a próxima tentativa (tem o texto para copiar à mão junto).
+    if (state === 'ok') this.exportTimer = setTimeout(() => this.clearExport(), EXPORT_STATUS_MS);
+  }
+
+  private clearExportTimer(): void {
+    if (this.exportTimer) clearTimeout(this.exportTimer);
+    this.exportTimer = null;
+  }
+
+  /** Some com o aviso e com a caixa de texto do fallback (ao fechar ou trocar de dia). */
+  private clearExport(): void {
+    this.clearExportTimer();
+    setText(this.exportStatusText, '');
+    this.exportStatus.classList.remove('is-ok', 'is-error');
+    this.exportExtra.replaceChildren();
+  }
+
+  private exportCsv(): void {
+    const stats = this.data?.stats;
+    if (!stats || isEmptyDay(stats)) return;
+    const name = csvFileName(new Date(stats.start));
+    const url = URL.createObjectURL(new Blob([buildCsv(stats)], { type: 'text/csv;charset=utf-8' }));
+    // O link temporário existe só para o clique: o blob é liberado depois que o download começou.
+    const a = h('a', { hidden: true, attrs: { href: url, download: name } });
+    this.el.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    this.exportExtra.replaceChildren();
+    this.setExportStatus(tr('CSV baixado: {0}', [name]), 'ok');
+  }
+
+  private async copySummary(): Promise<void> {
+    const stats = this.data?.stats;
+    if (!stats || isEmptyDay(stats)) return;
+    const text = toSummary(stats);
+    // copyText já cai para a seleção + execCommand quando a Clipboard API é negada.
+    const ok = await copyText(text);
+    if (ok) {
+      this.exportExtra.replaceChildren();
+      this.setExportStatus(tr('Resumo copiado.'), 'ok');
+      return;
+    }
+    this.showExportFallback(text);
+    this.setExportStatus(tr('Não foi possível copiar. Selecione o texto abaixo e copie com Ctrl+C.'), 'error');
+  }
+
+  /** Sem permissão para copiar: o resumo fica numa caixa selecionável, já selecionada. */
+  private showExportFallback(text: string): void {
+    const ta = h('textarea', {
+      class: 'ui-day__export-fallback',
+      attrs: { readonly: true, rows: 10, 'aria-label': tr('Resumo do dia para copiar à mão') },
+    });
+    ta.value = text;
+    this.exportExtra.replaceChildren(ta);
+    ta.focus();
+    ta.select();
   }
 
   private renderAll(): void {
@@ -338,7 +467,7 @@ export class DayPanel implements UiComponent {
         h('p', {
           class: 'ui-day__empty',
           text: today
-            ? tr('Ainda não há tempo registrado hoje. Os números aparecem assim que algum agente trabalhar com o Habblaud aberto.')
+            ? tr('Ainda não há tempo registrado hoje. Os números aparecem assim que algum agente trabalhar com o HabbAI aberto.')
             : tr('Nada registrado neste dia.'),
         }),
       );
