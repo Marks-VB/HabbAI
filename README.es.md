@@ -11,6 +11,10 @@
 
 <p align="center"><a href="README.md">English</a> · <a href="README.pt-BR.md">Português</a> · <b>Español</b> · <a href="README.fr.md">Français</a></p>
 
+Este es un fork personalizado de [Habblaud](https://github.com/marmottajr/habblaud). La interfaz y la página de inicio
+de sesión remoto aparecen como **HabbAI**; los nombres técnicos (paquete, imágenes Docker, protocolo de Habblaud World)
+siguen siendo Habblaud.
+
 <p align="center">
   <img alt="Node.js 22.12+" src="https://img.shields.io/badge/node-%E2%89%A522.12-5fa04e?logo=node.js&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-7-3178c6?logo=typescript&logoColor=white" />

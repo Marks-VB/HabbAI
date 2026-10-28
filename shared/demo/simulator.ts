@@ -148,7 +148,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   { id: '.claude', short: 'C', name: 'Conta C', email: 'dev@empresa.example', organization: tr('Empresa'), plan: 'Max', color: '#f08a3c', configDir: '~/.claude' },
   { id: '.claude-conta2', short: 'D', name: 'Conta D', email: 'dev@pessoal.example', plan: 'Max', color: '#4aa8e8', configDir: '~/.claude-conta2' },
 ];
-/** Conta do Codex (um CODEX_HOME): sem e-mail (o Habblaud não lê credenciais), com o plano dos `rate_limits`. */
+/** Conta do Codex (um CODEX_HOME): sem e-mail (o HabbAI não lê credenciais), com o plano dos `rate_limits`. */
 const DEMO_CODEX_ACCOUNT: DemoAccount = { id: '.codex', provider: 'codex', short: 'X', name: 'Codex', plan: 'Team', color: '#a77bf3', configDir: '~/.codex' };
 const MERGED_ACCOUNTS: Array<Pick<DemoAccount, 'short' | 'name' | 'color'>> = [
   { short: 'X', name: 'Demo X', color: '#5cc97b' },
@@ -306,7 +306,7 @@ export class DemoSimulator {
 
   /**
    * Mensagem mandada pelo escritório a um agente principal (fictícia: nada vai a uma sessão de verdade): a
-   * atividade "Mensagem pelo Habblaud" e, se ele estava à toa, o próximo turno começa logo, como se respondesse.
+   * atividade "Mensagem pelo HabbAI" e, se ele estava à toa, o próximo turno começa logo, como se respondesse.
    * false = agente desconhecido, subagente ou que já saiu.
    */
   receiveMessage(agentId: string, text: string, now = Date.now()): boolean {
@@ -434,11 +434,11 @@ export class DemoSimulator {
       return true;
     }
     if (answers) {
-      this.activity(a, now, { kind: 'other', icon: '💬', text: tr('Respondido no Habblaud'), detail: answerSummary(p.questions ?? [], answers), tool: 'PermissionRequest' });
+      this.activity(a, now, { kind: 'other', icon: '💬', text: tr('Respondido no HabbAI'), detail: answerSummary(p.questions ?? [], answers), tool: 'PermissionRequest' });
     } else if (d.behavior === 'allow') {
-      this.activity(a, now, { kind: 'other', icon: '✅', text: d.suggestion !== undefined ? tr('Aprovado no Habblaud (sempre permitir)') : tr('Aprovado no Habblaud'), detail: title, tool: 'PermissionRequest' });
+      this.activity(a, now, { kind: 'other', icon: '✅', text: d.suggestion !== undefined ? tr('Aprovado no HabbAI (sempre permitir)') : tr('Aprovado no HabbAI'), detail: title, tool: 'PermissionRequest' });
     } else {
-      this.activity(a, now, { kind: 'wait', icon: '🚫', text: tr('Recusado no Habblaud'), detail: d.message ? `${title} — ${d.message}` : title, tool: 'PermissionRequest' });
+      this.activity(a, now, { kind: 'wait', icon: '🚫', text: tr('Recusado no HabbAI'), detail: d.message ? `${title} — ${d.message}` : title, tool: 'PermissionRequest' });
     }
     this.resumeFromWaiting(a, now);
     return true;
@@ -507,7 +507,7 @@ export class DemoSimulator {
     if (existing) return existing;
     const used = new Set([...this.rooms.values()].map((r) => r.slot));
     let slot = 0;
-    while (used.has(slot) || now - (this.slotFreedAt.get(slot) ?? -Infinity) < SLOT_COOLDOWN_MS) slot++;
+    while (used.has(slot) || now - (this.slotFreedAt.get(slot) ?? Number.NEGATIVE_INFINITY) < SLOT_COOLDOWN_MS) slot++;
     const room: RoomInfo = { id, name: project.name, path: `${ROOT}/${project.name}`, slot, seed: hash32(id), createdAt: now };
     this.rooms.set(id, room);
     this.notice(now, 'info', tr('🏗️ Nova sala: {0}', [project.name]), undefined, id);
@@ -629,7 +629,7 @@ export class DemoSimulator {
       nextActionAt: now + this.ms(1_500, 3_000),
       actionsLeft: 99,
       children: [],
-      closeAt: Infinity,
+      closeAt: Number.POSITIVE_INFINITY,
       taskCursor: n,
       shellEnds: new Map(),
       shelledThisTurn: true,

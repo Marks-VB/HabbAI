@@ -10,7 +10,7 @@ $shortcut = $WshShell.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = $exePath
 $shortcut.WorkingDirectory = $projectRoot
 $shortcut.IconLocation = "$icoPath, 0"
-$shortcut.Description = "Habblaud - Escritório Virtual para Agentes de IA"
+$shortcut.Description = "HabbAI - Escritório Virtual para Agentes de IA"
 $shortcut.Save()
 
 Write-Host "Atalho criado na Área de Trabalho: $shortcutPath"

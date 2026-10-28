@@ -54,7 +54,7 @@ namespace HabblaudLauncher
 
             // Cria o ícone na bandeja (System Tray)
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "Habblaud - Escritório Virtual";
+            trayIcon.Text = "HabbAI - Escritório Virtual";
             
             string icoPath = Path.Combine(baseDir, "habblaud.ico");
             if (File.Exists(icoPath))
@@ -85,7 +85,7 @@ namespace HabblaudLauncher
             trayIcon.DoubleClick += (s, e) => OpenBrowser(Url);
             trayIcon.Visible = true;
 
-            trayIcon.ShowBalloonTip(3000, "Habblaud", "Escritório virtual iniciado em http://localhost:4747", ToolTipIcon.Info);
+            trayIcon.ShowBalloonTip(3000, "HabbAI", "Escritório virtual iniciado em http://localhost:4747", ToolTipIcon.Info);
 
             Application.ApplicationExit += (s, e) => StopServer();
             Application.Run();
@@ -141,7 +141,7 @@ namespace HabblaudLauncher
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Não foi possível iniciar o Habblaud:\n" + ex.Message, "Erro no Habblaud", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Não foi possível iniciar o HabbAI:\n" + ex.Message, "Erro no HabbAI", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
