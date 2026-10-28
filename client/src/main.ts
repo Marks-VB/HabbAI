@@ -11,4 +11,20 @@ const LOADERS: Partial<Record<Locale, () => Promise<Readonly<Record<string, stri
 const locale = getLocale();
 const load = LOADERS[locale];
 const dictionary = load ? load().then((d) => registerDictionary(locale, d)).catch(() => undefined) : Promise.resolve();
-void dictionary.then(() => import('./app')).then((app) => app.start());
+
+/**
+ * Service worker (client/public/sw.js): é o que deixa o app instalável e com uma tela offline. Só em produção —
+ * em `npm run dev` o Vite serve os módulos soltos, e um sw.js de um build antigo atrapalharia. Registrar tarde
+ * (depois do `load`) não atrasa a primeira pintura, e uma falha aqui nunca pode quebrar o app.
+ */
+function registerServiceWorker(): void {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
+  const register = () => void navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
+}
+
+void dictionary.then(() => import('./app')).then((app) => {
+  app.start();
+  registerServiceWorker();
+});

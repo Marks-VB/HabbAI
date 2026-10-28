@@ -73,6 +73,7 @@ export function isNotModified(req: IncomingMessage, etag: string, mtimeMs: numbe
 export function createStaticHandler(distDir: string): (req: IncomingMessage, res: ServerResponse, pathname: string) => void {
   const root = resolve(distDir);
   const index = join(root, 'index.html');
+  const serviceWorker = join(root, 'sw.js');
 
   const send = (req: IncomingMessage, res: ServerResponse, file: string, st: Stats, cache: string) => {
     const etag = etagOf(st);
@@ -85,6 +86,9 @@ export function createStaticHandler(distDir: string): (req: IncomingMessage, res
       'X-Frame-Options': 'DENY',
       'Referrer-Policy': 'no-referrer',
     };
+    // O service worker precisa de no-cache (já é o caso: /sw.js não está em /bundle/) e de escopo na raiz para
+    // controlar o site inteiro; o tipo text/javascript vem da extensão .js em MIME.
+    if (file === serviceWorker) headers['Service-Worker-Allowed'] = '/';
     if (isNotModified(req, etag, st.mtimeMs)) {
       res.writeHead(304, headers);
       return void res.end();
@@ -122,6 +126,12 @@ export function createStaticHandler(distDir: string): (req: IncomingMessage, res
     const st = inside && file !== root ? fileStat(file) : undefined;
     if (st) return send(req, res, file, st, rel.startsWith(HASHED_DIR) ? IMMUTABLE : REVALIDATE);
     if (rel.startsWith('/assets/') || rel.startsWith(HASHED_DIR)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+      return void res.end(tr('Não encontrado'));
+    }
+    // Service worker ausente no build: 404 de verdade, nunca o index.html (viria como text/html e o registro
+    // falharia com um erro confuso de MIME).
+    if (rel === '/sw.js') {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
       return void res.end(tr('Não encontrado'));
     }
