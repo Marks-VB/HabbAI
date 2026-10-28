@@ -327,7 +327,7 @@ describe('projeção: regras', () => {
     expect(project(base, new FakeIds(), NOW).tokens).toEqual({ day: 1_200_000, week: 99_000_000 });
     expect(project({ ...base, options: { ...base.options, tokensVisible: false } }, new FakeIds(), NOW).tokens).toBeUndefined();
     expect(project({ ...base, tokens: undefined }, new FakeIds(), NOW).tokens).toBeUndefined();
-    expect([0, -5, NaN, 7, 99, 100, 149, 150, 12_345, 850_123, 1e16].map(roundTokens)).toEqual([0, 0, 0, 7, 99, 100, 150, 150, 12_000, 850_000, 1e15]);
+    expect([0, -5, Number.NaN, 7, 99, 100, 149, 150, 12_345, 850_123, 1e16].map(roundTokens)).toEqual([0, 0, 0, 7, 99, 100, 150, 150, 12_000, 850_000, 1e15]);
   });
 
   it('compacted só com o opt-in e só para quem compactou', () => {
@@ -341,7 +341,7 @@ describe('projeção: regras', () => {
   });
 
   it('tasksDone: faixa das concluídas no dia (a contagem do chamador vale sobre a lista)', () => {
-    expect([0, 1, 2, 3, 5, 6, 40, -1, NaN].map(tasksBand)).toEqual([0, 1, 1, 2, 2, 3, 3, 0, 0]);
+    expect([0, 1, 2, 3, 5, 6, 40, -1, Number.NaN].map(tasksBand)).toEqual([0, 1, 1, 2, 2, 3, 3, 0, 0]);
     const done = (n: number) => Array.from({ length: n }, (_, i) => ({ id: String(i), title: 'x', status: 'completed' as const }));
     const agents = [agent('m1', '/p/a', { tasks: done(4) }), agent('m2', '/p/a', { tasks: done(1) })];
     const ids = new FakeIds();

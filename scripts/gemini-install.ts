@@ -21,7 +21,7 @@ function loadSettings() {
 
 function saveSettings(s: any) {
   mkdirSync(dirname(SETTINGS_FILE), { recursive: true });
-  writeFileSync(SETTINGS_FILE, JSON.stringify(s, null, 2) + '\n');
+  writeFileSync(SETTINGS_FILE, `${JSON.stringify(s, null, 2)}\n`);
 }
 
 if (cmd === 'install') {

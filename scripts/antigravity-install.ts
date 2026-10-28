@@ -21,7 +21,7 @@ function loadHooks() {
 
 function saveHooks(h: any) {
   mkdirSync(dirname(HOOKS_FILE), { recursive: true });
-  writeFileSync(HOOKS_FILE, JSON.stringify(h, null, 2) + '\n');
+  writeFileSync(HOOKS_FILE, `${JSON.stringify(h, null, 2)}\n`);
 }
 
 if (cmd === 'install') {

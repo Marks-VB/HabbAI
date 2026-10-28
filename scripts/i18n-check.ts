@@ -38,9 +38,9 @@ function unescapeJs(s: string): string {
   return s.replace(/\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/g, (_, e: string) => {
     if (e === 'n') return '\n';
     if (e === 't') return '\t';
-    if (e.startsWith('u{')) return String.fromCodePoint(parseInt(e.slice(2, -1), 16));
-    if (e[0] === 'u' && e.length === 5) return String.fromCharCode(parseInt(e.slice(1), 16));
-    if (e[0] === 'x' && e.length === 3) return String.fromCharCode(parseInt(e.slice(1), 16));
+    if (e.startsWith('u{')) return String.fromCodePoint(Number.parseInt(e.slice(2, -1), 16));
+    if (e[0] === 'u' && e.length === 5) return String.fromCharCode(Number.parseInt(e.slice(1), 16));
+    if (e[0] === 'x' && e.length === 3) return String.fromCharCode(Number.parseInt(e.slice(1), 16));
     return e;
   });
 }

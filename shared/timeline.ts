@@ -361,7 +361,7 @@ function withoutNulls<T extends object>(o: T): T {
  */
 export function parseTimeline(text: string): TimelineRecord[] {
   const out: TimelineRecord[] = [];
-  let last = -Infinity;
+  let last = Number.NEGATIVE_INFINITY;
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
     let rec: unknown;

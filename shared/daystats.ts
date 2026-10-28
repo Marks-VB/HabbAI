@@ -995,7 +995,7 @@ export class StatsTracker {
   }
 
   observe(view: StatsView, now: number): void {
-    const dt = this.lastSample === undefined ? Infinity : now - this.lastSample;
+    const dt = this.lastSample === undefined ? Number.POSITIVE_INFINITY : now - this.lastSample;
     this.lastSample = now;
     const roomNames = new Map(view.rooms.map((r) => [r.id, r.name]));
     const accounts = new Map(view.accounts.map((a) => [a.id, { name: a.name, short: a.short, color: a.color }]));

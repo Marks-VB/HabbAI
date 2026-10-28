@@ -152,7 +152,7 @@ try {
   await page.waitForTimeout(700);
   const wheel = await page.evaluate(() => {
     const el = document.querySelector('.ui-city-wheel');
-    return { x: parseFloat(el.style.getPropertyValue('--cx')), y: parseFloat(el.style.getPropertyValue('--cy')) };
+    return { x: Number.parseFloat(el.style.getPropertyValue('--cx')), y: Number.parseFloat(el.style.getPropertyValue('--cy')) };
   });
   await page.screenshot({ path: join(out, 'world-social.png'), clip: { x: Math.max(0, wheel.x - 380), y: Math.max(0, wheel.y - 230), width: 760, height: 420 } });
   console.log('salvo:', join(out, 'world-social.png'));

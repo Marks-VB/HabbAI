@@ -17,7 +17,7 @@ describe('demo: eventos do GitHub', () => {
   it('de tempos em tempos: avisos, atividades e festa/alarme nas salas (o alarme acaba)', () => {
     const sim = new DemoSimulator({ seed: 5, speed: 4, sessions: 5 }, 0);
     const seen = { party: 0, alarm: 0, recovered: 0, notices: 0, feed: 0 };
-    let first = Infinity;
+    let first = Number.POSITIVE_INFINITY;
     for (let t = 0; t < 1_800_000 / 4; t += 250) {
       const r = sim.tick(t);
       seen.notices += r.notices.filter((n) => /^(🎉|🚨|✅ CI)/.test(n.text)).length;
