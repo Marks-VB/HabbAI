@@ -26,5 +26,56 @@ jobs:
 
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run i18n:check
+      - run: npm run test:coverage
       - run: npm run build
+
+  # O Habblaud roda no Windows tanto quanto no Linux/macOS: os testes que dependem de permissão POSIX ou de caminhos
+  # fixos precisam ser pulados por plataforma (server/test/fixtures.ts, HAS_POSIX_MODES), nunca falhar.
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.12'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  # Estilo e padrões que o typecheck não vê (imports sem uso, APIs frágeis, strings fora do tr() etc.).
+  qualidade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.12'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+
+  # Fumaça no navegador de verdade: a interface sobe, o escritório desenha e nada estoura no console.
+  # Usa o Chromium do playwright-core (ou um Chrome/Edge do sistema); sem navegador, o teste se explica e sai.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.12'
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright-core install chromium-headless-shell
+      - run: npm run build
+      - run: npm run test:e2e

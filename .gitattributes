@@ -1,0 +1,19 @@
+# Fim de linha único no repositório: LF. Sem isto, o core.autocrlf de cada máquina (no Windows ele costuma vir
+# ligado) transforma arquivos inteiros em diff só por causa do CRLF.
+* text=auto eol=lf
+
+# Binários: nada de normalizar.
+*.png binary
+*.gif binary
+*.ico binary
+*.exe binary
+*.woff binary
+*.woff2 binary
+
+# Scripts do Windows ficam com CRLF (PowerShell e .bat não gostam de LF em algumas versões).
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# O lockfile é gerado pelo npm: sem merge manual, ele é reconstruído.
+package-lock.json -diff linguist-generated

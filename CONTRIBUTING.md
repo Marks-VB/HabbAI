@@ -35,10 +35,25 @@ O Habblaud tem interface em português, inglês, espanhol e francês. O portugu�
 Antes de abrir o pull request, rode:
 
 ```sh
+npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run i18n:check
 ```
+
+O `biome.json` liga só as regras que pegam defeito de verdade (import ou variável morta, Promise solta, comparação
+frouxa, `eval`) e um punhado de estilo barato de corrigir; o pacote `recommended` fica desligado de propósito, porque
+ligado ele acusa milhares de avisos de estilo em código que já está bom. Ficam desligadas, como dívida a pagar numa
+rodada só de estilo: `noAssignInExpressions`, `useConst`, `noNonNullAssertion`, `noDelete`, `noParameterAssign` e
+`noUnusedFunctionParameters`.
+
+Quando quiser ver a cobertura, rode `npm run test:coverage`: o resumo aparece no terminal e o relatório HTML fica em
+`coverage/`. O `vitest.config.ts` define um piso de cobertura (statements, branches, funções e linhas) que faz o comando
+falhar se a mudança derrubar o número; baixar esse piso exige justificativa no pull request.
+
+Para uma fumaça no navegador de verdade, rode `npm run test:e2e`. Ele usa o Chromium do `playwright-core` ou um
+Chrome/Edge do sistema e avisa quando não encontra nenhum dos dois.
 
 Se a mudança alterar um plugin do Claude Code, valide também o plugin afetado:
 
