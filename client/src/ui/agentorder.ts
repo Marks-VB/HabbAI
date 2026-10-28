@@ -13,7 +13,7 @@ export function orderAgents<T>(roomId: string, items: readonly T[], sessionOf: (
   const rank = new Map(saved.map((sid, i) => [sid, i]));
   return items
     .map((item, i) => ({ item, i, r: rank.get(sessionOf(item)) }))
-    .sort((x, y) => (x.r ?? Infinity) - (y.r ?? Infinity) || x.i - y.i)
+    .sort((x, y) => (x.r ?? Number.POSITIVE_INFINITY) - (y.r ?? Number.POSITIVE_INFINITY) || x.i - y.i)
     .map((x) => x.item);
 }
 

@@ -100,7 +100,6 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
         : snow ? (rng() < 0.22 ? 'snowman' : 'pine')
           : rng() < pineChance ? 'pine' : 'tree';
   const shrub = (): ExteriorProp['kind'] => (orbital ? 'crate' : 'bush');
-  const bed = (): ExteriorProp['kind'] => (orbital ? 'crate' : beach ? 'parasol' : snow ? 'bush' : 'flowers');
   const stone = (): ExteriorProp['kind'] => (orbital ? 'crate' : 'rock');
   const fenceKind = (i: number): ExteriorProp['kind'] => (orbital ? 'rail' : beach ? 'rail' : snow ? 'hedge' : i % 3 === 1 ? 'flowers' : 'hedge');
 

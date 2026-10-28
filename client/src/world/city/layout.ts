@@ -187,7 +187,7 @@ export function nearestWalkableTile(x: number, y: number, maxR = 16): CityPoint 
   if (isWalkable(tx + 0.5, ty + 0.5, anyLot)) return { x: tx, y: ty };
   for (let r = 1; r <= maxR; r++) {
     let best: CityPoint | null = null;
-    let bestD = Infinity;
+    let bestD = Number.POSITIVE_INFINITY;
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
@@ -408,7 +408,7 @@ export function plazaDecor(): Decor[] {
   ] as const) {
     out.push({ kind: 'lamp', x: X(lx) + 8, y: Y(ly) + 10, seed: lx * 3 + ly });
   }
-  // o totem do Habblaud ao lado do ponto de nascimento
+  // o totem do HabbAI ao lado do ponto de nascimento
   out.push({ kind: 'totem', x: X(SPAWN.x - 3) + 8, y: Y(SPAWN.y) + 4, seed: 2 });
   out.push({ kind: 'planter', x: X(SPAWN.x + 3) + 8, y: Y(SPAWN.y) + 6, seed: 9, small: true });
   return out;

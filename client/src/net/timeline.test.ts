@@ -140,7 +140,7 @@ describe('reconstrução do timelapse', () => {
     const recs: TimelineRecord[] = [];
     const truth: { at: number; frame: TimelineFrame }[] = [];
     let written: TimelineFrame | null = null;
-    let lastKey = -Infinity;
+    let lastKey = Number.NEGATIVE_INFINITY;
     for (let now = T0; now <= T0 + 40 * MIN; now += 1_000) {
       sim.tick(now);
       const frame = compactSnapshot(sim.snapshot(now));

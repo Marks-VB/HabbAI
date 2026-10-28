@@ -44,7 +44,7 @@ export interface RoomVariant {
 function shade(hex: string, amount: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return hex;
-  const n = parseInt(m[1], 16);
+  const n = Number.parseInt(m[1], 16);
   const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v + (amount > 0 ? (255 - v) * amount : v * amount))));
   const r = ch((n >> 16) & 255);
   const g = ch((n >> 8) & 255);

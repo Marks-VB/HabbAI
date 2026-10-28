@@ -1,5 +1,5 @@
 // Peças do personagem (pele, cabelo e estilo, olhos, roupa, calça, sapato, acessório, barba) com a prévia de corpo
-// inteiro: o miolo do editor de personagem, usado na gaveta do agente (character-editor.ts) e no personagem do Habblaud
+// inteiro: o miolo do editor de personagem, usado na gaveta do agente (character-editor.ts) e no personagem do HabbAI
 // World (world/settings-world.ts). Quem usa guarda o nome, salva e decide o que mandar; aqui só se escolhe a aparência.
 import { ACCESSORIES, BOTTOM_STYLES, TOP_STYLES, type AppearanceParts, type PartKey } from '../../../shared/appearance';
 import { characterSprite, editorConflict, editorOptions, fitToOptions, type EditorOptions } from '../art';

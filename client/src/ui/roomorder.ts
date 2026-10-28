@@ -10,7 +10,7 @@ export function orderRooms<T>(items: readonly T[], idOf: (item: T) => string): T
   const rank = new Map(saved.map((id, i) => [id, i]));
   return items
     .map((item, i) => ({ item, i, r: rank.get(idOf(item)) }))
-    .sort((x, y) => (x.r ?? Infinity) - (y.r ?? Infinity) || x.i - y.i)
+    .sort((x, y) => (x.r ?? Number.POSITIVE_INFINITY) - (y.r ?? Number.POSITIVE_INFINITY) || x.i - y.i)
     .map((x) => x.item);
 }
 

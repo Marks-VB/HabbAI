@@ -84,7 +84,7 @@ export class Movable {
     return this.box !== null;
   }
 
-  /** Ocupando a tela toda do Habblaud (por cima de tudo; não arrasta). */
+  /** Ocupando a tela toda do HabbAI (por cima de tudo; não arrasta). */
   get maximized(): boolean {
     return this.max;
   }
@@ -229,7 +229,7 @@ export class Movable {
    */
   private minTop(): number {
     const s = getComputedStyle(this.el);
-    return (parseFloat(s.getPropertyValue('--top-h')) || 0) + (parseFloat(s.getPropertyValue('--gap')) || 0);
+    return (Number.parseFloat(s.getPropertyValue('--top-h')) || 0) + (Number.parseFloat(s.getPropertyValue('--gap')) || 0);
   }
 
   /** Aplica a caixa, mantendo um pedaço da janela (e a barra) dentro da tela. */

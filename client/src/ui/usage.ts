@@ -36,7 +36,7 @@ export function sourceLabel(u: NonNullable<AccountInfo['usage']>): string {
 export const USAGE_SETUP_STEPS: readonly [string, string][] = [
   [
     'npm run mod:install',
-    tr('Recomendado: instala o mod do Habblaud no Claude Code (2.1.287 ou mais novo), que passa o uso de 5 h e da semana ao vivo. Rode na pasta do Habblaud, no computador onde o Claude Code roda; nas sessões já abertas, `/reload-plugins`.'),
+    tr('Recomendado: instala o mod do Habblaud no Claude Code (2.1.287 ou mais novo), que passa o uso de 5 h e da semana ao vivo. Rode na pasta do HabbAI, no computador onde o Claude Code roda; nas sessões já abertas, `/reload-plugins`.'),
   ],
   [
     'npm run usage:install',
@@ -388,7 +388,7 @@ export class UsageCards {
     setText(r.howLong, codex ? tr('Como funciona') : tr('Como ativar'));
     setText(r.howShort, codex ? tr('Saber') : tr('Ativar'));
     r.how.dataset.help = codex ? 'codex' : 'usage';
-    setTitle(r.how, codex ? tr('Como o uso do Codex chega ao Habblaud (abre a ajuda em “Codex”)') : tr('Como mostrar o uso desta conta (abre a ajuda em “Contas e uso”)'));
+    setTitle(r.how, codex ? tr('Como o uso do Codex chega ao HabbAI (abre a ajuda em “Codex”)') : tr('Como mostrar o uso desta conta (abre a ajuda em “Contas e uso”)'));
     this.updateTip(r, a, state, five, week, now);
   }
 

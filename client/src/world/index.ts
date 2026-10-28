@@ -183,7 +183,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const pick = (sx: number, sy: number): Hit => {
     const w = camera.screenToWorld(sx, sy);
     let best: string | null = null;
-    let bestDepth = -Infinity;
+    let bestDepth = Number.NEGATIVE_INFINITY;
     const slack = Math.max(1, 3 / camera.zoom);
     for (const [id, h] of renderer.heads) {
       if (!h.visible || id === VISITOR_ID) continue;

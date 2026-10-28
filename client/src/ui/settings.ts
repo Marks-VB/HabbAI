@@ -206,7 +206,7 @@ export class SettingsPopover implements UiComponent {
       (v) => pickLanguage(v),
     );
     this.language.row.append(
-      h('span', { class: 'ui-set__hint', text: tr('Os textos das atividades vêm do servidor: seguem HABBLAUD_LANG ou o idioma do sistema onde o Habblaud roda (o inglês, só com HABBLAUD_LANG=en).') }),
+      h('span', { class: 'ui-set__hint', text: tr('Os textos das atividades vêm do servidor: seguem HABBLAUD_LANG ou o idioma do sistema onde o HabbAI roda (o inglês, só com HABBLAUD_LANG=en).') }),
     );
 
     this.demoGroup = h(

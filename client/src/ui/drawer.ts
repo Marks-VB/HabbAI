@@ -242,7 +242,7 @@ class AgentView {
   private actTime: HTMLElement;
   private actDetails: HTMLDetailsElement;
   private actDetail: HTMLElement;
-  /** Mandar mensagem ao agente principal pelo Habblaud (plugin habblaud-mensagens). */
+  /** Mandar mensagem ao agente principal pelo HabbAI (plugin habblaud-mensagens). */
   private composer: MessageComposer;
   private msgSec: ReturnType<typeof section>;
   private tasksSec: ReturnType<typeof section>;
@@ -724,7 +724,7 @@ class AgentView {
                   this.pty.enabled && ptyControllable(this.last) ? tr('; "Assumir daqui" continua nela aqui') : '',
                 ])
               : kind === 'interativo'
-                ? tr('Abrir o terminal desta sessão, que roda aqui no Habblaud (T)')
+                ? tr('Abrir o terminal desta sessão, que roda aqui no HabbAI (T)')
                 : tr('Abrir o terminal: a sessão roda em outro terminal; dá para assumir daqui (T)'),
     );
   }

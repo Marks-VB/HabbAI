@@ -36,7 +36,7 @@ function digest(data: Uint8ClampedArray): string {
 }
 /** Quantos pixels opacos do buffer têm exatamente a cor `hex` (#rrggbb). */
 function countColor(buf: PixelBuf, hex: string): number {
-  const n = parseInt(hex.slice(1), 16);
+  const n = Number.parseInt(hex.slice(1), 16);
   const r = n >> 16;
   const g = (n >> 8) & 255;
   const b = n & 255;
@@ -321,7 +321,7 @@ describe('vida social: poses, itens e gestos', () => {
   };
   /** Pixels com cor próxima da pele (luz, base e sombra do ramp). */
   const skinIn = (b: PixelBuf, x0: number, x1: number, y0: number, y1: number) => {
-    const n = parseInt(A.skin.slice(1), 16);
+    const n = Number.parseInt(A.skin.slice(1), 16);
     const [sr, sg, sb] = [n >> 16, (n >> 8) & 255, n & 255];
     let c = 0;
     for (let y = y0; y < y1; y++) {
@@ -749,7 +749,7 @@ describe('desenhos por quadro', () => {
       },
     };
     const lum = (hex: string) => {
-      const n = parseInt(hex.slice(1, 7), 16);
+      const n = Number.parseInt(hex.slice(1, 7), 16);
       return (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
     };
     drawScreen(ctx as unknown as CanvasRenderingContext2D, { x: 0, y: 0, w: 14, h: 9 }, 'off', 0, 1);

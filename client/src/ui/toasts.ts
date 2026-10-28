@@ -10,7 +10,7 @@ import { tr } from '../../../shared/i18n';
 const MAX_VISIBLE = 4;
 /** Avisos iguais dentro desta janela viram um só (com contador). */
 const DEDUPE_MS = 20_000;
-const LIFETIME: Record<NoticeLevel, number> = { info: 5_000, success: 6_000, warn: 9_000, alert: Infinity };
+const LIFETIME: Record<NoticeLevel, number> = { info: 5_000, success: 6_000, warn: 9_000, alert: Number.POSITIVE_INFINITY };
 
 interface Toast {
   key: string;

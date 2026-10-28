@@ -23,7 +23,7 @@ function makeCanvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingCo
 }
 
 function hex(c: string): [number, number, number] {
-  const n = parseInt(c.slice(1), 16);
+  const n = Number.parseInt(c.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
@@ -614,7 +614,7 @@ function railSprite(): PropSprite {
 }
 
 export function propSprite(prop: ExteriorProp, scenario: ScenarioTheme = 'city'): PropSprite {
-  const key = (prop.kind === 'lamp' || prop.kind === 'bench' || prop.kind === 'totem' ? prop.kind : `${prop.kind}:${prop.seed % 7}`) + `:${scenario}`;
+  const key = `${prop.kind === 'lamp' || prop.kind === 'bench' || prop.kind === 'totem' ? prop.kind : `${prop.kind}:${prop.seed % 7}`}:${scenario}`;
   let s = cache.get(key);
   if (s) return s;
   switch (prop.kind) {

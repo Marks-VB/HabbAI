@@ -6,10 +6,10 @@ import { mix } from './core/color';
 type Ctx = CanvasRenderingContext2D;
 
 /** Retângulo de recorte ativo: todo fill é limitado a ele (as telas nunca vazam da moldura). */
-let clipX0 = -Infinity;
-let clipY0 = -Infinity;
-let clipX1 = Infinity;
-let clipY1 = Infinity;
+let clipX0 = Number.NEGATIVE_INFINITY;
+let clipY0 = Number.NEGATIVE_INFINITY;
+let clipX1 = Number.POSITIVE_INFINITY;
+let clipY1 = Number.POSITIVE_INFINITY;
 
 function clipTo(x: number, y: number, w: number, h: number): void {
   clipX0 = x;

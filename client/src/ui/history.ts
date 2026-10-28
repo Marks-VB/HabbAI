@@ -130,7 +130,7 @@ export class HistoryPopover implements UiComponent {
   private error = '';
   private query = '';
   private request = 0;
-  private closedAt = -Infinity;
+  private closedAt = Number.NEGATIVE_INFINITY;
   /** O que está desenhado na lista (evita refazer o DOM a cada quadro). */
   private drawn = '';
 

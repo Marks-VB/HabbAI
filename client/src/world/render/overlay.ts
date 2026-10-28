@@ -158,7 +158,7 @@ function accountDot(ctx: CanvasRenderingContext2D, x: number, y: number, r: numb
 function luminance(hex: string): number {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex);
   if (!m) return 0.5;
-  const n = parseInt(m[1], 16);
+  const n = Number.parseInt(m[1], 16);
   return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
 }
 
@@ -430,7 +430,7 @@ export class Overlay {
       const anim = room ? buildAnim(room.phase, room.progress(now)) : null;
       // texto da placa quando ela fica grande o bastante para ler; senão, o nome flutuante
       const rect = this.renderer.signRect(vis);
-      const text = room ? room.info.name : vis.id === 'core:recepcao' ? 'Habblaud' : null;
+      const text = room ? room.info.name : vis.id === 'core:recepcao' ? 'HabbAI' : null;
       const readable = !!rect && rect.h * zoom >= SIGN_MIN_PX;
       if (readable && rect && text && (!anim || anim.sign >= 1)) {
         const ax = this.sx(rect.x);

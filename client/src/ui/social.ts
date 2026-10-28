@@ -114,7 +114,7 @@ export class SocialSection {
     }
 
     const items = s.ledger.slice(0, LEDGER_SHOWN);
-    const lk = items.map((e) => `${e.at}:${e.delta}:${e.text}`).join('|') + `@${Math.floor(now / 30_000)}`;
+    const lk = `${items.map((e) => `${e.at}:${e.delta}:${e.text}`).join('|')}@${Math.floor(now / 30_000)}`;
     if (lk !== this.keys.ledger) {
       this.keys.ledger = lk;
       this.ledger.replaceChildren(

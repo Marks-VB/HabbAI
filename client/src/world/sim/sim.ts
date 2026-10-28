@@ -1296,7 +1296,7 @@ export class Sim {
     const door = room.layout.door;
     const busy = this.busyTiles(ch.id);
     let best: { x: number; y: number } | null = null;
-    let bestScore = -Infinity;
+    let bestScore = Number.NEGATIVE_INFINITY;
     for (let y = r.y + 2; y <= r.y + 10; y++) {
       for (let x = r.x + 1; x <= r.x + 14; x++) {
         if (!this.overflowFree(x, y, ch, busy)) continue;
@@ -1432,7 +1432,7 @@ export class Sim {
     const grid = this.building.grid;
     const busy = this.busyTiles(from.id, target.id);
     let best: { x: number; y: number } | null = null;
-    let bestD = Infinity;
+    let bestD = Number.POSITIVE_INFINITY;
     for (const [dx, dy] of [
       [-1, 0],
       [1, 0],

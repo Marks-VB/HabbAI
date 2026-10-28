@@ -398,7 +398,7 @@ export class Social {
     const busy = this.sim.busyTiles(ch.id);
     const taken = new Set(g.members.filter((m) => m.tile && !m.left).map((m) => m.tile!.y * grid.w + m.tile!.x));
     let best: { x: number; y: number } | null = null;
-    let bestD = Infinity;
+    let bestD = Number.POSITIVE_INFINITY;
     // de preferência na fileira de trás (rosto para a câmera, olhando a partida); depois dos lados
     const rowCost = (dy: number) => (dy === -1 ? 0 : dy === -2 ? 1.2 : dy === 1 ? 2.5 : dy === 0 ? 2 : 4);
     for (let dy = -2; dy <= 2; dy++) {

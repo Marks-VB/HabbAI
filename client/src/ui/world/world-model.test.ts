@@ -246,10 +246,10 @@ describe('e-mail, código e senha', () => {
 
   it('senha: de 12 a 128 caracteres contados em código (não em UTF-16)', () => {
     expect(passwordProblem('curta')).toBe('short');
-    expect(passwordProblem('a'.repeat(11) + 'b')).toBeNull();
+    expect(passwordProblem(`${'a'.repeat(11)}b`)).toBeNull();
     expect(passwordProblem('🙂'.repeat(11))).toBe('short');
-    expect(passwordProblem('🙂'.repeat(11) + 'x')).toBeNull();
-    expect(passwordProblem('x'.repeat(129) + 'y')).toBe('long');
+    expect(passwordProblem(`${'🙂'.repeat(11)}x`)).toBeNull();
+    expect(passwordProblem(`${'x'.repeat(129)}y`)).toBe('long');
   });
 
   it('senha: nem o e-mail, nem só repetição', () => {
@@ -401,9 +401,9 @@ describe('cartão "Seu prédio"', () => {
     expect(buildingState({ ...live, left: true }, false)).toBe('no_player');
   });
 
-  it('parado pelo servidor do mundo: cada motivo com o seu texto; "Atualize o Habblaud" e "Conectado em outro computador"', () => {
+  it('parado pelo servidor do mundo: cada motivo com o seu texto; "Atualize o HabbAI" e "Conectado em outro computador"', () => {
     const stopped = (reason: WorldBuildingStop) => buildingView({ ...live, connected: false, stopped: reason }, true, NOW);
-    expect(stopped('update')).toMatchObject({ state: 'stopped', label: 'Atualize o Habblaud', toggle: null, leave: true, rejected: null });
+    expect(stopped('update')).toMatchObject({ state: 'stopped', label: 'Atualize o HabbAI', toggle: null, leave: true, rejected: null });
     expect(stopped('other-device')).toMatchObject({ label: 'Conectado em outro computador', toggle: { action: 'resume', text: 'Trazer para este computador' }, leave: true });
     expect(stopped('suspended').toggle).toMatchObject({ action: 'resume', text: 'Tentar de novo' });
     expect(stopped('banned')).toMatchObject({ label: 'Conta banida', toggle: null, leave: false });

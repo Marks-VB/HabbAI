@@ -198,7 +198,7 @@ function drawRawPainting(ctx: CanvasRenderingContext2D, s: Sprite, ox: number, o
 function tintFloor(ctx: CanvasRenderingContext2D, px: { x: number; y: number; w: number; h: number }, color: string): void {
   const m = /^#?([0-9a-f]{6})$/i.exec(color.trim());
   if (!m) return;
-  const n = parseInt(m[1], 16);
+  const n = Number.parseInt(m[1], 16);
   // mistura 10% da cor com branco: só um sopro de cor
   const k = 0.1;
   const ch = (v: number) => Math.round(255 + (v - 255) * k);

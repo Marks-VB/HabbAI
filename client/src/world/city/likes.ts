@@ -60,7 +60,7 @@ export interface DoorActions {
 
 export function doorActions(b: WorldBuildingPublic, me: { x: number; y: number } | null, myBuildingId: string | null): DoorActions {
   const mine = !!myBuildingId && b.id === myBuildingId;
-  const dist = me ? doorDistance(me, b) : Infinity;
+  const dist = me ? doorDistance(me, b) : Number.POSITIVE_INFINITY;
   return {
     canLike: !mine && dist <= LIKE_DISTANCE + 1e-9,
     canKnock: !mine && b.knocks === true && dist <= KNOCK_DISTANCE + 1e-9,

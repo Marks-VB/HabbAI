@@ -22,11 +22,11 @@ function parseUncached(c: string): RGBA {
   if (s.startsWith('#')) {
     const hex = s.slice(1);
     if (hex.length === 3 || hex.length === 4) {
-      const n = [...hex].map((ch) => parseInt(ch + ch, 16));
+      const n = [...hex].map((ch) => Number.parseInt(ch + ch, 16));
       return [n[0], n[1], n[2], hex.length === 4 ? n[3] : 255];
     }
     if (hex.length === 6 || hex.length === 8) {
-      const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+      const n = (i: number) => Number.parseInt(hex.slice(i, i + 2), 16);
       return [n(0), n(2), n(4), hex.length === 8 ? n(6) : 255];
     }
     return MAGENTA;
@@ -36,11 +36,11 @@ function parseUncached(c: string): RGBA {
   const parts = fn[2].split(/[\s,/]+/).filter(Boolean);
   const num = (p: string | undefined, scale: number) => {
     if (p === undefined) return 1;
-    return p.endsWith('%') ? (parseFloat(p) / 100) * scale : parseFloat(p);
+    return p.endsWith('%') ? (Number.parseFloat(p) / 100) * scale : Number.parseFloat(p);
   };
   const alphaOf = (p: string | undefined) => {
     if (p === undefined) return 255;
-    const a = p.endsWith('%') ? parseFloat(p) / 100 : parseFloat(p);
+    const a = p.endsWith('%') ? Number.parseFloat(p) / 100 : Number.parseFloat(p);
     return Math.round(clamp01(a) * 255);
   };
   if (fn[1].startsWith('rgb')) {
@@ -51,7 +51,7 @@ function parseUncached(c: string): RGBA {
       alphaOf(parts[3]),
     ];
   }
-  const h = parseFloat(parts[0] ?? '0');
+  const h = Number.parseFloat(parts[0] ?? '0');
   const sat = num(parts[1], 1);
   const lig = num(parts[2], 1);
   const [r, g, b] = hslToRgb(h, sat, lig);

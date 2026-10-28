@@ -19,7 +19,7 @@ export interface VisitControllerDeps {
   /** Manda comandos pelo stream da cena Mundo (só `leave` e `resync {building}` saem daqui). */
   send(cmds: WorldSceneCommand[]): void;
   now(): number;
-  /** Versão do Habblaud (vai em `meta.version` do escritório da visita). */
+  /** Versão do HabbAI (vai em `meta.version` do escritório da visita). */
   version: string;
   /** O interior mudou (faixa, painel, luzes, tema). */
   changed?(): void;
@@ -33,7 +33,7 @@ export class VisitController {
   snapshot: OfficeSnapshot;
   /** `leave` já mandado: esperando o `pos` (a volta à rua). */
   leaving = false;
-  private resyncAt = -Infinity;
+  private resyncAt = Number.NEGATIVE_INFINITY;
 
   constructor(
     inside: WorldSceneInside,
@@ -60,7 +60,7 @@ export class VisitController {
     const r = applyBuildingPatch(this.snapshot, { rev: inside.rev, floors: d.floors, building: d.building }, this.deps.now());
     this.rev = inside.rev;
     this.detail = d;
-    this.resyncAt = -Infinity;
+    this.resyncAt = Number.NEGATIVE_INFINITY;
     this.publish(r.snapshot);
   }
 

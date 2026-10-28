@@ -141,7 +141,7 @@ export class HttpWorldStream implements WorldStream {
   private flushTimer: unknown = null;
   private retryTimer: unknown = null;
   private inflight = false;
-  private lastPostAt = -Infinity;
+  private lastPostAt = Number.NEGATIVE_INFINITY;
   /** Espera pedida pelo servidor local (429). */
   private holdUntil = 0;
   private attempts = 0;
@@ -716,7 +716,7 @@ export class FakeWorldStream implements WorldStream {
       this.later.push({ at: now + 1_600, msg: { t: 'greeting', from: b.id, to: a.id, greetingId: REPLY[g], until: now + 6_600 } });
     }
     for (const p of bots) {
-      if (Math.hypot(p.pos.x - this.me.x, p.pos.y - this.me.y) > 7 || now - (this.greetedMe.get(p.id) ?? -Infinity) < 30_000) continue;
+      if (Math.hypot(p.pos.x - this.me.x, p.pos.y - this.me.y) > 7 || now - (this.greetedMe.get(p.id) ?? Number.NEGATIVE_INFINITY) < 30_000) continue;
       if (this.social() < 0.5) continue;
       this.greetedMe.set(p.id, now);
       const g: GreetingId = this.social() < 0.5 ? 'hello' : 'wave';

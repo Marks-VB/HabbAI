@@ -34,7 +34,7 @@ export interface WorldGate {
   remote: boolean;
   /** Página aberta pelo próprio computador (Host local). */
   local: boolean;
-  /** meta.terminal: o Habblaud só é acessível pelo próprio computador (a trava das ações da conta). */
+  /** meta.terminal: o HabbAI só é acessível pelo próprio computador (a trava das ações da conta). */
   terminal: boolean;
   /** Modo demonstração com o FakeWorldApi: sem servidor, nenhuma trava vale. */
   fake: boolean;
@@ -504,9 +504,9 @@ export function worldErrorText(raw: WorldErrorCode | string, action: WorldAction
     case 'too_large':
     case 'unsupported_media_type':
     case 'method_not_allowed':
-      return tr('O pedido saiu num formato que o servidor não aceita. Atualize o Habblaud e tente de novo.');
+      return tr('O pedido saiu num formato que o servidor não aceita. Atualize o HabbAI e tente de novo.');
     case 'not_configured':
-      return tr('O Habblaud World não está ligado neste Habblaud (HABBLAUD_WORLD_URL recusada; veja o log do servidor).');
+      return tr('O Habblaud World não está ligado neste HabbAI (HABBLAUD_WORLD_URL recusada; veja o log do servidor).');
     case 'rate_limited':
       return action === 'export'
         ? tr('Dá para baixar os dados uma vez por dia. Tente de novo amanhã.')
@@ -520,21 +520,21 @@ export function worldErrorText(raw: WorldErrorCode | string, action: WorldAction
     case 'account_deleted':
       return tr('A conta do Habblaud World foi excluída. O prédio e o perfil saíram do mundo na hora; o resto é apagado do banco em 7 dias e dos backups em até 30.');
     case 'storage_failed':
-      return tr('Não deu para gravar a sessão neste computador: ela vale só até o Habblaud reiniciar.');
+      return tr('Não deu para gravar a sessão neste computador: ela vale só até o HabbAI reiniciar.');
     case 'too_many_streams':
-      return tr('A cidade já está aberta em outras abas do Habblaud. Feche uma delas para abrir aqui.');
+      return tr('A cidade já está aberta em outras abas do HabbAI. Feche uma delas para abrir aqui.');
     case 'no_stream':
-      return tr('A cena Mundo perdeu a conexão com o Habblaud. Abra a cidade de novo.');
+      return tr('A cena Mundo perdeu a conexão com o HabbAI. Abra a cidade de novo.');
     case 'not_connected':
       if (action === 'unblock') return tr('Sem conexão com o Habblaud World agora: desbloquear precisa do prédio aceso ou da cidade aberta.');
-      return tr('Sem conexão com o Habblaud World agora; o Habblaud tenta de novo sozinho.');
+      return tr('Sem conexão com o Habblaud World agora; o HabbAI tenta de novo sozinho.');
     case 'offline':
-      return tr('Sem conexão com o Habblaud.');
+      return tr('Sem conexão com o HabbAI.');
     case 'forbidden':
     case 'local_only':
-      return tr('A conta do World só pode ser mexida pelo próprio computador, com o Habblaud aberto em localhost.');
+      return tr('A conta do World só pode ser mexida pelo próprio computador, com o HabbAI aberto em localhost.');
     case 'terminal_off':
-      return tr('A conta do World só pode ser mexida com o Habblaud acessível apenas pelo próprio computador (acesso local, bind 127.0.0.1).');
+      return tr('A conta do World só pode ser mexida com o HabbAI acessível apenas pelo próprio computador (acesso local, bind 127.0.0.1).');
     case 'invalid':
       switch (action) {
         case 'register':
@@ -561,7 +561,7 @@ export function worldErrorText(raw: WorldErrorCode | string, action: WorldAction
 /**
  * Estado do cartão "Seu prédio" (conta aprovada). Sem personagem o prédio não entra no mundo; fora do mundo ("Sair do
  * mundo") e pausado valem mais do que a conexão (nos dois nenhum pacote sobe); depois, uma parada pedida pelo servidor do
- * mundo (`stopped`, com o motivo); sem conexão aberta, o Habblaud está conectando ou tentando de novo.
+ * mundo (`stopped`, com o motivo); sem conexão aberta, o HabbAI está conectando ou tentando de novo.
  */
 export type BuildingState = 'connected' | 'reconnecting' | 'paused' | 'stopped' | 'left' | 'no_player';
 
@@ -577,7 +577,7 @@ export function buildingState(b: WorldBuildingStatus | undefined, hasPlayer: boo
 export function buildingStopView(reason: WorldBuildingStop): { label: string; desc: string; toggle: BuildingView['toggle'] } {
   switch (reason) {
     case 'update':
-      return { label: tr('Atualize o Habblaud'), desc: tr('Esta versão do Habblaud não entra mais no mundo. Atualize para o prédio voltar a acender.'), toggle: null };
+      return { label: tr('Atualize o HabbAI'), desc: tr('Esta versão do HabbAI não entra mais no mundo. Atualize para o prédio voltar a acender.'), toggle: null };
     case 'other-device':
       return {
         label: tr('Conectado em outro computador'),
@@ -613,7 +613,7 @@ export const UPLINK_REJECT_CODES = UPLINK_ACK_ERRORS;
 export function uplinkRejectText(code: string | undefined): string {
   switch (code) {
     case 'schema':
-      return tr('O pacote saiu fora do formato do protocolo. Atualize o Habblaud.');
+      return tr('O pacote saiu fora do formato do protocolo. Atualize o HabbAI.');
     case 'limits':
       return tr('O escritório passou dos limites do mundo (64 andares, 64 agentes por andar, 256 agentes ou 64 KB).');
     case 'name_pool':
@@ -629,9 +629,9 @@ export function uplinkRejectText(code: string | undefined): string {
     case 'left':
       return tr('A conta saiu do mundo (por este ou por outro computador): nada mais sai até você voltar ao mundo.');
     case 'implausible':
-      return tr('O pacote contradiz o anterior de um jeito que o Habblaud não produz: o mundo o descartou, e o prédio fica com o último aceito. As próximas remessas vão normalmente.');
+      return tr('O pacote contradiz o anterior de um jeito que o HabbAI não produz: o mundo o descartou, e o prédio fica com o último aceito. As próximas remessas vão normalmente.');
     default:
-      return tr('Um motivo que esta versão do Habblaud não conhece.');
+      return tr('Um motivo que esta versão do HabbAI não conhece.');
   }
 }
 
@@ -778,7 +778,7 @@ function buildingViewBase(b: WorldBuildingStatus | undefined, hasPlayer: boolean
     case 'reconnecting': {
       const connected = state === 'connected';
       const first = !b?.lastUplinkAt;
-      // Sem conexão e o mundo em manutenção (503 `maintenance`): o Habblaud tenta de novo com espera.
+      // Sem conexão e o mundo em manutenção (503 `maintenance`): o HabbAI tenta de novo com espera.
       const maintenance = !connected && !!opts.maintenance;
       return {
         state,
@@ -789,7 +789,7 @@ function buildingViewBase(b: WorldBuildingStatus | undefined, hasPlayer: boolean
             ? tr('O mundo está em manutenção; tentamos de novo em instantes.')
             : first
               ? tr('O prédio acende com a primeira remessa.')
-              : tr('Sem conexão com o mundo agora: o Habblaud tenta de novo sozinho. Com 2 minutos sem notícias, o prédio apaga.'),
+              : tr('Sem conexão com o mundo agora: o HabbAI tenta de novo sozinho. Com 2 minutos sem notícias, o prédio apaga.'),
         stats,
         rejected,
         toggle: { action: 'pause', text: tr('Pausar'), hint: `${tr('Pausar interrompe o envio na hora e apaga o prédio no mundo.')} ${later}` },

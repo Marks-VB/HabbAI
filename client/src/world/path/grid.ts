@@ -41,7 +41,7 @@ export class WalkGrid {
     if (this.walkable(x, y)) return { x, y };
     for (let r = 1; r <= maxR; r++) {
       let best: { x: number; y: number } | null = null;
-      let bestD = Infinity;
+      let bestD = Number.POSITIVE_INFINITY;
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;

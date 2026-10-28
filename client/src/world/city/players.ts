@@ -264,7 +264,7 @@ export function wirePos(v: number): number {
  * "parei" sempre sai (no próximo intervalo livre).
  */
 export class MoveSender {
-  private lastAt = -Infinity;
+  private lastAt = Number.NEGATIVE_INFINITY;
   private last: { x: number; y: number; dir: Direction; moving: boolean } | null = null;
 
   constructor(private readonly send: (m: { t: 'move'; x: number; y: number; dir: Direction; moving: boolean }) => void) {}
@@ -286,7 +286,7 @@ export class MoveSender {
    */
   keepAlive(p: { x: number; y: number; dir: Dir }): void {
     const cur = { x: wirePos(p.x), y: wirePos(p.y), dir: DIR_TO_PROTO[p.dir], moving: false };
-    this.lastAt = -Infinity;
+    this.lastAt = Number.NEGATIVE_INFINITY;
     this.last = cur;
     this.send({ t: 'move', ...cur });
   }
@@ -294,6 +294,6 @@ export class MoveSender {
   /** Esquece o último enviado (depois de uma correção, o próximo tick manda de novo). */
   reset(): void {
     this.last = null;
-    this.lastAt = -Infinity;
+    this.lastAt = Number.NEGATIVE_INFINITY;
   }
 }

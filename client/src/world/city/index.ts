@@ -72,7 +72,7 @@ export interface CitySceneOptions {
   options: () => WorldOptions;
   /** Margem coberta pela barra do topo (px CSS). */
   topInset: () => number;
-  /** Versão do Habblaud (o escritório da visita leva em `meta.version`). */
+  /** Versão do HabbAI (o escritório da visita leva em `meta.version`). */
   version?: () => string;
 }
 
@@ -438,7 +438,7 @@ export function createCityScene(o: CitySceneOptions): CityScene {
 
   // ------------------------------------------------------------------ stream
 
-  const offline = () => tr('Sem conexão com o Habblaud World agora; o Habblaud tenta de novo sozinho.');
+  const offline = () => tr('Sem conexão com o Habblaud World agora; o HabbAI tenta de novo sozinho.');
 
   const onStream = (ev: WorldStreamEvent) => {
     switch (ev.type) {
@@ -532,7 +532,7 @@ export function createCityScene(o: CitySceneOptions): CityScene {
       if (w.x >= c.bx - slack && w.x <= c.bx + c.bw + slack && w.y >= c.by - slack && w.y <= c.by + c.bh + slack) return { type: 'player', id: c.id };
     }
     let best: Hit = null;
-    let bestDepth = -Infinity;
+    let bestDepth = Number.NEGATIVE_INFINITY;
     for (const v of renderer.buildingsDrawn) {
       if (w.x < v.x || w.x > v.x + 192 || w.y < v.y || w.y > v.y + v.m.height) continue;
       if (v.depth > bestDepth) {

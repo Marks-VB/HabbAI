@@ -2303,7 +2303,7 @@ function drawGesture(dc: Dc, kind: 'rock' | 'paper' | 'scissors', hx: number, hy
 
 function hexKey(c: string): number {
   const m = /^#([0-9a-f]{6})$/i.exec(c);
-  return m ? parseInt(m[1], 16) : -1;
+  return m ? Number.parseInt(m[1], 16) : -1;
 }
 
 function pixelKey(b: PixelBuf, x: number, y: number): number {
