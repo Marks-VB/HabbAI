@@ -40,6 +40,10 @@ WORKDIR /app
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/dist ./dist
 
+# Nada de sourcemap na imagem: os .map (servidor, e do cliente se algum dia houver) só servem para depurar na máquina
+# de quem desenvolve, somam alguns MB e o Node em produção não os usa. `-f` ignora o padrão sem correspondência.
+RUN rm -f dist/server/*.map dist/client/bundle/*.map
+
 # Estado do Habblaud (nomes persistidos). O volume nomeado herda este dono na primeira montagem.
 RUN mkdir -p /data && chown node:node /data
 

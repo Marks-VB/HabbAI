@@ -10,8 +10,15 @@
 !server/
 !scripts/build-server.mjs
 !scripts/build-info.mjs
+# Configuração do npm de quem desenvolve (engine-strict: o Node da imagem precisa satisfazer "engines").
+!.npmrc
 
 # Mesmo dentro das pastas incluídas: nada de lixo local.
 **/node_modules
 **/.DS_Store
 **/*.log
+# Testes não entram no build (nem no contexto): o vitest roda só na máquina de quem desenvolve.
+**/*.test.ts
+# Sourcemap não é entrada de build: o esbuild gera os .map do servidor dentro do estágio do build e o Dockerfile os
+# apaga na imagem final.
+**/*.map
