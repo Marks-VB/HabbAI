@@ -545,6 +545,22 @@ terminal** leaves the question there. The answer reaches the agent as if you had
 - In demo mode, the made-up agents also ask for permission and ask questions (pretend ones), so you can
   try it out.
 
+### Webhook and Telegram notifications
+
+When an agent asks for permission — in Claude Code or Codex —, Habblaud can also notify you outside the page:
+
+- **Webhook:** `HABBLAUD_WEBHOOK_URL` points to an HTTP address. If it's a Discord or Slack webhook, the body already
+  goes in their format (a card with the agent, tool and time, or a simple text); any other address receives JSON with
+  `event` (`permission_request`), `agentName`, `title`, `text`, `tool`, `url` and `timestamp`.
+- **Telegram:** `HABBLAUD_TELEGRAM_BOT_TOKEN` (the bot token) and `HABBLAUD_TELEGRAM_CHAT_ID` (the chat that receives
+  it) send the message through the bot, with a link to open Habblaud. Both must be set.
+- You can use both channels at once. Delivery waits up to 4 seconds and, if it fails, only the server log shows it: the
+  request stays in the office and in the terminal, and answering works as usual.
+- The notice goes through the same path as **Answering from the office**: it needs the permissions path enabled (the
+  Claude Code plugin or the Codex hooks) and Habblaud reachable only from the computer it runs on. The variables are
+  read in Node mode; in Docker they don't go through `docker-compose.yml` yet, so external notifications require
+  running Habblaud directly.
+
 ### Sending messages
 
 With the messages plugin installed (`npm run mod:install`, which installs it along with the mod; it requires Claude Code
@@ -563,6 +579,24 @@ and waits for the next request, give a new instruction or correct its course, wi
   Read the warning in [Privacy and security](#privacy-and-security).
   From the [phone with login](#phone-with-login-and-https-approving-requests), only with `messages` in `HABBLAUD_REMOTE_ALLOW`.
 - In demo mode, the made-up agents also receive messages (pretend ones).
+
+### General order (megaphone)
+
+In the top bar, the **megaphone** button opens the **General order**: write an instruction, check how many agents will
+receive it and click **Broadcast order** (`Ctrl+Enter` or `⌘Enter` also sends). The text is the same for everyone and
+can be up to 20,000 characters.
+
+- The order follows the same path as [sending messages](#sending-messages): each main agent receives it as if you had
+  typed it in its terminal, waits for the turn to end and shows **queued**, **delivered** or **not delivered** in its
+  details.
+- Only main agents that are present and can receive it at that moment get it: a Claude Code session with the plugin
+  answering or Codex with `codex queue` (or the host bridge). Subagents are left out, and so is anyone who already has
+  5 messages waiting.
+- It uses the same safeguard as messages: local access only, `HABBLAUD_MENSAGENS=0` turns it off and, from the
+  [phone with login](#phone-with-login-and-https-approving-requests), it needs `messages` in
+  `HABBLAUD_REMOTE_ALLOW`. The button doesn't show up in demo mode or in the replay.
+- Under the hood, the page calls `POST /api/messages/broadcast` with `{text}` and receives the list of what was sent
+  and the count.
 
 ### Editing the character
 
@@ -668,6 +702,12 @@ If you use more than one Claude Code account (for example, a `c` shortcut with `
 `CLAUDE_CONFIG_DIR=~/.claude-conta2`), Habblaud shows them all together: each agent carries its account's chip and the top bar
 shows, for each account, the **percentage used** of the 5-hour session and of the week and **when each limit resets**.
 
+**Each tool has its icon.** Next to the account name, a pixel-art badge with the tool's icon and name — Codex, Gemini
+CLI, Antigravity, opencode or Aider —, in its color, shows up in the agent drawer, the tooltip, the terminal, the usage
+cards, the session history and the sidebar (where only the icon fits). Claude Code, the default, still has no badge. In
+the office, every character's label shows its tool's icon, including Claude Code's, so you can tell at a glance who
+belongs to which one.
+
 **How accounts are recognized.** Each Claude Code config folder is an account: `~/.claude` and any
 `~/.claude*` with `projects/` or `sessions/` (plus `CLAUDE_CONFIG_DIR`). To give each one its letter, Habblaud
 reads, in your shell files (`~/.zshrc`, `~/.bashrc`…), **only** the `alias x='... claude ...'` lines:
@@ -729,6 +769,9 @@ Everything works without configuring anything. If you need to adjust something, 
 | `HABBLAUD_CLAUDE_BIN` | `claude` from PATH | The Claude Code executable that the interactive terminal and New agent run. |
 | `HABBLAUD_REMOTE_ALLOW` | `permissions` | What the [phone with login](#phone-with-login-and-https-approving-requests) can do: `permissions`, `messages`, `terminal`, `spawn` (comma-separated) or `none`. The other `HABBLAUD_REMOTE_*` are written by `npm run remote:setup`. |
 | `HABBLAUD_MENSAGENS` | on (with the terminal) | `0` turns off only messages from the office (the box in the terminal and in the agent's details). |
+| `HABBLAUD_WEBHOOK_URL` | — | HTTP webhook that receives a notice when an agent asks for permission: Discord, Slack or generic JSON. |
+| `HABBLAUD_TELEGRAM_BOT_TOKEN` | — | Telegram bot token for the permission notice (used together with `HABBLAUD_TELEGRAM_CHAT_ID`). |
+| `HABBLAUD_TELEGRAM_CHAT_ID` | — | Telegram chat that receives the permission notice (used together with the bot token). |
 | `HABBLAUD_CODEX` | on | `0` turns off Codex in the office. |
 | `HABBLAUD_CODEX_DIRS` | automatic detection | Codex folders, comma-separated (instead of `~/.codex*` and `CODEX_HOME`). |
 | `HABBLAUD_CODEX_BIN` | `codex` from PATH (on Windows, `codex.exe`) | The Codex binary that delivers the messages (`codex queue`), in Node mode or in `npm run codex:bridge`. |
@@ -1254,6 +1297,14 @@ a new request to someone — it lets the group know ("Oops, they're calling me! 
     <td><b>In the agent's details.</b> What it's doing, the wallet, the score, the personality, friendships and rivalries (with the head-to-head record) and the statement.</td>
   </tr>
 </table>
+
+### The office cat
+
+An **orange tabby cat** in pixel art lives in the building. It shows up in the corridor, picks a corner to sit in and,
+now and then, curls up asleep for a few seconds before wandering again. The cat doesn't get in anyone's way.
+
+Click it to pet it: it sits down, purrs for a moment and lets a pink heart float over its head; then it goes back to its
+routine. It's just for show, like the rest of the social life: nothing changes in the sessions.
 
 ### Personalities
 

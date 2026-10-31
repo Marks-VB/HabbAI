@@ -3381,4 +3381,17 @@ export const ES: Readonly<Record<string, string>> = {
 
   // server/spawn/spawn.ts
   "o claude deste computador é um atalho .cmd e não achei o programa por trás dele": "el claude de este equipo es un acceso directo .cmd y no encontré el programa que hay detrás",
+
+  // broadcast
+  "Digite uma instrução para todos os agentes do escritório...": "Escribe una instrucción para todos los agentes de la oficina...",
+  "Transmitir ordem": "Transmitir orden",
+  "Ordem geral para os agentes": "Orden general para los agentes",
+  "{0} agentes principais receberão esta mensagem.": "{0} agentes principales recibirán este mensaje.",
+  "Digite uma instrução antes de enviar.": "Escribe una instrucción antes de enviar.",
+  "Transmitindo...": "Transmitiendo...",
+  "Ordem transmitida com sucesso para {0} agentes.": "Orden transmitida con éxito a {0} agentes.",
+  "Falha ao transmitir ordem: {0}": "Fallo al transmitir orden: {0}",
+  "Ordem geral: envia uma instrução para todos os agentes": "Orden general: envía una instrucción a todos los agentes",
+  "esperado {text}": "esperado {text}",
+  "o texto passa de {0} caracteres": "el texto supera los {0} caracteres",
 };

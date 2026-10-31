@@ -574,6 +574,24 @@ vous l'aviez choisie dans le terminal.
 - En mode démonstration, les agents fictifs demandent aussi des permissions et posent des questions (pour de faux),
   pour que vous puissiez essayer.
 
+### Notifications par webhook et Telegram
+
+Quand un agent demande une permission — dans Claude Code ou Codex —, Habblaud peut aussi vous prévenir en dehors de la
+page :
+
+- **Webhook :** `HABBLAUD_WEBHOOK_URL` pointe vers une adresse HTTP. S'il s'agit d'un webhook Discord ou Slack, le corps
+  part déjà dans leur format (une carte avec l'agent, l'outil et l'heure, ou un texte simple) ; toute autre adresse
+  reçoit un JSON avec `event` (`permission_request`), `agentName`, `title`, `text`, `tool`, `url` et `timestamp`.
+- **Telegram :** `HABBLAUD_TELEGRAM_BOT_TOKEN` (le jeton du bot) et `HABBLAUD_TELEGRAM_CHAT_ID` (la conversation qui le
+  reçoit) envoient le message via le bot, avec un lien pour ouvrir Habblaud. Les deux doivent être définis.
+- Vous pouvez utiliser les deux canaux en même temps. L'envoi attend jusqu'à 4 secondes et, en cas d'échec, seul le
+  journal du serveur le signale : la demande reste dans le bureau et dans le terminal, et la réponse fonctionne comme
+  d'habitude.
+- L'alerte passe par le même chemin que **Répondre depuis le bureau** : elle exige la voie des permissions activée (le
+  plugin Claude Code ou les hooks Codex) et Habblaud accessible uniquement depuis l'ordinateur lui-même. Les variables
+  sont lues en mode Node ; dans Docker, elles ne passent pas encore par `docker-compose.yml`, donc l'alerte externe
+  demande de lancer Habblaud directement.
+
 ### Envoyer des messages
 
 Avec le plugin de messages installé (`npm run mod:install`, qui l'installe en même temps que le mod ; nécessite Claude
@@ -592,6 +610,24 @@ son tour et attend la demande suivante, donner une nouvelle instruction ou corri
   Lisez l'avertissement dans [Confidentialité et sécurité](#confidentialité-et-sécurité).
   Depuis le [téléphone avec connexion](#téléphone-avec-connexion-et-https-valider-les-demandes), seulement avec `messages` dans `HABBLAUD_REMOTE_ALLOW`.
 - En mode démonstration, les agents fictifs reçoivent aussi des messages (pour de faux).
+
+### Ordre général (mégaphone)
+
+Dans la barre supérieure, le bouton du **mégaphone** ouvre l'**Ordre général** : écrivez une instruction, vérifiez
+combien d'agents la recevront et cliquez sur **Diffuser l'ordre** (`Ctrl+Entrée` ou `⌘Entrée` envoie aussi). Le texte
+est le même pour tous et peut faire jusqu'à 20 000 caractères.
+
+- L'ordre suit le même chemin qu'[Envoyer des messages](#envoyer-des-messages) : chaque agent principal le reçoit
+  comme si vous l'aviez tapé dans son terminal, attend la fin de son tour et affiche **en file**, **remis** ou **non
+  remis** dans ses détails.
+- Seuls les agents principaux présents qui peuvent le recevoir à ce moment-là le reçoivent : une session Claude Code
+  avec le plugin qui répond ou Codex avec `codex queue` (ou le relais de l'hôte). Les sous-agents sont exclus, tout
+  comme ceux qui ont déjà 5 messages en attente.
+- Il utilise le même verrou que les messages : accès local uniquement, `HABBLAUD_MENSAGENS=0` le désactive et, depuis
+  le [téléphone avec connexion](#téléphone-avec-connexion-et-https-valider-les-demandes), il faut `messages` dans
+  `HABBLAUD_REMOTE_ALLOW`. Le bouton n'apparaît ni en mode démonstration ni dans le replay.
+- En interne, la page appelle `POST /api/messages/broadcast` avec `{text}` et reçoit la liste de ce qui a été envoyé et
+  le décompte.
 
 ### Modifier le personnage
 
@@ -702,6 +738,12 @@ Si vous utilisez plus d'un compte Claude Code (par exemple, un raccourci `c` ave
 et le haut de l'écran montre, pour chaque compte, le **pourcentage utilisé** de la session de 5 heures et de la semaine,
 et **quand chaque limite se réinitialise**.
 
+**Chaque outil a son icône.** À côté du nom du compte, un badge en pixel art avec l'icône et le nom de l'outil — Codex,
+Gemini CLI, Antigravity, opencode ou Aider —, dans sa couleur, apparaît dans les détails de l'agent, l'infobulle, le
+terminal, les cartes d'utilisation, l'historique des sessions et la barre latérale (où seule l'icône tient). Claude Code,
+qui est le réglage par défaut, reste sans badge. Dans le bureau, l'étiquette de chaque personnage montre l'icône de son
+outil, y compris celle de Claude Code, pour savoir d'un coup d'œil qui appartient à laquelle.
+
 **Comment les comptes sont reconnus.** Chaque dossier de configuration de Claude Code est un compte : `~/.claude` et
 tout `~/.claude*` contenant `projects/` ou `sessions/` (en plus de `CLAUDE_CONFIG_DIR`). Pour attribuer une lettre à
 chacun, Habblaud lit dans les fichiers du shell (`~/.zshrc`, `~/.bashrc`…) **uniquement** les lignes `alias x='... claude ...'` :
@@ -767,6 +809,9 @@ Tout fonctionne sans rien configurer. Si vous avez besoin d'ajuster quelque chos
 | `HABBLAUD_CLAUDE_BIN` | `claude` du PATH | L'exécutable de Claude Code que lancent le terminal interactif et Nouvel agent. |
 | `HABBLAUD_REMOTE_ALLOW` | `permissions` | Ce que peut faire le [téléphone avec connexion](#téléphone-avec-connexion-et-https-valider-les-demandes) : `permissions`, `messages`, `terminal`, `spawn` (séparés par des virgules) ou `none`. Les autres `HABBLAUD_REMOTE_*` sont écrites par `npm run remote:setup`. |
 | `HABBLAUD_MENSAGENS` | activé (avec le terminal) | `0` désactive seulement les messages depuis le bureau (la zone dans le terminal et dans les détails de l'agent). |
+| `HABBLAUD_WEBHOOK_URL` | — | Webhook HTTP qui reçoit une alerte quand un agent demande une permission : Discord, Slack ou JSON générique. |
+| `HABBLAUD_TELEGRAM_BOT_TOKEN` | — | Jeton du bot Telegram pour l'alerte de permission (utilisé avec `HABBLAUD_TELEGRAM_CHAT_ID`). |
+| `HABBLAUD_TELEGRAM_CHAT_ID` | — | Conversation Telegram qui reçoit l'alerte de permission (utilisée avec le jeton du bot). |
 | `HABBLAUD_CODEX` | activé | `0` désactive Codex dans le bureau. |
 | `HABBLAUD_CODEX_DIRS` | détection automatique | Dossiers de Codex, séparés par des virgules (à la place de `~/.codex*` et `CODEX_HOME`). |
 | `HABBLAUD_CODEX_BIN` | `codex` du PATH (sous Windows, `codex.exe`) | Le binaire de Codex qui remet les messages (`codex queue`), en mode Node ou dans `npm run codex:bridge`. |
@@ -1313,6 +1358,14 @@ on m'appelle ! 🏃 ») et retourne en courant à son bureau.
     <td><b>Dans les détails de l'agent.</b> Ce qu'il fait, son porte-monnaie, son score, sa personnalité, ses amitiés et ses rivalités (avec le bilan) et son relevé.</td>
   </tr>
 </table>
+
+### Le chat du bureau
+
+Un **chat tigré orange** en pixel art vit dans le bâtiment. Il apparaît dans le couloir, choisit un coin où s'asseoir et,
+de temps en temps, se pelotonne pour dormir quelques secondes avant de repartir se promener. Le chat ne gêne personne.
+
+Cliquez dessus pour le caresser : il s'assoit, ronronne un instant et laisse flotter un cœur rose au-dessus de sa tête,
+puis reprend sa routine. C'est purement décoratif, comme le reste de la vie sociale : rien ne change dans les sessions.
 
 ### Personnalités
 

@@ -573,6 +573,22 @@ terminal.
 - En el modo demostración, los agentes ficticios también piden permiso y hacen preguntas (de mentira), para que lo
   pruebes.
 
+### Notificaciones por webhook y Telegram
+
+Cuando un agente pide permiso —en Claude Code o en Codex—, Habblaud también puede avisarte fuera de la página:
+
+- **Webhook:** `HABBLAUD_WEBHOOK_URL` apunta a una dirección HTTP. Si es un webhook de Discord o de Slack, el cuerpo ya
+  va en su formato (una tarjeta con agente, herramienta y hora, o un texto simple); cualquier otra dirección recibe un
+  JSON con `event` (`permission_request`), `agentName`, `title`, `text`, `tool`, `url` y `timestamp`.
+- **Telegram:** `HABBLAUD_TELEGRAM_BOT_TOKEN` (el token del bot) y `HABBLAUD_TELEGRAM_CHAT_ID` (la conversación que lo
+  recibe) envían el mensaje mediante el bot, con un enlace para abrir Habblaud. Los dos deben estar definidos.
+- Puedes usar los dos canales a la vez. El envío espera hasta 4 segundos y, si falla, solo queda en el log del servidor:
+  la solicitud sigue en la oficina y en la terminal, y la respuesta funciona como siempre.
+- El aviso sale por el mismo camino que **Responder desde la oficina**: necesita la vía de permisos activada (el plugin
+  de Claude Code o los hooks de Codex) y Habblaud accesible solo desde la propia computadora. Las variables se leen en
+  modo Node; en Docker todavía no pasan por `docker-compose.yml`, así que el aviso externo exige ejecutar Habblaud
+  directamente.
+
 ### Enviar mensajes
 
 Con el plugin de mensajes instalado (`npm run mod:install`, que lo instala junto con el mod; requiere Claude Code
@@ -592,6 +608,24 @@ ventana correcta.
   `HABBLAUD_MENSAGENS=0`. Lee el aviso en [Privacidad y seguridad](#privacidad-y-seguridad).
   Desde el [celular con inicio de sesión](#celular-con-inicio-de-sesión-y-https-aprobar-solicitudes), solo con `messages` en `HABBLAUD_REMOTE_ALLOW`.
 - En el modo demostración, los agentes ficticios también reciben mensajes (de mentira).
+
+### Orden general (megáfono)
+
+En la barra superior, el botón del **megáfono** abre la **Orden general**: escribe una instrucción, comprueba cuántos
+agentes la recibirán y haz clic en **Transmitir orden** (`Ctrl+Enter` o `⌘Enter` también envía). El texto es el mismo
+para todos y admite hasta 20.000 caracteres.
+
+- La orden sigue el mismo camino que [Enviar mensajes](#enviar-mensajes): cada agente principal la recibe como si la
+  hubieras escrito en su terminal, espera a que termine el turno y muestra **en cola**, **entregada** o **no se
+  entregó** en sus detalles.
+- Solo la reciben los agentes principales presentes que pueden recibirla en ese momento: una sesión de Claude Code con
+  el plugin respondiendo o Codex con `codex queue` (o el auxiliar del host). Los subagentes quedan fuera, y quien ya
+  tenga 5 mensajes esperando también.
+- Usa el mismo bloqueo que los mensajes: solo con acceso local, `HABBLAUD_MENSAGENS=0` lo desactiva y, desde el
+  [celular con inicio de sesión](#celular-con-inicio-de-sesión-y-https-aprobar-solicitudes), requiere `messages` en
+  `HABBLAUD_REMOTE_ALLOW`. El botón no aparece en el modo demostración ni en el replay.
+- Por dentro, la página llama a `POST /api/messages/broadcast` con `{text}` y recibe la lista de lo enviado y el
+  recuento.
 
 ### Editar el personaje
 
@@ -703,6 +737,12 @@ Si usas más de una cuenta de Claude Code (por ejemplo, un atajo `c` con `~/.cla
 parte superior muestra, para cada cuenta, el **porcentaje usado** de la sesión de 5 horas y de la semana y **cuándo se
 reinicia cada límite**.
 
+**Cada herramienta tiene su icono.** Junto al nombre de la cuenta, un sello en pixel art con el icono y el nombre de la
+herramienta —Codex, Gemini CLI, Antigravity, opencode o Aider—, en el color de cada una, aparece en los detalles del
+agente, la sugerencia, la terminal, las tarjetas de uso, el historial de sesiones y la barra lateral (donde solo cabe el
+icono). Claude Code, que es el predeterminado, sigue sin sello. En la oficina, la etiqueta de cada personaje muestra el
+icono de su herramienta, incluido el de Claude Code, así que se sabe de un vistazo quién es de cada una.
+
 **Cómo se reconocen las cuentas.** Cada carpeta de configuración de Claude Code es una cuenta: `~/.claude` y cualquier
 `~/.claude*` con `projects/` o `sessions/` (además de `CLAUDE_CONFIG_DIR`). Para asignarle una letra a cada una,
 Habblaud lee en los archivos del shell (`~/.zshrc`, `~/.bashrc`…) **solamente** las líneas `alias x='... claude ...'`:
@@ -764,6 +804,9 @@ Todo funciona sin configurar nada. Si necesitas ajustar algo, usa variables de e
 | `HABBLAUD_CLAUDE_BIN` | `claude` del PATH | El ejecutable de Claude Code que ejecutan la terminal interactiva y Nuevo agente. |
 | `HABBLAUD_REMOTE_ALLOW` | `permissions` | Lo que puede hacer el [celular con inicio de sesión](#celular-con-inicio-de-sesión-y-https-aprobar-solicitudes): `permissions`, `messages`, `terminal`, `spawn` (separados por comas) o `none`. Las demás `HABBLAUD_REMOTE_*` las escribe `npm run remote:setup`. |
 | `HABBLAUD_MENSAGENS` | activados (con la terminal) | `0` desactiva solo los mensajes desde la oficina (el cuadro en la terminal y en los detalles del agente). |
+| `HABBLAUD_WEBHOOK_URL` | — | Webhook HTTP que recibe un aviso cuando un agente pide permiso: Discord, Slack o JSON genérico. |
+| `HABBLAUD_TELEGRAM_BOT_TOKEN` | — | Token del bot de Telegram para el aviso de permiso (se usa junto con `HABBLAUD_TELEGRAM_CHAT_ID`). |
+| `HABBLAUD_TELEGRAM_CHAT_ID` | — | Conversación de Telegram que recibe el aviso de permiso (se usa junto con el token del bot). |
 | `HABBLAUD_CODEX` | activado | `0` desactiva Codex en la oficina. |
 | `HABBLAUD_CODEX_DIRS` | detección automática | Carpetas de Codex, separadas por comas (en lugar de `~/.codex*` y `CODEX_HOME`). |
 | `HABBLAUD_CODEX_BIN` | `codex` del PATH (en Windows, `codex.exe`) | El binario de Codex que entrega los mensajes (`codex queue`), en modo Node o en `npm run codex:bridge`. |
@@ -1300,6 +1343,14 @@ a su escritorio.
     <td><b>En los detalles del agente.</b> Qué está haciendo, el monedero, el marcador, la personalidad, las amistades y rivalidades (con el historial) y los movimientos.</td>
   </tr>
 </table>
+
+### El gato de la oficina
+
+Un **gato atigrado naranja** en pixel art vive en el edificio. Aparece en el pasillo, elige un rincón para sentarse y,
+de vez en cuando, se acurruca dormido unos segundos antes de volver a pasear. El gato no estorba a nadie.
+
+Haz clic en él para acariciarlo: se sienta, ronronea un momento y deja flotar un corazón rosa sobre su cabeza; después
+vuelve a su rutina. Es solo escenificación, como el resto de la vida social: nada cambia en las sesiones.
 
 ### Personalidades
 

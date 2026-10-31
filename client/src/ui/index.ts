@@ -349,6 +349,9 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   });
   store.on('connection', () => invalidate());
   onAccessChange(() => invalidate());
+  world.onDeskClick?.((_roomId, folder) => {
+    topbar.openSpawn(folder);
+  });
   world.onSelect((sel) => {
     const prev = selection;
     selection = sel;

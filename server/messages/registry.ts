@@ -78,6 +78,7 @@ export interface MessageRegistryOptions {
   office: OfficeLike;
   /** Agente do demo (Office.demoAgent): esses só existem no snapshot. */
   demoAgent?: (id: string) => AgentInfo | undefined;
+  demoAgents?: () => AgentInfo[];
   /** Entrega fictícia a um agente do demo (Office.deliverDemoMessage); false = ele já saiu. */
   demoDeliver?: (agentId: string, text: string) => boolean;
   /** Mensagens aos agentes do Codex; ausente = eles não recebem. */
@@ -280,6 +281,24 @@ export class MessageRegistry {
   }
 
   /** Situação de uma mensagem (sem o texto), ou undefined. */
+  /** Envia a mesma instrução para todos os agentes principais ativos. */
+  broadcast(raw: unknown): { sent: OutboxMessage[]; count: number } {
+    const r = rec(raw);
+    const text = typeof r?.text === 'string' ? r.text.trim() : '';
+    if (!text) throw new InvalidRequest(tr('esperado {text}'));
+    if (text.length > MAX_TEXT) throw new InvalidRequest(tr('o texto passa de {0} caracteres', [MAX_TEXT]));
+
+    const realAgents = this.opts.office.list();
+    const demoList = this.opts.demoAgents ? this.opts.demoAgents() : [];
+    const agents = [...realAgents, ...demoList].filter((a) => a.kind === 'main' && present(a));
+    const sent: OutboxMessage[] = [];
+    for (const a of agents) {
+      const res = this.send({ agentId: a.id, text });
+      if ('message' in res) sent.push(res.message);
+    }
+    return { sent, count: sent.length };
+  }
+
   get(id: string): OutboxMessage | undefined {
     const e = this.messages.get(id);
     return e ? { ...e.msg } : undefined;

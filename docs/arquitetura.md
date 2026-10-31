@@ -16,6 +16,7 @@ flowchart LR
   E --> G["client/src/ui<br/>interface"]
   F --> H["client/src/art<br/>pixel art"]
   C -. "shared/world/projection.ts" .-> I["server/world<br/>Habblaud World"]
+  C -. "server/notifications" .-> J["Webhook / Telegram"]
 ```
 
 1. **Fontes** (`server/sources/`) leem, somente leitura, os arquivos das sessões abertas e das transcrições — Claude
@@ -26,13 +27,13 @@ flowchart LR
 2. **Modelo** ([`server/model/office.ts`](../server/model/office.ts)) junta tudo em agentes, salas, feed e avisos,
    com `rooms.ts` (nomes de sala) e `names.ts` (nomes de personagem).
 3. **API** ([`server/http/app.ts`](../server/http/app.ts)) publica o snapshot por SSE em `GET /api/stream` e as rotas
-   de detalhe, terminal, estatísticas, permissões, mensagens e World. `guard.ts` barra `Host`/`Origin` estranhos;
-   `remote.ts` é a porta do celular, com login e TLS.
+   de detalhe, terminal, estatísticas, permissões, mensagens (incluindo `POST /api/messages/broadcast`, a Ordem geral)
+   e World. `guard.ts` barra `Host`/`Origin` estranhos; `remote.ts` é a porta do celular, com login e TLS.
 4. **Cliente** ([`client/src/net/store.ts`](../client/src/net/store.ts)) assina o SSE e notifica a interface; o
    desenho fica em [`client/src/world/`](../client/src/world/index.ts) com a arte procedural de
-   [`client/src/art/`](../client/src/art/index.ts), a interface em [`client/src/ui/`](../client/src/ui/index.ts) e o
-   som sintetizado em [`client/src/audio/`](../client/src/audio/synth.ts). O ponto de entrada é
-   [`client/src/main.ts`](../client/src/main.ts), que carrega o dicionário do idioma antes do app.
+   [`client/src/art/`](../client/src/art/index.ts) (personagens, móveis e o mascote), a interface em
+   [`client/src/ui/`](../client/src/ui/index.ts) e o som sintetizado em [`client/src/audio/`](../client/src/audio/synth.ts).
+   O ponto de entrada é [`client/src/main.ts`](../client/src/main.ts), que carrega o dicionário do idioma antes do app.
 
 ## Os diretórios
 
@@ -42,7 +43,7 @@ flowchart LR
 | [`server/sources/`](../server/sources/registry.ts) | Leitura das sessões e transcrições de cada ferramenta, com `source.ts` como contrato comum. |
 | [`server/model/`](../server/model/office.ts) | O estado do escritório (agentes, salas, feed, avisos) e os nomes. |
 | [`server/world/`](../server/world/uplink.ts) | Conta e prédio do Habblaud World: `service.ts`, `uplink.ts` (WebSocket), `viewer.ts` (cidade), `social.ts`. |
-| [`server/`](../server/index.ts) (demais) | `permissions/`, `messages/`, `pty/`, `spawn/`, `deliveries/`, `dictation/`, `remote/`, `history/`, `updates/`, `accounts/` e `codex/`. |
+| [`server/`](../server/index.ts) (demais) | `permissions/`, `messages/`, `notifications/` (webhook e Telegram), `pty/`, `spawn/`, `deliveries/`, `dictation/`, `remote/`, `history/`, `updates/`, `accounts/` e `codex/`. |
 | [`shared/`](../shared/types.ts) | Contratos (`types.ts`), atividades, aparência, i18n e o simulador de demonstração. |
 | [`shared/locales/`](../shared/locales/en.ts) | Traduções de `en`, `es` e `fr`; o português é a chave, escrita no próprio `tr()`. |
 | [`shared/world/`](../shared/world/projection.ts) | Protocolo, schema, geometria da cidade e a projeção do prédio (o único lugar que monta o pacote). |
