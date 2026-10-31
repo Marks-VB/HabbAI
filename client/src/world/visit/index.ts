@@ -23,6 +23,7 @@ import { modalOpen } from '../input';
 import type { WorldOptions } from '../api';
 import { intentFrom, moveKeyOf } from '../city/input';
 import { buildRail } from '../floors/rail';
+import { advance, cancel, createTransition, currentFloor as transitionFloor, request } from '../floors/transition';
 import { createWorld } from '../index';
 import { browserStorage, clearWorldWallets } from '../social/wallet';
 import { mountVisitSocial, stampBoard, stampPinTitle } from '../visit-social';
@@ -105,29 +106,52 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
 
   // ------------------------------------------------------------------ trilho de andares
 
-  /** Fade curto da troca (o elevador animado fica para a Fase 2); com movimento reduzido, corte seco. */
+  /** Fade da troca de andar, guiado pela máquina de estados (Fase 2: porta → fade → chegada). */
   const fade = h('div', { class: 'ui-visit-fade', hidden: true, attrs: { 'aria-hidden': 'true' } });
-  let fadeTimer: ReturnType<typeof setTimeout> | null = null;
-  const flash = () => {
-    if (prefersReducedMotion()) return;
-    setHidden(fade, false);
-    fade.classList.remove('is-on');
-    void fade.offsetWidth;
-    fade.classList.add('is-on');
-    if (fadeTimer) clearTimeout(fadeTimer);
-    fadeTimer = setTimeout(() => {
-      fadeTimer = null;
-      fade.classList.remove('is-on');
+  let transition = createTransition(world.visit.currentFloor());
+  let lastFrame = 0;
+
+  /** Quantos andares a visita oferece agora (o trilho e a transição usam o mesmo número). */
+  const floorCount = () => Math.max(1, visitPanel(controller.detail).rooms.length);
+
+  /** A cena só troca de andar quando a transição manda (uma vez por viagem). */
+  const applyFloor = () => {
+    const target = transitionFloor(transition);
+    if (target !== world.visit.currentFloor()) world.visit.setFloor(target);
+  };
+
+  /** Opacidade do fade: sobe em `doors`, fica cheia em `fade` e desce em `arrive`. */
+  const paintFade = () => {
+    const { phase, elapsed, duration } = transition;
+    if (phase === 'idle') {
       setHidden(fade, true);
-    }, 240);
+      fade.style.opacity = '0';
+      return;
+    }
+    const p = duration > 0 ? Math.min(1, Math.max(0, elapsed / duration)) : 1;
+    const opacity = phase === 'doors' ? p : phase === 'fade' ? 1 : 1 - p;
+    setHidden(fade, false);
+    fade.style.opacity = String(Math.min(1, Math.max(0, opacity)) * 0.55);
+  };
+
+  /** Troca de andar: com movimento reduzido o estado resolve no clique; senão, a animação roda no `tick`. */
+  const goToFloor = (target: number) => {
+    const r = request(transition, target, { floorCount: floorCount(), instant: prefersReducedMotion() });
+    transition = r.state;
+    if (r.floorChanged) applyFloor();
+    paintFade();
+  };
+
+  /** Um andar sumiu (ou o prédio recomeçou): volta ao estado parado no andar válido mais próximo. */
+  const resetFloor = (floor: number) => {
+    transition = cancel(transition);
+    transition = createTransition(floor);
+    paintFade();
   };
 
   const rail = mountFloorRail({
     model: () => buildRail(visitPanel(controller.detail).rooms, world.visit.currentFloor()),
-    go: (floor) => {
-      flash();
-      world.visit.setFloor(floor);
-    },
+    go: (floor) => goToFloor(floor),
     current: () => world.visit.currentFloor(),
     focusWorld: () => canvas.focus(),
   });
@@ -293,7 +317,11 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
     setText(panelBtn, `${tr('Salas')} (${d.floors.length})`);
     renderBoard();
     // um andar que saiu do pacote leva o andar atual junto (a câmera nunca fica presa num andar que sumiu)
-    if (d.floors.length > 0 && world.visit.currentFloor() > d.floors.length - 1) world.visit.setFloor(d.floors.length - 1);
+    if (d.floors.length > 0 && world.visit.currentFloor() > d.floors.length - 1) {
+      const last = d.floors.length - 1;
+      world.visit.setFloor(last);
+      resetFloor(last);
+    }
     rail.update();
     panelBtn.setAttribute('aria-expanded', String(panelOpen));
     layer.classList.toggle('has-panel', panelOpen);
@@ -418,9 +446,17 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
     }, LEAVE_TIMEOUT_MS);
   }
 
-  // a dica "Sair pelo elevador (E)" acompanha o visitante
-  const tick = () => {
+  // a dica "Sair pelo elevador (E)" acompanha o visitante; a transição de andar avança aqui
+  const tick = (now: number) => {
     raf = requestAnimationFrame(tick);
+    const dt = lastFrame ? Math.min(100, Math.max(0, now - lastFrame)) : 0;
+    lastFrame = now;
+    if (transition.phase !== 'idle') {
+      const r = advance(transition, dt);
+      transition = r.state;
+      if (r.floorChanged) applyFloor();
+      paintFade();
+    }
     const show = !controller.leaving && world.visit.atExit();
     const at = show ? world.visit.visitorScreen() : null;
     setHidden(exitHint, !at);
@@ -485,7 +521,6 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
       if (destroyed) return;
       destroyed = true;
       if (leaveTimer) clearTimeout(leaveTimer);
-      if (fadeTimer) clearTimeout(fadeTimer);
       cancelAnimationFrame(raf);
       offSelect();
       offFloor();
