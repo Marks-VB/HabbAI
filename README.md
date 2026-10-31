@@ -410,9 +410,43 @@ In **Settings → Appearance → Office theme**, choose:
 - **None**: always the original look.
 - **Christmas**: wreaths, warm lights, trees with presents, Christmas rugs, snow on the windows and Santa hats on the characters.
 - **Halloween**: pumpkins, decorative ghosts, cobwebs, bats, purple lights, themed rugs and costume accessories.
+- **Cyberpunk**: dark walls with cyan and magenta neon, signs, holographic terminals, circuit rugs, neon rain in the
+  windows and visors on the characters.
+- **Retro**: warm walls, bunting, arcade cabinets and CRT TVs in place of the plants, rugs with 70s canisters,
+  sunset in the windows and headphones on the characters.
+- **Orbital Station**: deck walls with indicator lights, hydroponic pods and consoles in place of the plants,
+  metal-plate rugs, blue glass partitions, nebulae and a ringed planet in the windows and helmets on the characters.
+- **Seasons**: automatic layer from the southern hemisphere calendar — Spring from September to February, Autumn
+  from March to May and Festa Junina in June and July (August returns to the original look).
+- **Spring**: light walls with pinkish cornices, tulip vases and flowering shrubs in place of the plants, petal rugs,
+  flowering branches on the walls, sun and blossoming trees in the windows and a flower in the characters' hair.
+- **Autumn**: amber walls, little golden trees and baskets of dry leaves in place of the plants, leaf rugs, a leaf
+  garland on the walls, orange sunset in the windows and scarves on the characters.
+- **Festa Junina**: bonfires and corn stalks in place of the plants, rugs with bunting lines, bunting and balloons on
+  the walls, late-afternoon sky in the windows and straw hats on the characters.
+
+Cyberpunk, Retro, Orbital Station, Seasons, Spring, Autumn and Festa Junina apply only to the office on this page: the
+Habblaud World building keeps the seasonal themes (Automatic, None, Christmas and Halloween).
 
 The switch is immediate and the choice is saved in this browser. The themes keep the agents' paths,
 activities and animations. The day/night cycle is still a separate option.
+
+### Outdoor scenery
+
+In **Settings → Appearance → Outdoor scenery**, choose what surrounds the building (street, sidewalks, trees,
+streetlights and the view from the windows). Nothing changes inside the rooms.
+
+- **City** (default): paved street with cars, sidewalks and trees.
+- **Forest**: dirt and stone paths, dense trees and no cars.
+- **Cyberpunk**: technological asphalt with cyan and magenta neon lights.
+- **Retro**: golden autumn foliage and warmer air.
+- **Orbital Station**: metal deck with landing pads, pipes, towers and antennas in place of the trees, and the street
+  lane becomes a transport rail, with no cars.
+- **Snow**: grass and sidewalks covered in snow, snowy pines, snowmen and footprints; the street stays clear.
+- **Beach**: sand in place of the grass, a wooden deck on the sidewalk and the sea in place of the street, with foam,
+  waves, shells, rocks, beach umbrellas and palm trees. No cars.
+
+The scenery matches any office theme and is also saved in this browser.
 
 <table>
   <tr>
@@ -557,9 +591,8 @@ When an agent asks for permission — in Claude Code or Codex —, Habblaud can 
 - You can use both channels at once. Delivery waits up to 4 seconds and, if it fails, only the server log shows it: the
   request stays in the office and in the terminal, and answering works as usual.
 - The notice goes through the same path as **Answering from the office**: it needs the permissions path enabled (the
-  Claude Code plugin or the Codex hooks) and Habblaud reachable only from the computer it runs on. The variables are
-  read in Node mode; in Docker they don't go through `docker-compose.yml` yet, so external notifications require
-  running Habblaud directly.
+  Claude Code plugin or the Codex hooks) and Habblaud reachable only from the computer it runs on. In Docker, they go
+  in `.env`, like the other variables.
 
 ### Sending messages
 
@@ -780,7 +813,8 @@ Everything works without configuring anything. If you need to adjust something, 
 | `HABBLAUD_ACCOUNTS` | — | JSON to customize name, letter or color, matched by the account folder name. E.g. `[{"id":".claude-conta2","name":"Trabalho","short":"T","color":"#5cc97b"}]`. |
 
 **In Docker**, `HABBLAUD_PORT`, `HABBLAUD_BIND`, `HABBLAUD_ALLOWED_HOSTS`, `HABBLAUD_DEMO`, `HABBLAUD_TERMINAL`,
-`HABBLAUD_MENSAGENS`, `HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, the `HABBLAUD_WORLD*` and the
+`HABBLAUD_MENSAGENS`, `HABBLAUD_WEBHOOK_URL`, `HABBLAUD_TELEGRAM_BOT_TOKEN`, `HABBLAUD_TELEGRAM_CHAT_ID`,
+`HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, the `HABBLAUD_WORLD*` and the
 `HABBLAUD_REMOTE_*` apply (in `.env` or in the environment), as do `HABBLAUD_CLAUDE_DIRS`, `HABBLAUD_CODEX_DIRS`, `HABBLAUD_USAGE_DIR` and
 `HABBLAUD_ACCOUNTS` (read by `docker:up` on the host); the rest are fixed inside the container. Options: `npm run docker:up -- --no-build` (starts without rebuilding),
 `npm run docker:down` (stops) and `npm run docker:logs` (follows the logs).

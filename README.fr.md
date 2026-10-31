@@ -428,9 +428,46 @@ Dans **Réglages → Apparence → Thème du bureau**, choisissez :
 - **Aucun** : toujours l'apparence d'origine.
 - **Noël** : guirlandes, lumières chaudes, sapins avec des cadeaux, tapis de Noël, neige aux fenêtres et bonnets sur les personnages.
 - **Halloween** : citrouilles, fantômes décoratifs, toiles d'araignée, chauves-souris, lumières violettes, tapis thématiques et accessoires de déguisement.
+- **Cyberpunk** : murs sombres avec néon cyan et magenta, enseignes, terminaux holographiques, tapis de circuit,
+  pluie de néon aux fenêtres et visières sur les personnages.
+- **Rétro** : murs chaleureux, fanions, bornes d'arcade et téléviseurs à tube à la place des plantes, tapis avec
+  bidons des années 70, coucher de soleil aux fenêtres et casques sur les personnages.
+- **Station Orbitale** : murs de pont avec voyants lumineux, capsules hydroponiques et consoles à la place des plantes,
+  tapis de plaques métalliques, cloisons en verre bleuté, nébuleuses et une planète à anneau aux fenêtres et casques
+  sur les personnages.
+- **Saisons** : couche automatique selon le calendrier de l'hémisphère sud — Printemps de septembre à février, Automne
+  de mars à mai et Fête Junina en juin et juillet (août revient à l'apparence d'origine).
+- **Printemps** : murs clairs avec corniches rosées, vases de tulipes et arbustes fleuris à la place des plantes,
+  tapis de pétales, branches fleuries aux murs, soleil et arbres en fleurs aux fenêtres et une fleur dans les cheveux
+  des personnages.
+- **Automne** : murs ambrés, petits arbres dorés et paniers de feuilles sèches à la place des plantes, tapis de
+  feuilles, guirlande de feuilles aux murs, coucher de soleil orangé aux fenêtres et écharpes sur les personnages.
+- **Fête Junina** : feux de camp et pieds de maïs à la place des plantes, tapis avec guirlandes de fanions, fanions et
+  ballons aux murs, ciel de fin d'après-midi aux fenêtres et chapeaux de paille sur les personnages.
+
+Cyberpunk, Rétro, Station Orbitale, Saisons, Printemps, Automne et Fête Junina ne valent que pour le bureau de cette
+page : le bâtiment de Habblaud World garde les thèmes saisonniers (Automatique, Aucun, Noël et Halloween).
 
 Le changement est immédiat et le choix est enregistré dans ce navigateur. Les thèmes conservent les trajets,
 les activités et les animations des agents. Le cycle jour/nuit reste une option indépendante.
+
+### Décor extérieur
+
+Dans **Réglages → Apparence → Décor extérieur**, choisissez ce qui entoure le bâtiment (rue, trottoirs, arbres,
+lampadaires et la vue depuis les fenêtres). Rien ne change à l'intérieur des salles.
+
+- **Ville** (par défaut) : rue bitumée avec voitures, trottoirs et arbres.
+- **Forêt** : sentiers de terre et de pierre, arbres denses et aucune voiture.
+- **Cyberpunk** : asphalte technologique avec lumières néon cyan et magenta.
+- **Rétro** : feuillage automnal doré et air plus chaud.
+- **Station Orbitale** : pont métallique avec plateformes d'atterrissage, tuyaux, tours et antennes à la place des
+  arbres, et la voie de la rue devient un rail de transport, sans voitures.
+- **Neige** : herbe et trottoirs couverts de neige, pins enneigés, bonshommes de neige et empreintes ; la rue reste
+  dégagée.
+- **Plage** : sable à la place de l'herbe, terrasse en bois sur le trottoir et la mer à la place de la rue, avec
+  écume, vagues, coquillages, rochers, parasols et palmiers. Sans voitures.
+
+Le décor s'accorde avec n'importe quel thème du bureau et est lui aussi enregistré dans ce navigateur.
 
 <table>
   <tr>
@@ -588,9 +625,8 @@ page :
   journal du serveur le signale : la demande reste dans le bureau et dans le terminal, et la réponse fonctionne comme
   d'habitude.
 - L'alerte passe par le même chemin que **Répondre depuis le bureau** : elle exige la voie des permissions activée (le
-  plugin Claude Code ou les hooks Codex) et Habblaud accessible uniquement depuis l'ordinateur lui-même. Les variables
-  sont lues en mode Node ; dans Docker, elles ne passent pas encore par `docker-compose.yml`, donc l'alerte externe
-  demande de lancer Habblaud directement.
+  plugin Claude Code ou les hooks Codex) et Habblaud accessible uniquement depuis l'ordinateur lui-même. Dans Docker,
+  elles vont dans le `.env`, comme les autres variables.
 
 ### Envoyer des messages
 
@@ -820,7 +856,8 @@ Tout fonctionne sans rien configurer. Si vous avez besoin d'ajuster quelque chos
 | `HABBLAUD_ACCOUNTS` | — | JSON pour personnaliser le nom, la lettre ou la couleur, associé par le nom du dossier du compte. Ex. : `[{"id":".claude-conta2","name":"Trabalho","short":"T","color":"#5cc97b"}]`. |
 
 **Dans Docker**, sont prises en compte `HABBLAUD_PORT`, `HABBLAUD_BIND`, `HABBLAUD_ALLOWED_HOSTS`, `HABBLAUD_DEMO`, `HABBLAUD_TERMINAL`,
-`HABBLAUD_MENSAGENS`, `HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, les `HABBLAUD_WORLD*` et les
+`HABBLAUD_MENSAGENS`, `HABBLAUD_WEBHOOK_URL`, `HABBLAUD_TELEGRAM_BOT_TOKEN`, `HABBLAUD_TELEGRAM_CHAT_ID`,
+`HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, les `HABBLAUD_WORLD*` et les
 `HABBLAUD_REMOTE_*` (dans le `.env` ou dans l'environnement) ainsi que `HABBLAUD_CLAUDE_DIRS`, `HABBLAUD_CODEX_DIRS`, `HABBLAUD_USAGE_DIR` et
 `HABBLAUD_ACCOUNTS` (lues par `docker:up` sur l'hôte) ; les autres sont fixées à l'intérieur du conteneur. Options : `npm run docker:up -- --no-build` (démarre sans reconstruire),
 `npm run docker:down` (arrête) et `npm run docker:logs` (suit les journaux).

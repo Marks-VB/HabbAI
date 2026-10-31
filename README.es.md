@@ -427,9 +427,45 @@ En **Configuración → Apariencia → Tema de la oficina**, elige:
   los personajes.
 - **Halloween**: calabazas, fantasmas decorativos, telarañas, murciélagos, luces moradas, alfombras temáticas y
   accesorios de disfraz.
+- **Cyberpunk**: paredes oscuras con neón cian y magenta, letreros, terminales holográficas, alfombras de circuito,
+  lluvia de neón en las ventanas y viseras en los personajes.
+- **Retro**: paredes cálidas, banderines, máquinas arcade y televisores de tubo en lugar de las plantas, alfombras
+  con bidones setentistas, atardecer en las ventanas y auriculares en los personajes.
+- **Estación Orbital**: paredes de cubierta con luces indicadoras, cápsulas hidropónicas y consolas en lugar de las
+  plantas, alfombras de placas metálicas, mamparas de vidrio azulado, nebulosas y un planeta con anillo en las
+  ventanas y cascos en los personajes.
+- **Estaciones**: capa automática según el calendario del hemisferio sur: Primavera de septiembre a febrero, Otoño de
+  marzo a mayo y Fiesta Junina en junio y julio (agosto vuelve al aspecto original).
+- **Primavera**: paredes claras con cornisas rosadas, jarrones de tulipanes y arbustos floridos en lugar de las
+  plantas, alfombras de pétalos, ramas floridas en las paredes, sol y árboles en flor en las ventanas y una flor en el
+  pelo de los personajes.
+- **Otoño**: paredes ámbar, arbolitos dorados y cestas de hojas secas en lugar de las plantas, alfombras de hojas,
+  guirnalda de hojas en las paredes, atardecer anaranjado en las ventanas y bufandas en los personajes.
+- **Fiesta Junina**: hogueras y plantas de maíz en lugar de las plantas, alfombras con banderines, banderines y globos
+  en las paredes, cielo de atardecer en las ventanas y sombreros de paja en los personajes.
+
+Cyberpunk, Retro, Estación Orbital, Estaciones, Primavera, Otoño y Fiesta Junina solo valen para la oficina de esta
+página: el edificio de Habblaud World sigue con los temas de temporada (Automático, Ninguno, Navidad y Halloween).
 
 El cambio es inmediato y la elección queda guardada en este navegador. Los temas conservan los caminos,
 las actividades y las animaciones de los agentes. El ciclo día/noche sigue siendo una opción independiente.
+
+### Escenario exterior
+
+En **Configuración → Apariencia → Escenario exterior**, elige lo que rodea el edificio (calle, aceras, árboles,
+faroles y la vista de las ventanas). Nada cambia dentro de las salas.
+
+- **Ciudad** (por defecto): calle asfaltada con autos, aceras y árboles.
+- **Bosque**: senderos de tierra y piedra, árboles densos y ningún auto.
+- **Cyberpunk**: asfalto tecnológico con luces neón cian y magenta.
+- **Retro**: follaje otoñal dorado y aire más cálido.
+- **Estación Orbital**: cubierta metálica con plataformas de aterrizaje, tuberías, torres y antenas en lugar de los
+  árboles, y el carril de la calle se convierte en una vía de transporte, sin autos.
+- **Nieve**: césped y aceras cubiertos de nieve, pinos nevados, muñecos de nieve y huellas; la calle sigue despejada.
+- **Playa**: arena en lugar del césped, tarima de madera en la acera y el mar en lugar de la calle, con espuma, olas,
+  conchas, piedras, sombrillas y palmeras. Sin autos.
+
+El escenario combina con cualquier tema de la oficina y también queda guardado en este navegador.
 
 <table>
   <tr>
@@ -585,9 +621,8 @@ Cuando un agente pide permiso —en Claude Code o en Codex—, Habblaud también
 - Puedes usar los dos canales a la vez. El envío espera hasta 4 segundos y, si falla, solo queda en el log del servidor:
   la solicitud sigue en la oficina y en la terminal, y la respuesta funciona como siempre.
 - El aviso sale por el mismo camino que **Responder desde la oficina**: necesita la vía de permisos activada (el plugin
-  de Claude Code o los hooks de Codex) y Habblaud accesible solo desde la propia computadora. Las variables se leen en
-  modo Node; en Docker todavía no pasan por `docker-compose.yml`, así que el aviso externo exige ejecutar Habblaud
-  directamente.
+  de Claude Code o los hooks de Codex) y Habblaud accesible solo desde la propia computadora. En Docker, van en el
+  `.env`, como las demás variables.
 
 ### Enviar mensajes
 
@@ -815,7 +850,8 @@ Todo funciona sin configurar nada. Si necesitas ajustar algo, usa variables de e
 | `HABBLAUD_ACCOUNTS` | — | JSON para personalizar el nombre, la letra o el color, emparejado por el nombre de la carpeta de la cuenta. P. ej.: `[{"id":".claude-conta2","name":"Trabalho","short":"T","color":"#5cc97b"}]`. |
 
 **En Docker**, valen `HABBLAUD_PORT`, `HABBLAUD_BIND`, `HABBLAUD_ALLOWED_HOSTS`, `HABBLAUD_DEMO`, `HABBLAUD_TERMINAL`,
-`HABBLAUD_MENSAGENS`, `HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, las `HABBLAUD_WORLD*` y las
+`HABBLAUD_MENSAGENS`, `HABBLAUD_WEBHOOK_URL`, `HABBLAUD_TELEGRAM_BOT_TOKEN`, `HABBLAUD_TELEGRAM_CHAT_ID`,
+`HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, las `HABBLAUD_WORLD*` y las
 `HABBLAUD_REMOTE_*` (en el `.env` o en el entorno) y `HABBLAUD_CLAUDE_DIRS`, `HABBLAUD_CODEX_DIRS`, `HABBLAUD_USAGE_DIR` y
 `HABBLAUD_ACCOUNTS` (leídas por `docker:up` en el host); las demás quedan fijas dentro del contenedor. Opciones: `npm run docker:up -- --no-build` (inicia sin reconstruir),
 `npm run docker:down` (detiene) y `npm run docker:logs` (sigue los logs).

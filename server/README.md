@@ -88,6 +88,7 @@ festa) ou 10 min. Push só avisa. O mesmo CI visto de novo em 2 min não repete 
 | `GET /api/permissions/:id` | (página) detalhe do pedido com os argumentos (`PermissionRequestInfo` com `input`) |
 | `POST /api/permissions/:id/decision` | (página) `PermissionDecision`: `{behavior: 'allow' \| 'deny' \| 'terminal' \| 'answer', message?, interrupt?, suggestion?, answers?}` |
 | `POST /api/messages` | (página) `{agentId, text}`: manda uma mensagem a um agente principal; `201 OutboxMessage`; só com bind local (ver abaixo) |
+| `POST /api/messages/broadcast` | (página) `{text}`: manda a mesma mensagem a todos os agentes principais ativos que conseguem receber agora; `201 {sent: OutboxMessage[], count}`; só com bind local (ver abaixo) |
 | `GET /api/messages/:id` | (página) situação da mensagem (`OutboxMessage`: `queued` \| `sent` \| `delivered` \| `failed`) |
 | `POST /api/mod/inbox` | (plugin `habblaud-mensagens`) `{session, account?}`: marca a presença da sessão e entrega `{messages: InboxMessage[]}` |
 | `POST /api/mod/inbox/ack` | (plugin) `{session, results: [{id, ok, error?}]}`: confirma cada mensagem entregue (ou a falha) |
@@ -263,6 +264,10 @@ A página manda texto a um agente principal (`POST /api/messages`, pela gaveta d
 o plugin `habblaud-mensagens` da sessão o busca (`POST /api/mod/inbox`, a cada 2 s) e o entrega com
 `$.prompt.submit({ text, asUser: true })`: o modelo lê como se você tivesse digitado. Depois confirma
 (`POST /api/mod/inbox/ack`). Detalhes do plugin em [`mod/README.md`](../mod/README.md).
+
+**Ordem geral.** `POST /api/messages/broadcast` recebe `{text}` e chama `send` para cada agente principal presente;
+quem não aceitaria a mensagem naquele instante (subagente, sessão sem o plugin, Codex sem entregador ou já com 5 em
+aberto) fica de fora e não entra na contagem. O texto segue o mesmo limite de 20.000 caracteres.
 
 `messages/registry.ts` (`MessageRegistry`):
 
@@ -485,6 +490,9 @@ em `shared/world/city.ts` (fonte da verdade; o servidor do mundo guarda a cópia
 | `HABBLAUD_CODEX_DIRS` | — | pastas do Codex separadas por vírgula; substitui a detecção (`CODEX_HOME` e `~/.codex*`) |
 | `HABBLAUD_CODEX_BIN` | `codex` do PATH | binário do Codex para o `codex queue` (modo Node e `npm run codex:bridge`) |
 | `HABBLAUD_MENSAGENS` | ligado (com o terminal) | `0`, `false`, `off` ou `no` desligam só as mensagens pelo escritório |
+| `HABBLAUD_WEBHOOK_URL` | — | webhook HTTP avisado quando um agente pede permissão (Discord e Slack no formato deles; o resto recebe o JSON do `WebhookPayload`) |
+| `HABBLAUD_TELEGRAM_BOT_TOKEN` | — | token do bot do Telegram para o aviso de permissão (usado com `HABBLAUD_TELEGRAM_CHAT_ID`) |
+| `HABBLAUD_TELEGRAM_CHAT_ID` | — | conversa do Telegram que recebe o aviso de permissão (usada com o token do bot) |
 | `HABBLAUD_CLAUDE_DIRS` | — | config dirs separados por vírgula; substitui a detecção (`~/.claude*` com `projects/` ou `sessions/` + `CLAUDE_CONFIG_DIR`) |
 | `HABBLAUD_DATA_DIR` | `~/.habblaud` (Docker: `/data`) | estado do Habblaud (nomes e personagens dos projetos persistidos em `names.json`, linha do tempo em `timeline/`, estatísticas do Meu dia em `stats/`, última verificação de versão em `updates.json`) |
 | `HABBLAUD_TIMELINE` | ligado | `0` desliga a gravação da linha do tempo do timelapse |

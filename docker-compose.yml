@@ -34,6 +34,10 @@ services:
       HABBLAUD_TERMINAL: ${HABBLAUD_TERMINAL:-}
       # 0 desliga as mensagens pelo escritório (mandar mensagens aos agentes pela página e pelo terminal).
       HABBLAUD_MENSAGENS: ${HABBLAUD_MENSAGENS:-}
+      # Avisos externos quando um agente pede permissão: webhook HTTP e/ou bot do Telegram.
+      HABBLAUD_WEBHOOK_URL: ${HABBLAUD_WEBHOOK_URL:-}
+      HABBLAUD_TELEGRAM_BOT_TOKEN: ${HABBLAUD_TELEGRAM_BOT_TOKEN:-}
+      HABBLAUD_TELEGRAM_CHAT_ID: ${HABBLAUD_TELEGRAM_CHAT_ID:-}
       # 0 desliga a verificação de versão nova (consulta às releases no GitHub a cada 6 h).
       HABBLAUD_UPDATE_CHECK: ${HABBLAUD_UPDATE_CHECK:-}
       HABBLAUD_LANG: ${HABBLAUD_LANG:-}

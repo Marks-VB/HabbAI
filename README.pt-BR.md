@@ -591,9 +591,8 @@ Quando um agente pede permissão — no Claude Code ou no Codex —, o Habblaud 
 - Dá para usar os dois canais ao mesmo tempo. O envio espera até 4 segundos e, se falhar, só fica no log do servidor:
   o pedido continua no escritório e no terminal, e a resposta é a mesma de sempre.
 - O aviso sai pelo mesmo caminho de **Responder pelo escritório**: precisa do caminho de permissões ligado (o plugin
-  do Claude Code ou os hooks do Codex) e do Habblaud acessível só pelo próprio computador. As variáveis são lidas no
-  modo Node; no Docker, elas ainda não passam pelo `docker-compose.yml`, então o aviso externo pede o Habblaud rodando
-  direto.
+  do Claude Code ou os hooks do Codex) e do Habblaud acessível só pelo próprio computador. No Docker, elas vão no
+  `.env`, como as demais variáveis.
 
 ### Mandar mensagens
 
@@ -814,7 +813,8 @@ Tudo funciona sem configurar nada. Se precisar ajustar, use variáveis de ambien
 | `HABBLAUD_ACCOUNTS` | — | JSON para personalizar nome, letra ou cor, casado pelo nome da pasta da conta. Ex.: `[{"id":".claude-conta2","name":"Trabalho","short":"T","color":"#5cc97b"}]`. |
 
 **No Docker**, valem `HABBLAUD_PORT`, `HABBLAUD_BIND`, `HABBLAUD_ALLOWED_HOSTS`, `HABBLAUD_DEMO`, `HABBLAUD_TERMINAL`,
-`HABBLAUD_MENSAGENS`, `HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, os `HABBLAUD_WORLD*` e os
+`HABBLAUD_MENSAGENS`, `HABBLAUD_WEBHOOK_URL`, `HABBLAUD_TELEGRAM_BOT_TOKEN`, `HABBLAUD_TELEGRAM_CHAT_ID`,
+`HABBLAUD_CODEX`, `HABBLAUD_UPDATE_CHECK`, `HABBLAUD_LANG`, `HABBLAUD_PTY`, os `HABBLAUD_WORLD*` e os
 `HABBLAUD_REMOTE_*` (no `.env` ou no ambiente) e `HABBLAUD_CLAUDE_DIRS`, `HABBLAUD_CODEX_DIRS`, `HABBLAUD_USAGE_DIR` e
 `HABBLAUD_ACCOUNTS` (lidas pelo `docker:up` no host); as demais ficam fixas dentro do container. Opções: `npm run docker:up -- --no-build` (sobe sem reconstruir),
 `npm run docker:down` (para) e `npm run docker:logs` (acompanha os logs).
