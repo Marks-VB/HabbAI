@@ -10,6 +10,8 @@ do meio (0.**3**.0).
 
 ## [Não lançado]
 
+## [1.1.0] - 2026-10-31
+
 ### Adicionado
 
 - **Visita andar por andar (Tiny Death Star)**: dentro de um prédio do Habblaud World, o escritório deixa de ser um corredor achatado e vira um prédio empilhado, com uma sala por andar (o térreo guarda a recepção, a copa, o banheiro e o lounge), um poço de elevador ligando os corredores e um trilho lateral para pular de andar — com bolinha de status, contagem de agentes, atalhos de teclado (↑/↓, Home/End, PageUp/PageDown) e anúncio para leitor de tela. No celular o trilho vira uma faixa de chips na base. O escritório local continua exatamente como estava; a visita abre no térreo e o número de andares enviado ao mundo não muda (continua sendo o de salas reais). A troca de andar passa por uma transição curta de elevador (porta, escurecimento e chegada em 300 ms no total, e cliques seguidos valem o último); com "reduzir movimento" no sistema, o corte é seco.
@@ -738,7 +740,8 @@ Primeira versão publicada.
   Subagentes chegam, trabalham e entregam ao principal. Mostra as duas contas, com o uso de 5 horas e semanal de
   cada uma (tap de statusline), além de feed de atividade, avisos e modo demonstração. Roda no Node ou no Docker local.
 
-[Não lançado]: https://github.com/marmottajr/habblaud/compare/v1.0.3...HEAD
+[Não lançado]: https://github.com/Marks-VB/HabbAI/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Marks-VB/HabbAI/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/marmottajr/habblaud/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/marmottajr/habblaud/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/marmottajr/habblaud/compare/v1.0.0...v1.0.1
