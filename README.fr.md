@@ -922,8 +922,10 @@ au-dessus, comme le paquet du World le décrit déjà. La barre à gauche liste 
 nombre d'agents ; cliquez pour sauter, utilisez `↑`/`↓`, `Home`/`End` ou `PageUp`/`PageDown`, et `▲`/`▼` pour monter ou
 descendre d'un étage. Le changement passe par une courte transition d'ascenseur (portes, fondu et arrivée en 300 ms ;
 avec « réduire les animations » dans le système, coupe nette) et les clics rapides gardent le dernier. Sur mobile, la barre
-devient une bande de pastilles en bas. Votre bureau garde le couloir habituel ; les étages ne concernent que la visite, et
-le nombre envoyé au World reste celui des salles réelles.
+devient une bande de pastilles en bas. Dans votre propre bureau, la même vue est optionnelle : **Réglages › Apparence ›
+Étages** empile une salle par étage (le rez-de-chaussée garde l'accueil, la cuisine, la salle de bain et le salon) et
+affiche la barre ; désactivée, le bureau reste le couloir habituel. Le nombre envoyé au World reste celui des salles
+réelles.
 
 **Visites.** Près de la porte d'un immeuble, **Entrer (E)** vous fait entrer : le bureau du propriétaire en direct, avec
 des salles aux noms fictifs et les agents dans leur statut du moment, en lecture seule (ni terminal, ni messages, ni

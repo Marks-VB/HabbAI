@@ -875,8 +875,10 @@ prédios e pessoas fictícios): [a cidade](docs/screenshots/world-cidade.png) e
 pacote do World já descreve. O trilho à esquerda lista os andares com a bolinha de status e a contagem de agentes; clique
 para pular, use `↑`/`↓`, `Home`/`End` ou `PageUp`/`PageDown`, e `▲`/`▼` para andar um andar. A troca passa por uma
 transição curta de elevador (porta, escurecimento e chegada em 300 ms; com "reduzir movimento" no sistema, corte seco) e
-cliques seguidos valem o último. No celular o trilho vira uma faixa de chips na base. O escritório da sua máquina continua
-no corredor de sempre; os andares são só da visita, e o número enviado ao World continua sendo o de salas reais.
+cliques seguidos valem o último. No celular o trilho vira uma faixa de chips na base. No seu próprio escritório a
+mesma visão é opcional: **Configurações › Aparência › Andares** empilha uma sala por andar (o térreo fica com recepção,
+copa, banheiro e lounge) e mostra o trilho; desligado, o escritório é o corredor de sempre. O número enviado ao World
+continua sendo o de salas reais.
 
 **Visitas.** Perto da porta de um prédio, **Entrar (E)** leva para dentro: o escritório do dono ao vivo, com as salas de
 nomes fictícios e os agentes no status de agora, só para ver (nada de terminal, mensagens ou permissões, e nada do
