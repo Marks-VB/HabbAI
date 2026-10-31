@@ -15,6 +15,7 @@ import {
   INBOX_BATCH,
   KEEP_MS,
   MAX_OPEN,
+  MAX_TEXT,
   MessageRegistry,
   PRESENCE_MS,
   QUEUED_TIMEOUT_MS,
@@ -48,6 +49,7 @@ function setup() {
   registry = new MessageRegistry({
     office,
     demoAgent: (id) => office.demoAgent(id),
+    demoAgents: () => office.demoAgents(),
     demoDeliver: (id, text) => office.deliverDemoMessage(id, text),
     now: clock.now,
   });
@@ -326,5 +328,60 @@ describe('MessageRegistry: demo', () => {
     office.setDemo(false);
     registry.tick();
     expect(registry.get(id)).toMatchObject({ status: 'failed', error: ERR_GONE });
+  });
+});
+
+describe('MessageRegistry: ordem geral (broadcast)', () => {
+  it('manda para todos os principais com presença, na ordem; subagente e quem saiu ficam de fora', () => {
+    const { office, registry, clock } = setup();
+    office.addSub({ id: SUB, parentId: MAIN, sessionId: SESSION, role: 'Explore', background: false, startedAt: 0 });
+    registry.inbox({ session: SESSION });
+    registry.inbox({ session: 'sess-2' });
+    const r = registry.broadcast({ text: '  rode a suíte completa  ' });
+    expect(r.count).toBe(2);
+    expect(r.sent).toEqual([
+      { id: expect.stringMatching(/^m-/), agentId: MAIN, status: 'queued', createdAt: clock.now(), updatedAt: clock.now() },
+      { id: expect.stringMatching(/^m-/), agentId: OTHER, status: 'queued', createdAt: clock.now(), updatedAt: clock.now() },
+    ]);
+    // O texto não volta para a página; o plugin recebe a instrução já aparada.
+    expect(JSON.stringify(r)).not.toContain('suíte');
+    expect(registry.inbox({ session: SESSION }).map((m) => m.text)).toEqual(['rode a suíte completa']);
+    expect(registry.inbox({ session: 'sess-2' }).map((m) => m.text)).toEqual(['rode a suíte completa']);
+    expect(registry.inbox({ session: SESSION })).toEqual([]);
+
+    // Quem saiu não recebe; sem nenhum principal alcançável, a ordem sai vazia.
+    office.closeMain(MAIN);
+    office.closeMain(OTHER);
+    expect(registry.broadcast({ text: 'de novo' })).toEqual({ sent: [], count: 0 });
+  });
+
+  it('principal presente mas sem o plugin conectado fica de fora (não é erro)', () => {
+    const { registry } = setup();
+    expect(registry.broadcast({ text: 'sem plugin' })).toEqual({ sent: [], count: 0 });
+    registry.inbox({ session: SESSION });
+    const r = registry.broadcast({ text: 'só o MAIN tem plugin' });
+    expect(r.count).toBe(1);
+    expect(r.sent.map((m) => m.agentId)).toEqual([MAIN]);
+  });
+
+  it('corpo inválido lança InvalidRequest; o limite de 20.000 caracteres vale para a ordem', () => {
+    const { registry } = setup();
+    for (const bad of [null, {}, [], { text: '' }, { text: '  \n ' }, { text: 3 }]) expect(() => registry.broadcast(bad)).toThrow(/text/);
+    expect(() => registry.broadcast({ text: 'x'.repeat(MAX_TEXT + 1) })).toThrow(/20\.?000/);
+    registry.inbox({ session: SESSION });
+    expect(registry.broadcast({ text: 'x'.repeat(MAX_TEXT) }).count).toBe(1);
+  });
+
+  it('demo: os agentes fictícios entram na ordem geral junto com os reais', () => {
+    const { office, registry } = setup();
+    office.setDemo(true);
+    registry.inbox({ session: SESSION });
+    const demoMains = office
+      .commit()
+      .snapshot.agents.filter((a) => a.id.startsWith('demo:') && a.kind === 'main' && a.status !== 'offline' && a.status !== 'done');
+    expect(demoMains.length).toBeGreaterThan(0);
+    const r = registry.broadcast({ text: 'bom dia' });
+    expect(r.count).toBe(demoMains.length + 1);
+    expect(r.sent.map((m) => m.agentId).sort()).toEqual([MAIN, ...demoMains.map((a) => a.id)].sort());
   });
 });

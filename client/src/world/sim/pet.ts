@@ -15,6 +15,9 @@ export class OfficePet {
   private animTimer = 0;
   private initialized = false;
 
+  /** `random` é injetável para os testes (determinismo); no jogo é o Math.random. */
+  constructor(private readonly random: () => number = Math.random) {}
+
   init(spawnX: number, spawnY: number): void {
     if (this.initialized) return;
     this.x = spawnX;
@@ -61,8 +64,8 @@ export class OfficePet {
         this.x = this.targetX;
         this.y = this.targetY;
         // Chegou: escolhe se senta ou dorme
-        this.pose = Math.random() < 0.4 ? 'sleep' : 'sit';
-        this.stateTimer = this.pose === 'sleep' ? 14000 + Math.random() * 10000 : 5000 + Math.random() * 6000;
+        this.pose = this.random() < 0.4 ? 'sleep' : 'sit';
+        this.stateTimer = this.pose === 'sleep' ? 14000 + this.random() * 10000 : 5000 + this.random() * 6000;
       } else {
         this.x += (dx / dist) * speed;
         this.y += (dy / dist) * speed;

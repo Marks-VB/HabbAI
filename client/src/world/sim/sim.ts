@@ -592,7 +592,7 @@ export class Sim {
       this.pet.init(cx * TILE, cy * TILE);
     }
     this.pet.tick(
-      dt,
+      dt * 1000,
       (tx, ty) => this.building?.grid ? this.building.grid.walkable(tx, ty) : false,
       () => {
         const corr = this.building?.corridor;
