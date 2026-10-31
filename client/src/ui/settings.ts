@@ -1,6 +1,8 @@
 // Configurações (popover): opções do escritório, avisos, modo demonstração e Sobre (versão). O Habblaud World tem a
 // janela própria (ui/world/world-dialog.ts); daqui só sai a dica do tema em Aparência, que também vai para o prédio.
 import { access, remoteLogout } from '../net/access';
+import { budgetState, loadBudget, saveBudget } from '../net/budget';
+import { type BudgetConfig, type BudgetLimit, type BudgetScopeLimits } from '../../../shared/budget';
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, setAttr, setHidden, setText } from './dom';
 import { ICONS, scenarioIcon, themeIcon } from './icons';
@@ -13,6 +15,9 @@ import type { WorldThemeLink } from './world/world-dialog';
 import { LOCALE_STORAGE_KEY, LOCALES, normalizeLocale, tr, type Locale } from '../../../shared/i18n';
 
 type LanguageChoice = 'auto' | Locale;
+
+/** Campo numérico da seção Orçamento. */
+type BudgetField = { key: 'dayCost' | 'dayTokens' | 'monthCost' | 'monthTokens'; label: string; input: HTMLInputElement; tokens: boolean };
 
 /** Idioma escolhido nas Configurações ("auto" = o do navegador). */
 function savedLanguage(): LanguageChoice {
@@ -97,6 +102,13 @@ export function segmented<T extends string>(
   };
 }
 
+/** Valor guardado para um campo da seção Orçamento. */
+function budgetValue(limits: BudgetScopeLimits, key: BudgetField['key']): number | undefined {
+  const period = key.startsWith('day') ? limits.day : limits.month;
+  if (!period) return undefined;
+  return key.endsWith('Tokens') ? period.tokens : period.costUSD;
+}
+
 export class SettingsPopover implements UiComponent {
   readonly el: HTMLElement;
   private switches = new Map<BoolPref | 'demo', SwitchRefs>();
@@ -107,6 +119,15 @@ export class SettingsPopover implements UiComponent {
   private scenario: ReturnType<typeof segmented<UiPrefs['scenario']>>;
   private language: ReturnType<typeof segmented<LanguageChoice>>;
   private soundGroup: SoundSettingsGroup;
+  private budgetGroup: HTMLElement;
+  private budgetFields: ReadonlyArray<BudgetField>;
+  private budgetSave: HTMLButtonElement;
+  private budgetStatus: HTMLElement;
+  private budgetLoaded = false;
+  private budgetLoading = false;
+  private budgetFailed = false;
+  private budgetBusy = false;
+  private budgetError: string | null = null;
   private demoGroup: HTMLElement;
   /** Só na página do celular (porta remota com login): sair deste aparelho. */
   private remoteGroup: HTMLElement;
@@ -199,6 +220,42 @@ export class SettingsPopover implements UiComponent {
     );
     this.soundGroup = new SoundSettingsGroup(ctx, sound);
 
+    // Orçamento: limites do escritório inteiro (dia/mês, custo/tokens). Os escopos por projeto e por conta só pelo
+    // arquivo budget.json ou pelo PUT /api/budget — aqui o caso comum, em quatro campos.
+    const budgetInput = (): HTMLInputElement =>
+      h('input', { class: 'ui-budget__input', type: 'number', attrs: { min: '0', step: 'any', inputmode: 'decimal' } });
+    const dayCost = budgetInput();
+    const dayTokens = budgetInput();
+    const monthCost = budgetInput();
+    const monthTokens = budgetInput();
+    this.budgetFields = [
+      { key: 'dayCost', label: tr('Limite diário (US$)'), input: dayCost, tokens: false },
+      { key: 'dayTokens', label: tr('Limite diário (tokens)'), input: dayTokens, tokens: true },
+      { key: 'monthCost', label: tr('Limite mensal (US$)'), input: monthCost, tokens: false },
+      { key: 'monthTokens', label: tr('Limite mensal (tokens)'), input: monthTokens, tokens: true },
+    ];
+    const budgetField = (f: BudgetField) => h('label', { class: 'ui-budget__field' }, h('span', { text: f.label }), f.input);
+    this.budgetStatus = h('span', { class: 'ui-budget__status' });
+    this.budgetSave = h('button', {
+      class: 'ui-btn ui-btn--sm',
+      type: 'button',
+      text: tr('Salvar limites'),
+      on: { click: () => void this.saveBudgetLimits() },
+    }) as HTMLButtonElement;
+    this.budgetGroup = h(
+      'div',
+      { class: 'ui-set-group' },
+      h('h3', { text: tr('Orçamento') }),
+      h('div', { class: 'ui-budget__grid' }, ...this.budgetFields.map(budgetField)),
+      h('span', {
+        class: 'ui-set__hint',
+        text: tr(
+          'Vazio = sem limite. Avisa ao passar de 80% e de 100%, uma vez por período. Tokens = entrada + saída. Limites por projeto e por conta ficam em budget.json.',
+        ),
+      }),
+      h('div', { class: 'ui-budget__actions' }, this.budgetSave, this.budgetStatus),
+    );
+
     // Nomes dos idiomas sempre na própria língua, para quem não entende o idioma atual achar o seu.
     this.language = segmented<LanguageChoice>(
       tr('Idioma da interface'),
@@ -258,6 +315,7 @@ export class SettingsPopover implements UiComponent {
         h('h3', { text: tr('Avisos') }),
         sw('browserNotifications', tr('Notificações do navegador'), tr('Avisa quando alguém precisa de você e a aba está em segundo plano.'), () => void this.toggleNotifications()),
       ),
+      this.budgetGroup,
       this.soundGroup.el,
       h('div', { class: 'ui-set-group' }, h('h3', { text: tr('Idioma') }), this.language.row),
       this.demoGroup,
@@ -336,6 +394,11 @@ export class SettingsPopover implements UiComponent {
     this.soundGroup.render();
     setHidden(this.demoGroup, this.ctx.store.mock || access().remote);
     setHidden(this.remoteGroup, !access().remote);
+    const budgetLocal = !this.ctx.store.mock && !access().remote && access().local;
+    setHidden(this.budgetGroup, !budgetLocal);
+    if (budgetLocal) this.ensureBudgetLoaded();
+    setText(this.budgetStatus, this.budgetStatusText());
+    this.budgetSave.disabled = this.budgetBusy || !budgetState();
     this.about.render();
 
     const notif = this.switches.get('browserNotifications')!;
@@ -348,6 +411,106 @@ export class SettingsPopover implements UiComponent {
           : tr('Avisa quando alguém precisa de você e a aba está em segundo plano.');
     setText(notif.hint, hint);
     notif.btn.disabled = state === 'unsupported';
+  }
+
+  /** Carrega os limites uma vez (o banner também busca; aqui só preenche os campos quando a resposta chega). */
+  private ensureBudgetLoaded(): void {
+    const state = budgetState();
+    if (state) {
+      if (!this.budgetLoaded) {
+        this.budgetLoaded = true;
+        this.applyBudgetConfig(state.config);
+      }
+      return;
+    }
+    if (this.budgetLoading || this.budgetFailed) return;
+    this.budgetLoading = true;
+    void loadBudget().then(() => {
+      this.budgetLoading = false;
+      const next = budgetState();
+      if (!next) this.budgetFailed = true;
+      else if (!this.budgetLoaded) {
+        this.budgetLoaded = true;
+        this.applyBudgetConfig(next.config);
+      }
+      this.ctx.invalidate();
+    });
+  }
+
+  private applyBudgetConfig(config: BudgetConfig): void {
+    for (const f of this.budgetFields) {
+      const value = budgetValue(config.limits, f.key);
+      f.input.value = value === undefined ? '' : String(value);
+      f.input.classList.remove('is-invalid');
+    }
+    this.budgetError = null;
+  }
+
+  private budgetStatusText(): string {
+    if (this.budgetError) return this.budgetError;
+    const state = budgetState();
+    if (!state) return this.budgetFailed ? tr('Não foi possível carregar os limites.') : '';
+    if (!state.status.metrics.length) return tr('Nenhum limite definido.');
+    if (state.status.level === 'over') return tr('Algum limite estourado.');
+    if (state.status.level === 'warn') return tr('Algum limite passou de 80%.');
+    return tr('Dentro do orçamento.');
+  }
+
+  private async saveBudgetLimits(): Promise<void> {
+    if (this.budgetBusy) return;
+    // Sem a configuração atual não dá para preservar os escopos por projeto/conta: melhor não salvar nada.
+    const current = budgetState();
+    if (!current) {
+      this.budgetError = tr('Não foi possível carregar os limites.');
+      this.ctx.announce(this.budgetError);
+      this.ctx.invalidate();
+      return;
+    }
+    const values: Partial<Record<BudgetField['key'], number>> = {};
+    for (const f of this.budgetFields) {
+      f.input.classList.remove('is-invalid');
+      const raw = f.input.value.trim();
+      if (!raw) continue;
+      const value = Number(raw.replace(',', '.'));
+      if (!Number.isFinite(value) || value < 0 || (f.tokens && !Number.isInteger(value))) {
+        f.input.classList.add('is-invalid');
+        this.budgetError = tr('Valor inválido em "{0}": use um número maior ou igual a zero.', [f.label]);
+        this.ctx.announce(this.budgetError);
+        this.ctx.invalidate();
+        return;
+      }
+      values[f.key] = value;
+    }
+    const day: BudgetLimit = {};
+    if (values.dayCost !== undefined) day.costUSD = values.dayCost;
+    if (values.dayTokens !== undefined) day.tokens = values.dayTokens;
+    const month: BudgetLimit = {};
+    if (values.monthCost !== undefined) month.costUSD = values.monthCost;
+    if (values.monthTokens !== undefined) month.tokens = values.monthTokens;
+    const limits: BudgetScopeLimits = {};
+    if (day.costUSD !== undefined || day.tokens !== undefined) limits.day = day;
+    if (month.costUSD !== undefined || month.tokens !== undefined) limits.month = month;
+    // Os escopos por projeto/conta não têm campos aqui: vão como vieram do servidor.
+    const base = current.config;
+    const config: BudgetConfig = { version: 1, limits };
+    if (base.projects) config.projects = base.projects;
+    if (base.accounts) config.accounts = base.accounts;
+    this.budgetBusy = true;
+    this.budgetError = null;
+    this.ctx.invalidate();
+    try {
+      const r = await saveBudget(config);
+      if (!r.ok) {
+        this.budgetError = tr('Não foi possível salvar os limites: {0}', [r.error]);
+        this.ctx.announce(this.budgetError);
+        return;
+      }
+      this.applyBudgetConfig(r.response.config);
+      this.ctx.announce(tr('Limites salvos.'));
+    } finally {
+      this.budgetBusy = false;
+      this.ctx.invalidate();
+    }
   }
 
   private async toggleNotifications(): Promise<void> {

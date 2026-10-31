@@ -1,6 +1,7 @@
 // Barra superior: marca, conexão, contadores, uso por conta e botões de controle.
 import { access } from '../net/access';
 import { SpawnPanel } from './spawn';
+import { BroadcastDialog } from './broadcast';
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, setAttr, setHidden, setText, setTitle, setVariant } from './dom';
 import { formatDuration, formatInt } from './format';
@@ -51,6 +52,8 @@ export class TopBar implements UiComponent {
   readonly worldBtn: HTMLButtonElement;
   private readonly spawnBtn: HTMLButtonElement;
   private readonly spawnPanel: SpawnPanel;
+  private readonly broadcastBtn: HTMLButtonElement;
+  private readonly broadcastDialog: BroadcastDialog;
   /** Grupo dos botões de painéis (feed, Habblaud World, configurações, ajuda); o histórico entra aqui (ui/index.ts). */
   readonly panelGroup: HTMLElement;
 
@@ -116,6 +119,9 @@ export class TopBar implements UiComponent {
     this.spawnBtn = iconButton(ICONS.newAgent, tr('Novo agente: começa uma sessão do Claude Code no computador'), () => this.spawnPanel.toggle(this.spawnBtn), 'ui-btn-spawn');
     this.spawnBtn.setAttribute('aria-haspopup', 'dialog');
     this.spawnBtn.hidden = true;
+    this.broadcastDialog = new BroadcastDialog(ctx);
+    ctx.root.append(this.broadcastDialog.el);
+    this.broadcastBtn = iconButton(ICONS.broadcast, tr('Ordem geral: envia uma instrução para todos os agentes'), () => this.broadcastDialog.open(), 'ui-btn-broadcast');
     this.version = new VersionChip(ctx, this.settingsBtn);
     this.status = h('div', { class: 'ui-topbar__status' }, this.pill, this.version.el, this.demoBadge);
     const viewGroup = h(
@@ -129,6 +135,7 @@ export class TopBar implements UiComponent {
       'div',
       { class: 'ui-btn-group', role: 'group', attrs: { 'aria-label': tr('Painéis') } },
       this.spawnBtn,
+      this.broadcastBtn,
       this.timelapseBtn,
       this.feedBtn,
       this.worldBtn,
@@ -220,11 +227,17 @@ export class TopBar implements UiComponent {
     this.usage.render();
     this.version.render();
     setHidden(this.spawnBtn, !access().spawn || store.mock || store.replaying);
+    setHidden(this.broadcastBtn, store.mock || store.replaying);
 
     this.sidebarBtn.setAttribute('aria-pressed', String(this.ctx.isPanelOpen('sidebar')));
     this.feedBtn.setAttribute('aria-pressed', String(this.ctx.isPanelOpen('feed')));
     this.timelapseBtn.setAttribute('aria-pressed', String(this.ctx.isTimelapseOpen()));
     setHidden(this.timelapseBtn, store.mock);
+  }
+
+  openSpawn(folder?: string): void {
+    if (this.spawnBtn.hidden) return;
+    this.spawnPanel.open(this.spawnBtn, folder);
   }
 
   private renderShells(n: number, now: number): void {

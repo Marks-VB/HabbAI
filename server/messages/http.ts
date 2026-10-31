@@ -54,6 +54,10 @@ export function createMessageRoutes(registry: MessageRegistry): (req: IncomingMe
     sendJson(res, 200, { messages: registry.codexPoll(await readJson(req)) });
   };
 
+  const broadcast = async (req: IncomingMessage, res: ServerResponse) => {
+    sendJson(res, 201, registry.broadcast(await readJson(req)));
+  };
+
   const codexAck = async (req: IncomingMessage, res: ServerResponse) => {
     registry.codexAck(await readJson(req));
     sendJson(res, 200, { ok: true });
@@ -65,6 +69,7 @@ export function createMessageRoutes(registry: MessageRegistry): (req: IncomingMe
   };
 
   return (req, res, path) => {
+    if (path === '/api/messages/broadcast') return post(req, res, broadcast);
     if (path === '/api/messages') return post(req, res, send);
     if (path === '/api/mod/inbox') return post(req, res, inbox);
     if (path === '/api/mod/inbox/ack') return post(req, res, ack);

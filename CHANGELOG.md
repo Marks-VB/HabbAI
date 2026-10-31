@@ -12,6 +12,12 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Ordem Geral (Broadcast de mensagens)**: botão de megafone na barra superior e rota POST /api/messages/broadcast para enviar uma instrução em lote para todos os agentes principais ativos no escritório.
+- **Contratar agente com um clique na mesa vazia (Spawner Visual)**: clicar em qualquer mesa vaga de uma sala abre diretamente o painel de novo agente com o caminho do projeto daquela sala pré-selecionado.
+- **Notificações por Webhook e Telegram**: suporte a HABBLAUD_WEBHOOK_URL (com payloads adaptados para Discord, Slack e genérico) e HABBLAUD_TELEGRAM_BOT_TOKEN / HABBLAUD_TELEGRAM_CHAT_ID para alertar em tempo real quando um agente pede permissão para rodar comandos ou ferramentas.
+- **Orçamento com limites e alertas**: limites diários e mensais de custo (US$) e de tokens, no escritório inteiro e por projeto ou conta (em `~/.habblaud/budget.json`), com aviso no webhook/Telegram ao passar de 80% e de 100% — uma vez por período e escopo — banner dispensável na interface e uma seção em Configurações para definir os limites (GET/PUT `/api/budget`, só pelo próprio computador).
+- **Mascote no Escritório (Pets em Pixel Art)**: um gatinho malhado laranja passeia pelo corredor e lounge, dorme nos tapetes quando relaxado e ronrona/solta corações ao receber um clique com o mouse.
+
 - **"Meu dia" com exportação: o dia inteiro em CSV ou em texto, para levar para uma retro ou um relatório.**
   - **Exportar CSV** baixa um arquivo com os tempos por status, tarefas concluídas, sessões e subagentes, tokens e
     custo — uma linha por projeto, uma por conta e uma de total. Vem com BOM UTF-8 e vírgula decimal, para o Excel em

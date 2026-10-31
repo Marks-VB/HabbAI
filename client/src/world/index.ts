@@ -67,6 +67,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const socialCbs = new Set<(e: SocialEvent) => void>();
   const soundCbs = new Set<(c: SoundCue) => void>();
   const roomMenuCbs = new Set<(roomId: string, at: { x: number; y: number }) => void>();
+  const deskClickCbs = new Set<(roomId: string, folder?: string) => void>();
   let cues = new SoundCues(sim, camera);
   let selection: Selection = null;
   let hover: string | null = null;
@@ -194,9 +195,18 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       }
     }
     if (best) return { type: 'agent', id: best };
+    if (sim.pet?.x && Math.hypot(w.x - sim.pet.x, w.y - (sim.pet.y - 4)) < 12) return { type: 'pet', id: 'pet' };
     const tx = Math.floor(w.x / TILE);
     const ty = Math.floor(w.y / TILE);
-    for (const room of sim.rooms.values()) if (room.present && !room.ghost && inRect(room.layout.rect, tx, ty)) return { type: 'room', id: room.id };
+    for (const room of sim.rooms.values()) {
+      if (room.present && !room.ghost && inRect(room.layout.rect, tx, ty)) {
+        const deskSpot = room.layout.spots.find(
+          (s) => s.kind === 'desk' && ((s.tx === tx && s.ty === ty) || (s.side === 'S' && s.tx === tx && s.ty - 1 === ty) || (s.side === 'N' && s.tx === tx && s.ty + 1 === ty))
+        );
+        if (deskSpot && sim.spots.isFree(deskSpot.id)) return { type: 'desk', id: deskSpot.id, roomId: room.id, folder: room.info.path };
+        return { type: 'room', id: room.id };
+      }
+    }
     return null;
   };
 
@@ -222,7 +232,11 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
 
   const detachInput = attachInput(canvas, camera, {
     pick,
-    click: (hit, at) => (visitMode ? visitClick(hit, at) : setSelection(hit)),
+    click: (hit, at) => {
+      if (hit?.type === 'pet') return void sim.pet.pet();
+      if (hit?.type === 'desk') return void deskClickCbs.forEach((cb) => cb(hit.roomId, hit.folder));
+      return visitMode ? visitClick(hit, at) : setSelection(hit);
+    },
     doubleClick: (hit) => {
       if (hit?.type === 'agent') {
         setSelection(hit);
@@ -388,6 +402,10 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   return {
     select: (sel, opts) => setSelection(sel, !!opts?.focus),
     getSelection: () => selection,
+    onDeskClick: (cb: (roomId: string, folder?: string) => void) => {
+      deskClickCbs.add(cb);
+      return () => void deskClickCbs.delete(cb);
+    },
     onSelect: (cb) => {
       selectCbs.add(cb);
       return () => void selectCbs.delete(cb);

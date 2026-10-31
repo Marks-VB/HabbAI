@@ -80,6 +80,11 @@ export interface ApiDeps {
   renameRoom?: (id: string, name: string) => string | undefined;
   /** Estatísticas do "Meu dia" (GET /api/stats, http/stats.ts). */
   stats?: DayStatsService;
+  /**
+   * Limites e alertas de orçamento (GET/PUT /api/budget, budget/http.ts). Só pela porta local com Host local: os
+   * limites são uma configuração da máquina, não algo para mudar (ou ler) pelo celular.
+   */
+  budget?: (req: IncomingMessage, res: ServerResponse, path: string) => void;
   /** Verificação de versão nova no GitHub (GET /api/updates, POST /api/updates/check; updates/checker.ts). */
   updates?: {
     status(): UpdateStatus;
@@ -693,6 +698,17 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
     }
     if (path === '/api/stats' || path.startsWith('/api/stats/')) {
       handleStatsRoute(req, res, url, deps.stats, sendJson);
+      return true;
+    }
+    if (path === '/api/budget') {
+      // O orçamento é configuração da máquina: só pelo próprio computador, nunca pela porta remota (nem com login).
+      if (isRemote(req) || !isLoopbackHost(req.headers.host)) {
+        req.resume();
+        sendJson(res, 403, { error: tr('o orçamento só abre pelo próprio computador (http://localhost)') });
+      } else if (!deps.budget) {
+        req.resume();
+        sendJson(res, 404, { error: tr('orçamento indisponível') });
+      } else deps.budget(req, res, path);
       return true;
     }
     if (path === '/api/demo') {

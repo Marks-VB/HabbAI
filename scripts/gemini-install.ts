@@ -19,7 +19,7 @@ function loadSettings() {
   }
 }
 
-function saveSettings(s: any) {
+function saveSettings(s: unknown) {
   mkdirSync(dirname(SETTINGS_FILE), { recursive: true });
   writeFileSync(SETTINGS_FILE, `${JSON.stringify(s, null, 2)}\n`);
 }
@@ -33,7 +33,7 @@ if (cmd === 'install') {
   for (const ev of events) {
     s.hooks[ev] = s.hooks[ev] || [];
     // remove handler antigo do habblaud se houver
-    s.hooks[ev] = s.hooks[ev].filter((h: any) => !JSON.stringify(h).includes('habblaud-gemini'));
+    s.hooks[ev] = s.hooks[ev].filter((h: unknown) => !JSON.stringify(h).includes('habblaud-gemini'));
     s.hooks[ev].push({
       matcher: '*',
       hooks: [
@@ -53,7 +53,7 @@ if (cmd === 'install') {
   if (s.hooks) {
     for (const k of Object.keys(s.hooks)) {
       if (Array.isArray(s.hooks[k])) {
-        s.hooks[k] = s.hooks[k].filter((h: any) => !JSON.stringify(h).includes('habblaud-gemini'));
+        s.hooks[k] = s.hooks[k].filter((h: unknown) => !JSON.stringify(h).includes('habblaud-gemini'));
         if (s.hooks[k].length === 0) delete s.hooks[k];
       }
     }
