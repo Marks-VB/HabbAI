@@ -5,7 +5,7 @@ import { TILE, type ArtModule, type CharacterFrameRequest, type IconName, type S
 import type { ScenarioTheme, SeasonalTheme, WorldOptions } from '../api';
 import type { WorldAssets } from '../assets';
 import type { Camera } from '../camera';
-import { BUILDING_H, COL_W, CORE_COLS, CORRIDOR_Y } from '../constants';
+import { BUILDING_H, COL_W, CORE_COLS, CORRIDOR_Y, EXT_NORTH, EXT_SOUTH } from '../constants';
 import { layoutExterior, slotShell, type ExteriorLayout, type SlotShell } from '../layout/exterior';
 import { slotAt } from '../layout/geometry';
 import type { ExteriorProp } from '../layout/types';
@@ -126,7 +126,11 @@ export class Renderer {
   private base: HTMLCanvasElement | null = null;
   private baseX = 0;
   private baseY = 0;
+  /** Limites (tiles) da camada externa desenhada: no local, o prédio inteiro; na visita, o entorno do térreo. */
+  private baseBounds = { x: 0, y: 0, w: 0, h: 0 };
   private baseCols = -1;
+  private baseHeight = -1;
+  private baseGroundY = -1;
   private layoutVersion = -1;
   private assetsVersion = 0;
   private builtAssetsVersion = 0;
@@ -186,11 +190,13 @@ export class Renderer {
     this.scenario = scenario;
     this.theme = theme;
     const assetsChanged = this.builtAssetsVersion !== this.assetsVersion || themeChanged || scenarioChanged;
-    if (this.baseCols !== sim.building.cols || assetsChanged) this.buildBase();
+    const groundY = sim.building.groundY ?? 0;
+    if (this.baseCols !== sim.building.cols || this.baseHeight !== sim.building.rect.h || this.baseGroundY !== groundY || assetsChanged) this.buildBase();
     if (this.layoutVersion !== sim.layoutVersion || assetsChanged) {
       this.layoutVersion = sim.layoutVersion;
       const want = new Set<string>();
-      for (const a of [...sim.building.core, sim.building.corridor]) {
+      const corridors = sim.building.corridors ?? [sim.building.corridor];
+      for (const a of [...sim.building.core, ...corridors, ...(sim.building.shafts ?? [])]) {
         want.add(a.id);
         const cur = this.areas.get(a.id);
         if (!cur || cur.layout !== a || assetsChanged) this.areas.set(a.id, buildAreaVis(this.art, a, undefined, this.assets, theme));
@@ -219,9 +225,17 @@ export class Renderer {
   /** Camada base: área externa, pátios dos slots e fechamentos do corredor. */
   private buildBase(): void {
     const cols = this.sim.building.cols;
+    const height = this.sim.building.rect.h;
+    const groundY = this.sim.building.groundY ?? 0;
     this.baseCols = cols;
-    this.exterior = layoutExterior(cols, this.scenario);
-    const b = this.exterior.bounds;
+    this.baseHeight = height;
+    this.baseGroundY = groundY;
+    this.exterior = layoutExterior(cols, this.scenario, height, groundY + CORRIDOR_Y);
+    // No escritório local a camada cobre o prédio inteiro (como sempre). Na visita, só o entorno do
+    // térreo: os andares de cima são desenhados sobre a grama e não precisam de uma tela de 20 andares.
+    const ext = this.exterior.bounds;
+    this.baseBounds = { x: ext.x, y: groundY - EXT_NORTH, w: ext.w, h: BUILDING_H + EXT_NORTH + EXT_SOUTH };
+    const b = this.baseBounds;
     this.baseX = b.x * TILE;
     this.baseY = b.y * TILE;
     const c = document.createElement('canvas');
@@ -249,12 +263,15 @@ export class Renderer {
     }
     this.shells = [];
     this.shellWindows = [];
-    for (let col = CORE_COLS; col < cols; col++) {
-      for (const side of ['north', 'south'] as const) {
-        const sh = slotShell(slotAt(col, side), col === cols - 1, this.scenario);
-        this.shells.push(sh);
-        paintShell(this.art, ctx, sh.floors, sh.walls);
-        for (const w of sh.windows) this.shellWindows.push(toWallVis(w, `shell:${sh.slot}`));
+    // Na visita o prédio é a pilha de andares (não há "slots" vazios): nada de pátios atrás das salas.
+    if (!this.sim.visit) {
+      for (let col = CORE_COLS; col < cols; col++) {
+        for (const side of ['north', 'south'] as const) {
+          const sh = slotShell(slotAt(col, side), col === cols - 1, this.scenario);
+          this.shells.push(sh);
+          paintShell(this.art, ctx, sh.floors, sh.walls);
+          for (const w of sh.windows) this.shellWindows.push(toWallVis(w, `shell:${sh.slot}`));
+        }
       }
     }
     this.desaturate(ctx);
@@ -334,6 +351,7 @@ export class Renderer {
   /** Estação orbital: plataformas de pouso, tiras de luz e tubulações sobre o convés. */
   private decorateOrbitalDeck(ctx: CanvasRenderingContext2D): void {
     const b = this.exterior.bounds;
+    const bottom = this.sim.building.rect.y + this.sim.building.rect.h;
     /** Anel de traços desenhado em pixels (sem suavização), com a cruz de pouso no centro. */
     const pad = (cx: number, cy: number): void => {
       const r = 46;
@@ -357,7 +375,7 @@ export class Renderer {
     pad((b.x + 7) * TILE, (b.y + 8) * TILE);
     pad((b.x + b.w - 7) * TILE, (b.y + 8) * TILE);
     // tiras de luz ao longo da passarela sul
-    const lightY = (BUILDING_H + 2.2) * TILE;
+    const lightY = (bottom + 2.2) * TILE;
     for (let x = b.x + 3; x < b.x + b.w - 2; x += 6) {
       ctx.fillStyle = '#7fe3ff';
       ctx.fillRect(Math.round(x * TILE), Math.round(lightY), 7, 2);
@@ -375,7 +393,7 @@ export class Renderer {
       ctx.fillRect(Math.round(x * TILE), pipeY - 2, 3, 8);
     }
     // faixa de atenção na borda sul do prédio
-    const hazY = (BUILDING_H + 1.6) * TILE;
+    const hazY = (bottom + 1.6) * TILE;
     for (let x = b.x + 2; x < b.x + b.w - 2; x += 2) {
       ctx.fillStyle = Math.floor(x / 2) % 2 === 0 ? '#e0a93e' : '#2a3140';
       ctx.fillRect(Math.round(x * TILE), Math.round(hazY), TILE * 2, 3);
@@ -385,7 +403,8 @@ export class Renderer {
   /** Praia: espuma na beira do mar, conchas na areia e marcas de onda. */
   private decorateBeach(ctx: CanvasRenderingContext2D): void {
     const b = this.exterior.bounds;
-    const waterTop = (BUILDING_H + 4) * TILE;
+    const bottom = this.sim.building.rect.y + this.sim.building.rect.h;
+    const waterTop = (bottom + 4) * TILE;
     const waterH = this.exterior.streetH;
     const x0 = b.x * TILE;
     const x1 = (b.x + b.w) * TILE;
@@ -409,7 +428,7 @@ export class Renderer {
       }
     }
     // conchas e estrelinhas na areia da faixa sul
-    const sandTop = (BUILDING_H + 9) * TILE;
+    const sandTop = (bottom + 9) * TILE;
     const sandBottom = (b.y + b.h - 2) * TILE;
     let hsh = 0x51ed;
     const rnd = () => {
@@ -428,10 +447,12 @@ export class Renderer {
   /** Neve: bancos de neve nas bordas do passeio e pegadas perto da entrada. */
   private decorateSnow(ctx: CanvasRenderingContext2D): void {
     const b = this.exterior.bounds;
+    const bottom = this.sim.building.rect.y + this.sim.building.rect.h;
+    const groundY = this.sim.building.groundY ?? 0;
     const x0 = b.x * TILE;
     const x1 = (b.x + b.w) * TILE;
     // montinhos irregulares nas bordas do passeio
-    for (const ty of [BUILDING_H + 2, BUILDING_H + 9]) {
+    for (const ty of [bottom + 2, bottom + 9]) {
       const y = ty * TILE;
       for (let x = x0; x < x1; x += 5) {
         const h = 1 + ((x / 5) % 3);
@@ -442,7 +463,7 @@ export class Renderer {
       }
     }
     // pegadas saindo da entrada oeste
-    const py = (CORRIDOR_Y + 6) * TILE;
+    const py = (groundY + CORRIDOR_Y + 6) * TILE;
     for (let i = 0; i < 8; i++) {
       const x = x0 + 12 + i * 9;
       const y = py + (i % 2) * 3;
@@ -455,11 +476,13 @@ export class Renderer {
 
   /** Acabamento da camada externa: bordas levemente mais escuras (vinheta) e o capacho da entrada. */
   private finishBase(ctx: CanvasRenderingContext2D, cols: number): void {
-    const b = this.exterior.bounds;
+    const b = this.baseBounds;
     const x0 = b.x * TILE;
     const y0 = b.y * TILE;
     const w = b.w * TILE;
     const h = b.h * TILE;
+    const bottom = this.sim.building.rect.y + this.sim.building.rect.h;
+    const groundY = this.sim.building.groundY ?? 0;
     ctx.save();
     // vinheta: escurece com a distância ao prédio e chega ao tom da grama "de fora" exatamente na
     // borda da área desenhada (máscara de 1 px por tile, ampliada com suavização)
@@ -479,7 +502,7 @@ export class Renderer {
           const wx = b.x + tx + 0.5;
           const wy = b.y + ty + 0.5;
           const fx = wx < 0 ? smooth(6, -b.x, -wx) : wx > bwT ? smooth(6, b.x + b.w - bwT, wx - bwT) : 0;
-          const fy = wy < 0 ? smooth(5, -b.y, -wy) : wy > BUILDING_H ? smooth(12, b.y + b.h - BUILDING_H, wy - BUILDING_H) : 0;
+          const fy = wy < 0 ? smooth(5, -b.y, -wy) : wy > bottom ? smooth(12, b.y + b.h - bottom, wy - bottom) : 0;
           const i = (ty * b.w + tx) * 4;
           // tom da vinheta: acompanha o cenário (o verde padrão não serve no convés orbital, na neve nem na praia)
           const [tr, tg, tb] = this.scenario === 'orbital' ? [7, 11, 24]
@@ -500,7 +523,7 @@ export class Renderer {
       // sem vinheta
     }
     // capacho diante da fachada de vidro da entrada (oeste do corredor)
-    const my = (CORRIDOR_Y + 1.25) * TILE;
+    const my = (groundY + CORRIDOR_Y + 1.25) * TILE;
     ctx.fillStyle = '#3f4652';
     ctx.fillRect(-1.75 * TILE, my, 1.5 * TILE, 2.5 * TILE);
     ctx.fillStyle = '#596170';

@@ -17,10 +17,12 @@ import { tr } from '../../../../shared/i18n';
 import type { WorldSceneCommand, WorldSceneInside, WorldSceneMe } from '../../../../shared/world/api';
 import type { BuildingPatchMessage, StampId } from '../../../../shared/world/protocol';
 import { OfficeStore } from '../../net/store';
-import { h, setHidden, setText } from '../../ui/dom';
+import { h, prefersReducedMotion, setHidden, setText } from '../../ui/dom';
+import { mountFloorRail } from '../../ui/floors';
 import { modalOpen } from '../input';
 import type { WorldOptions } from '../api';
 import { intentFrom, moveKeyOf } from '../city/input';
+import { buildRail } from '../floors/rail';
 import { createWorld } from '../index';
 import { browserStorage, clearWorldWallets } from '../social/wallet';
 import { mountVisitSocial, stampBoard, stampPinTitle } from '../visit-social';
@@ -76,6 +78,8 @@ export interface VisitScene {
 export function createVisitScene(o: VisitSceneOptions): VisitScene {
   const canvas = document.createElement('canvas');
   canvas.id = 'visit';
+  // o trilho devolve o foco para cá no Esc; o teclado da visita é da janela, mas o foco fica no canvas
+  canvas.tabIndex = 0;
   o.after.after(canvas);
   // Um store só desta visita, que nunca conecta: o escritório desta máquina não muda.
   const store = new OfficeStore({ search: '' });
@@ -98,6 +102,39 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
     changed: () => render(),
   });
   world.visit.setVisitor({ name: o.me.name, look: o.me.look, parts: o.me.parts });
+
+  // ------------------------------------------------------------------ trilho de andares
+
+  /** Fade curto da troca (o elevador animado fica para a Fase 2); com movimento reduzido, corte seco. */
+  const fade = h('div', { class: 'ui-visit-fade', hidden: true, attrs: { 'aria-hidden': 'true' } });
+  let fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  const flash = () => {
+    if (prefersReducedMotion()) return;
+    setHidden(fade, false);
+    fade.classList.remove('is-on');
+    void fade.offsetWidth;
+    fade.classList.add('is-on');
+    if (fadeTimer) clearTimeout(fadeTimer);
+    fadeTimer = setTimeout(() => {
+      fadeTimer = null;
+      fade.classList.remove('is-on');
+      setHidden(fade, true);
+    }, 240);
+  };
+
+  const rail = mountFloorRail({
+    model: () => buildRail(visitPanel(controller.detail).rooms, world.visit.currentFloor()),
+    go: (floor) => {
+      flash();
+      world.visit.setFloor(floor);
+    },
+    current: () => world.visit.currentFloor(),
+    focusWorld: () => canvas.focus(),
+  });
+  const offFloor = world.visit.onFloor(() => {
+    rail.update();
+    insets();
+  });
 
   // ------------------------------------------------------------------ DOM
 
@@ -159,7 +196,7 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
   // o quadro de carimbos da portaria, em cima do quadro da parede da recepção (acompanha a câmera a cada quadro)
   const boardPins = h('div', { class: 'ui-visit-board__pins' });
   const board = h('div', { class: 'ui-visit-board', hidden: true, role: 'img' }, boardPins);
-  const layer = h('div', { class: 'ui-visit' }, board, bar, panel, exitHint, help, leaving);
+  const layer = h('div', { class: 'ui-visit' }, fade, board, bar, panel, rail.el, exitHint, help, leaving);
   o.uiRoot.append(layer);
   // os avisos do escritório desta máquina continuam, ao lado do painel
   o.uiRoot.classList.add('is-visit');
@@ -255,6 +292,9 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
     renderCard();
     setText(panelBtn, `${tr('Salas')} (${d.floors.length})`);
     renderBoard();
+    // um andar que saiu do pacote leva o andar atual junto (a câmera nunca fica presa num andar que sumiu)
+    if (d.floors.length > 0 && world.visit.currentFloor() > d.floors.length - 1) world.visit.setFloor(d.floors.length - 1);
+    rail.update();
     panelBtn.setAttribute('aria-expanded', String(panelOpen));
     layer.classList.toggle('has-panel', panelOpen);
     insets();
@@ -283,16 +323,21 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
     render();
   }
 
-  /** A área livre do mundo: abaixo da faixa e ao lado (ou acima, no celular) do painel. */
+  /** A área livre do mundo: abaixo da faixa e ao lado (ou acima, no celular) do painel e do trilho. */
   function insets(): void {
     layer.style.setProperty('--ui-visit-top', `${Math.round(o.topInset() + 8)}px`);
     const top = bar.getBoundingClientRect().bottom || o.topInset() + 56;
     const pr = panel.getBoundingClientRect();
+    const wide = !narrow();
+    // o trilho fica à esquerda no desktop e vira uma faixa na base no celular (o painel aberto manda)
+    const rr = !rail.el.hidden ? rail.el.getBoundingClientRect() : null;
+    const railLeft = rr && wide ? Math.max(0, rr.right + 4) : 0;
+    const railBottom = rr && !wide ? Math.max(0, window.innerHeight - rr.top + 4) : 0;
     world.setViewInsets?.({
       top: top + 4,
-      right: panelOpen && !narrow() ? Math.max(0, window.innerWidth - pr.left) : 0,
-      bottom: panelOpen && narrow() ? Math.max(0, window.innerHeight - pr.top) : 0,
-      left: 0,
+      right: panelOpen && wide ? Math.max(0, window.innerWidth - pr.left) : 0,
+      bottom: panelOpen && !wide ? Math.max(0, window.innerHeight - pr.top) : railBottom,
+      left: railLeft,
     });
   }
 
@@ -307,6 +352,8 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
     const el = t as HTMLElement | null;
     return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName ?? ''));
   };
+  /** O foco está no trilho de andares: as teclas são dele (setas, Home/End, Esc). */
+  const inRail = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.('.ui-floor-rail');
   const onKey = (e: KeyboardEvent, down: boolean) => {
     if (e.key === 'Shift') shift = down;
     else if (typeof e.getModifierState === 'function') shift = e.getModifierState('Shift');
@@ -316,7 +363,7 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
       pushIntent();
       return;
     }
-    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target) || modalOpen(e.target as HTMLElement | null)) return;
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target) || inRail(e.target) || modalOpen(e.target as HTMLElement | null)) return;
     if (k) {
       e.preventDefault();
       keys.add(k);
@@ -438,8 +485,11 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
       if (destroyed) return;
       destroyed = true;
       if (leaveTimer) clearTimeout(leaveTimer);
+      if (fadeTimer) clearTimeout(fadeTimer);
       cancelAnimationFrame(raf);
       offSelect();
+      offFloor();
+      rail.destroy();
       social.destroy();
       removeEventListener('keydown', onDown);
       removeEventListener('keyup', onUp);

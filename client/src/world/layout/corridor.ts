@@ -10,9 +10,9 @@ const SMALL = ['fern', 'succulent', 'flower'] as const;
 /** Passadeira: uma família de cor só (azul-acinzentado discreto), com leve variação de tom. */
 const RUNNERS = ['#8b9bb0', '#8597ab', '#909fb3'] as const;
 
-export function layoutCorridor(cols: number): AreaLayout {
+export function layoutCorridor(cols: number, id = CORRIDOR_ID): AreaLayout {
   const w = cols * COL_W;
-  const b = new AreaBuilder(CORRIDOR_ID, 'corridor', { x: 0, y: CORRIDOR_Y, w, h: CORRIDOR_H });
+  const b = new AreaBuilder(id, 'corridor', { x: 0, y: CORRIDOR_Y, w, h: CORRIDOR_H });
   b.floor('concrete', 0, 0, w, CORRIDOR_H, 501);
   // fachadas de vidro nas pontas do corredor (entrada principal a oeste)
   for (let ly = 0; ly < CORRIDOR_H; ly++) {

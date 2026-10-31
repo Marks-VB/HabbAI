@@ -7,7 +7,7 @@ import { DEFAULT_WORLD_OPTIONS, seasonalThemeFor, type Selection, type SocialEve
 import { loadWorldAssets, type WorldAssets } from './assets';
 import { Camera, overviewFrame } from './camera';
 import { createDebug, type WorldDebug } from './debug';
-import { BUILDING_H, COL_W } from './constants';
+import { COL_W } from './constants';
 import { RECEPTION_ID } from './layout/core';
 import { inRect } from './layout/geometry';
 import { attachInput, type Hit } from './input';
@@ -24,7 +24,10 @@ import { tr } from '../../../shared/i18n';
 export * from './api';
 export type { WorldDebug } from './debug';
 
-const art: ArtModule = artModule;
+// O namespace da arte é um binding vivo. O grafo de módulos da arte tem um ciclo com o personagem (art ↔
+// character), e capturar o namespace no topo do módulo pode congelar um `undefined` conforme a ordem de
+// avaliação dos chunks. Ler na hora da chamada (quando tudo já avaliou) evita isso.
+const artNow = (): ArtModule => artModule;
 
 /** O que a cena Visita usa do mundo dela (createWorld com `visit: true`). */
 export interface VisitWorld {
@@ -42,6 +45,14 @@ export interface VisitWorld {
   visitorScreen(): { x: number; y: number } | null;
   /** O quadro da parede da recepção na tela (px CSS): o lugar do quadro de carimbos da portaria; null fora da tela. */
   boardScreen(): { x: number; y: number; w: number; h: number } | null;
+  /** Quantos andares o prédio tem agora (o térreo incluso). */
+  floorCount(): number;
+  /** Andar atual (0 = térreo). */
+  currentFloor(): number;
+  /** Vai para um andar (o visitante em outro andar desce/sobe na hora). */
+  setFloor(floor: number): void;
+  /** Disparado quando o andar atual muda (trilho, teclado, visita andando no poço). */
+  onFloor(cb: (floor: number) => void): () => void;
 }
 
 export interface CreateWorldOptions {
@@ -57,8 +68,8 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const visitMode = !!o.visit;
   const camera = new Camera();
   // Simulação e desenho são recriados quando o timelapse entra, pula ou sai (rebuild).
-  let sim = new Sim(art, () => options, undefined, { visit: visitMode });
-  let renderer = new Renderer(canvas, art, sim, camera);
+  let sim = new Sim(artNow(), () => options, undefined, { visit: visitMode });
+  let renderer = new Renderer(canvas, artNow(), sim, camera);
   let overlay = new Overlay(renderer.ctx, sim, renderer, camera);
   let assets: WorldAssets | null = null;
   /** Timelapse ligado: relógio próprio do mundo (`worldNow`), acelerado pelo fator de animação. */
@@ -70,6 +81,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const soundCbs = new Set<(c: SoundCue) => void>();
   const roomMenuCbs = new Set<(roomId: string, at: { x: number; y: number }) => void>();
   const deskClickCbs = new Set<(roomId: string, folder?: string) => void>();
+  const floorCbs = new Set<(floor: number) => void>();
   let cues = new SoundCues(sim, camera);
   let selection: Selection = null;
   let hover: string | null = null;
@@ -85,6 +97,8 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   let userMoved = false;
   let framed = false;
   let lastCols = -1;
+  /** Visita: última versão do prédio empilhado (para reenquadrar quando andares entram ou saem). */
+  let lastLayoutVersion = -1;
   const abort = new AbortController();
 
   // ------------------------------------------------------------------ leitor de tela
@@ -180,25 +194,63 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     updateBounds();
   };
 
-  const buildingRect = () => ({ x: 0, y: 0, w: sim.building.cols * COL_W * TILE, h: BUILDING_H * TILE });
+  const buildingRect = () => {
+    const r = sim.building.rect;
+    return { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
+  };
+
+  /** O que a câmera enquadra: o prédio inteiro (local) ou a faixa do andar atual (visita). */
+  const focusRect = () => {
+    if (!visitMode) return buildingRect();
+    const r = sim.floorRect(sim.currentFloor);
+    if (sim.currentFloor === 0) return { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
+    // andar de projeto: a sala (coluna do meio) e a metade oeste do poço; o patamar fica fora do
+    // enquadramento inicial, mas a câmera ainda pode passear até ele dentro dos limites do andar
+    return { x: (r.x + COL_W) * TILE, y: r.y * TILE, w: (COL_W + 8) * TILE, h: r.h * TILE };
+  };
+
+  /** Limites de pans da câmera: o andar inteiro (visita) ou o prédio (local). */
+  const cameraBounds = () => {
+    const r = visitMode ? sim.floorRect(sim.currentFloor) : sim.building.rect;
+    const b = { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
+    return visitMode
+      ? { x: b.x - 7 * TILE, y: b.y - 1.5 * TILE, w: b.w + 14 * TILE, h: b.h + 4 * TILE }
+      : { x: b.x - 7 * TILE, y: b.y - 6 * TILE, w: b.w + 14 * TILE, h: b.h + 18 * TILE };
+  };
 
   const updateBounds = () => {
-    const b = buildingRect();
-    camera.bounds = { x: b.x - 7 * TILE, y: b.y - 6 * TILE, w: b.w + 14 * TILE, h: b.h + 18 * TILE };
-    const fit = camera.fitZoom(b, 16);
-    camera.minZoom = Math.min(1, Math.max(0.25, fit));
+    camera.bounds = cameraBounds();
+    const fit = camera.fitZoom(focusRect(), 16);
+    camera.minZoom = visitMode ? Math.max(0.25, fit) : Math.min(1, Math.max(0.25, fit));
     camera.clamp();
   };
 
   const overviewTarget = () => {
-    const f = overviewFrame(buildingRect(), camera.viewW, camera.viewH, camera.insets);
+    const f = overviewFrame(focusRect(), camera.viewW, camera.viewH, camera.insets);
     const fit = Math.max(camera.minZoom, f.zoom);
     const snapped = camera.snapZoom(fit, 'down');
     const zoom = snapped >= fit * 0.82 ? snapped : fit;
-    const z = Math.min(zoom, 4);
+    // na visita o zoom nunca fica abaixo do que enquadra o andar: senão a câmera mostraria o prédio inteiro
+    const z = visitMode ? Math.max(camera.minZoom, Math.min(zoom, 4)) : Math.min(zoom, 4);
     const c = camera.centerFor(f.cx, f.cy, z);
     // as margens de tela (pílulas acima, meio-fio abaixo) não são simétricas
     return { x: c.x, y: c.y - f.dy / z, zoom: z };
+  };
+
+  const emitFloor = () => floorCbs.forEach((cb) => cb(sim.currentFloor));
+
+  /** Enquadra a faixa do andar atual (visita) e esquece o "seguir" até o usuário mexer de novo. */
+  const focusFloor = () => {
+    updateBounds();
+    const o = overviewTarget();
+    camera.stop();
+    camera.follow = null;
+    camera.x = o.x;
+    camera.y = o.y;
+    camera.zoom = o.zoom;
+    camera.clamp();
+    userMoved = false;
+    framed = true;
   };
 
   const overview = (animate = true) => {
@@ -238,6 +290,15 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const focusAgent = (id: string, opts: { follow?: boolean } = {}) => {
     const ch = sim.person(id);
     if (!ch) return;
+    if (visitMode) {
+      // o agente pode estar num andar diferente (na copa, por exemplo): a visita sobe/desce até ele
+      const floor = sim.floorAtY(ch.ty);
+      if (floor !== sim.currentFloor) {
+        sim.goToFloor(floor);
+        focusFloor();
+        emitFloor();
+      }
+    }
     userMoved = true;
     const zoom = Math.max(camera.zoom, camera.snapZoom(3));
     const c = camera.centerFor(ch.x, ch.y - 12, zoom);
@@ -248,6 +309,14 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const focusRoom = (id: string) => {
     const room = sim.rooms.get(id);
     if (!room) return;
+    if (visitMode) {
+      const floor = sim.floorOf(id);
+      if (floor >= 0 && floor !== sim.currentFloor) {
+        sim.goToFloor(floor);
+        focusFloor();
+        emitFloor();
+      }
+    }
     userMoved = true;
     camera.follow = null;
     const r = room.layout.rect;
@@ -316,11 +385,13 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
 
   const pick = (sx: number, sy: number): Hit => {
     const w = camera.screenToWorld(sx, sy);
+    const floor = visitMode ? sim.currentFloor : -1;
     let best: string | null = null;
     let bestDepth = Number.NEGATIVE_INFINITY;
     const slack = Math.max(1, 3 / camera.zoom);
     for (const [id, h] of renderer.heads) {
       if (!h.visible || id === VISITOR_ID) continue;
+      if (visitMode && sim.floorAtY(h.feetY / TILE) !== floor) continue;
       if (w.x < h.bx - slack || w.x > h.bx + h.bw + slack || w.y < h.by - slack || w.y > h.by + h.bh + slack) continue;
       if (h.depth > bestDepth) {
         bestDepth = h.depth;
@@ -328,11 +399,13 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       }
     }
     if (best) return { type: 'agent', id: best };
-    if (sim.pet?.x && Math.hypot(w.x - sim.pet.x, w.y - (sim.pet.y - 4)) < 12) return { type: 'pet', id: 'pet' };
+    if (sim.pet?.x && (!visitMode || sim.floorAtY(sim.pet.y / TILE) === floor) && Math.hypot(w.x - sim.pet.x, w.y - (sim.pet.y - 4)) < 12) return { type: 'pet', id: 'pet' };
     const tx = Math.floor(w.x / TILE);
     const ty = Math.floor(w.y / TILE);
     for (const room of sim.rooms.values()) {
-      if (room.present && !room.ghost && inRect(room.layout.rect, tx, ty)) {
+      if (!room.present || room.ghost) continue;
+      if (visitMode && sim.floorOf(room.id) !== floor) continue;
+      if (inRect(room.layout.rect, tx, ty)) {
         const deskSpot = room.layout.spots.find(
           (s) => s.kind === 'desk' && ((s.tx === tx && s.ty === ty) || (s.side === 'S' && s.tx === tx && s.ty - 1 === ty) || (s.side === 'N' && s.tx === tx && s.ty + 1 === ty))
         );
@@ -355,7 +428,10 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     if (hit?.type === 'agent') return setSelection(hit);
     setSelection(null);
     const w = camera.screenToWorld(at.x, at.y);
-    if (sim.visitorWalkTo(Math.floor(w.x / TILE), Math.floor(w.y / TILE))) followVisitor();
+    const ty = Math.floor(w.y / TILE);
+    // só o andar atual: um clique fora da faixa (noutra sala) não manda ninguém atravessar o prédio
+    if (sim.floorAtY(ty) !== sim.currentFloor) return;
+    if (sim.visitorWalkTo(Math.floor(w.x / TILE), ty)) followVisitor();
   };
   const followVisitor = () => {
     if (!sim.visitor) return;
@@ -443,7 +519,28 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
         events.length = 0;
       }
       renderer.sync(seasonalThemeFor(options.theme, new Date()), options.scenario ?? 'city');
-      if (sim.building.cols !== lastCols) {
+      if (visitMode) {
+        // o prédio empilhado mudou (sala nova, sala que saiu): reenquadra o andar atual
+        if (sim.layoutVersion !== lastLayoutVersion) {
+          lastLayoutVersion = sim.layoutVersion;
+          updateBounds();
+          if (!framed && sim.initialized) {
+            overview(false);
+            framed = true;
+          } else if (!userMoved) overview(false);
+          emitFloor();
+        }
+        // atravessando o poço, o andar em que o visitante está vira o andar atual (a câmera o segue)
+        const v = sim.visitor;
+        if (v && !sim.visitorBusy) {
+          const floor = sim.floorAtY(v.ty);
+          if (floor !== sim.currentFloor) {
+            sim.currentFloor = floor;
+            updateBounds();
+            emitFloor();
+          }
+        }
+      } else if (sim.building.cols !== lastCols) {
         lastCols = sim.building.cols;
         updateBounds();
         if (!framed && sim.initialized) {
@@ -497,7 +594,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
         ? hit.id
         : hit?.type === 'agent'
           ? (sim.chars.get(hit.id)?.roomId ?? null)
-          : ([...sim.rooms.values()].find((room) => room.present && !room.ghost && inRect(room.layout.rect, Math.floor(w.x / TILE), Math.floor(w.y / TILE)))?.id ?? null);
+          : ([...sim.rooms.values()].find((room) => room.present && !room.ghost && (!visitMode || sim.floorOf(room.id) === sim.currentFloor) && inRect(room.layout.rect, Math.floor(w.x / TILE), Math.floor(w.y / TILE)))?.id ?? null);
     if (!roomId || !sim.rooms.has(roomId)) return;
     e.preventDefault();
     roomMenuCbs.forEach((cb) => cb(roomId, { x: e.clientX, y: e.clientY }));
@@ -522,8 +619,8 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const rebuild = () => {
     // As carteiras ao vivo gravam a cada 5 s: não perde o que mudou desde a última vez (no replay, não grava nada).
     sim.social.wallets.save(Date.now());
-    sim = new Sim(art, () => options, playback ? null : undefined, { visit: visitMode });
-    renderer = new Renderer(canvas, art, sim, camera);
+    sim = new Sim(artNow(), () => options, playback ? null : undefined, { visit: visitMode });
+    renderer = new Renderer(canvas, artNow(), sim, camera);
     if (assets) renderer.setAssets(assets);
     if (playback) {
       const p = playback;
@@ -533,6 +630,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     debug = createDebug(sim, renderer, camera, markMoved);
     cues = new SoundCues(sim, camera);
     lastCols = -1;
+    lastLayoutVersion = -1;
     setHover(null);
   };
 
@@ -635,6 +733,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       hoverCbs.clear();
       socialCbs.clear();
       soundCbs.clear();
+      floorCbs.clear();
     },
     get debug() {
       return debug;
@@ -672,6 +771,18 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
         const b = camera.worldToScreen(r.x + r.w, r.y + r.h);
         if (b.x < 0 || b.y < 0 || a.x > camera.viewW || a.y > camera.viewH) return null;
         return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
+      },
+      floorCount: () => sim.floorCount(),
+      currentFloor: () => sim.currentFloor,
+      setFloor: (floor) => {
+        if (!visitMode) return;
+        sim.goToFloor(floor);
+        focusFloor();
+        emitFloor();
+      },
+      onFloor: (cb) => {
+        floorCbs.add(cb);
+        return () => void floorCbs.delete(cb);
       },
     },
   };

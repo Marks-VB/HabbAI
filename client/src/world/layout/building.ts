@@ -16,6 +16,19 @@ export interface BuildingLayout {
   rooms: AreaLayout[];
   grid: WalkGrid;
   spots: SpotDef[];
+  /** Visita por andares (layout/floors.ts): um corredor por andar, inclusos o do térreo e o poço. */
+  corridors?: AreaLayout[];
+  /**
+   * Visita por andares: as fatias do poço do elevador (ligação caminhável entre os corredores) e a
+   * geometria das faixas. No escritório local ficam indefinidas (um andar só, o corredor de sempre).
+   */
+  shafts?: AreaLayout[];
+  /** Topo (tiles) do bloco do térreo; 0 no escritório local. */
+  groundY?: number;
+  /** Altura (tiles) de um andar de projeto; indefinida no escritório local. */
+  floorHeight?: number;
+  /** Número de andares da visita (o térreo incluso); indefinido no escritório local. */
+  floorCount?: number;
 }
 
 let coreCache: AreaLayout[] | null = null;

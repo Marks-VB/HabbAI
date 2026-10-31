@@ -5,12 +5,10 @@
 import type { AgentInfo, AgentStatus, RoomInfo } from '../../../shared/types';
 import type { ConnectionState } from '../net/store';
 import type { UiContext } from './context';
+import { AnnouncementQueue } from './announce-queue';
 import { tr } from '../../../shared/i18n';
 
-/** Intervalo mínimo entre dois anúncios: o resto espera na fila. */
-export const ANNOUNCE_INTERVAL_MS = 2_000;
-/** Teto da fila (um escritório grande mudando de uma vez não vira uma leitura sem fim). */
-export const ANNOUNCE_QUEUE_MAX = 20;
+export { ANNOUNCE_INTERVAL_MS, ANNOUNCE_QUEUE_MAX, AnnouncementQueue } from './announce-queue';
 
 export type AnnouncementKind = 'permission' | 'working' | 'done' | 'offline';
 
@@ -92,59 +90,6 @@ export function formatAnnouncement(e: Announcement): string {
       return tr('{0} terminou.', [who]);
     case 'offline':
       return tr('Sem conexão com o HabbAI: tentando reconectar.');
-  }
-}
-
-/**
- * Fila com intervalo mínimo entre anúncios: o primeiro sai na hora, os demais esperam a vez. O relógio e o
- * agendador são injetáveis para os testes (sem DOM e sem depender do tempo real).
- */
-export class AnnouncementQueue {
-  private pending: string[] = [];
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  private lastAt = Number.NEGATIVE_INFINITY;
-
-  constructor(
-    private readonly say: (text: string) => void,
-    private readonly intervalMs: number = ANNOUNCE_INTERVAL_MS,
-    private readonly now: () => number = Date.now,
-  ) {}
-
-  /** Quantos anúncios ainda esperam na fila. */
-  get size(): number {
-    return this.pending.length;
-  }
-
-  push(text: string): void {
-    const clean = text.trim();
-    if (!clean) return;
-    this.pending.push(clean);
-    // Um pico (o servidor volta com tudo mudado) não pode virar minutos de leitura: fica o aviso mais recente.
-    if (this.pending.length > ANNOUNCE_QUEUE_MAX) this.pending.splice(0, this.pending.length - ANNOUNCE_QUEUE_MAX);
-    this.pump();
-  }
-
-  clear(): void {
-    this.pending = [];
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-  }
-
-  private pump(): void {
-    if (this.timer || !this.pending.length) return;
-    const wait = this.lastAt + this.intervalMs - this.now();
-    if (wait > 0) {
-      this.timer = setTimeout(() => {
-        this.timer = null;
-        this.pump();
-      }, wait);
-      return;
-    }
-    this.lastAt = this.now();
-    const text = this.pending.shift();
-    if (text !== undefined) this.say(text);
-    // O que sobrou espera a próxima janela (sem depender de um push novo para andar).
-    this.pump();
   }
 }
 

@@ -12,6 +12,8 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Visita andar por andar (Tiny Death Star)**: dentro de um prédio do Habblaud World, o escritório deixa de ser um corredor achatado e vira um prédio empilhado, com uma sala por andar (o térreo guarda a recepção, a copa, o banheiro e o lounge), um poço de elevador ligando os corredores e um trilho lateral para pular de andar — com bolinha de status, contagem de agentes, atalhos de teclado (↑/↓, Home/End, PageUp/PageDown) e anúncio para leitor de tela. No celular o trilho vira uma faixa de chips na base. O escritório local continua exatamente como estava; a visita abre no térreo e o número de andares enviado ao mundo não muda (continua sendo o de salas reais).
+
 - **Saúde e métricas para quem roda em Docker (`GET /healthz` e `GET /metrics`).** O `/healthz` (sem login) devolve
   versão, uptime, `ok`/`degraded`, fontes ativas, sessões conhecidas, clientes SSE conectados e a idade do último evento;
   uma fonte que falha 3 ciclos seguidos de leitura deixa o estado `degraded` (HTTP 503). O `/metrics` fala o formato de

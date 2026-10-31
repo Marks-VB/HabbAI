@@ -30,15 +30,15 @@ export interface SlotShell {
   props: ExteriorProp[];
 }
 
-export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): ExteriorLayout {
+export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city', height = BUILDING_H, corridorY = CORRIDOR_Y): ExteriorLayout {
   const w = cols * COL_W;
-  const bounds: TileRect = { x: -EXT_WEST, y: -EXT_NORTH, w: w + EXT_WEST + EXT_EAST, h: BUILDING_H + EXT_NORTH + EXT_SOUTH };
+  const bounds: TileRect = { x: -EXT_WEST, y: -EXT_NORTH, w: w + EXT_WEST + EXT_EAST, h: height + EXT_NORTH + EXT_SOUTH };
   const px = (t: number) => t * TILE;
   const floors: FloorPatch[] = [];
   const props: ExteriorProp[] = [];
   const rng = mulberry32(0xc0de + cols);
 
-  const south = BUILDING_H;
+  const south = height;
   if (scenario === 'forest') {
     // Gramado verde floresta denso e vibrante
     floors.push({ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 101, tint: '#3e8043' });
@@ -48,46 +48,46 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
     floors.push({ kind: 'street', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 103 });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 104 });
     // Caminho da recepção até a calçada
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 105 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 106 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(corridorY), w: px(3), h: px(5), seed: 105 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(corridorY + 5), w: px(2), h: px(south + 2 - corridorY - 5), seed: 106 });
   } else if (scenario === 'cyberpunk') {
     floors.push({ kind: 'concrete', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 201 });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 202 });
     floors.push({ kind: 'street', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 203 });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 204 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 205 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 206 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(corridorY), w: px(3), h: px(5), seed: 205 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(corridorY + 5), w: px(2), h: px(south + 2 - corridorY - 5), seed: 206 });
   } else if (scenario === 'orbital') {
     // Convés de metal: plataforma, passarelas claras e o trilho escuro do transporte.
     floors.push({ kind: 'deck', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 301, tint: '#4a5876' });
     floors.push({ kind: 'deck', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 302, tint: '#5d6f8e' });
     floors.push({ kind: 'deck', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 303, tint: '#232b3e' });
     floors.push({ kind: 'deck', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 304, tint: '#5d6f8e' });
-    floors.push({ kind: 'deck', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 305, tint: '#5d6f8e' });
-    floors.push({ kind: 'deck', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 306, tint: '#5d6f8e' });
+    floors.push({ kind: 'deck', x: px(-3), y: px(corridorY), w: px(3), h: px(5), seed: 305, tint: '#5d6f8e' });
+    floors.push({ kind: 'deck', x: px(-3), y: px(corridorY + 5), w: px(2), h: px(south + 2 - corridorY - 5), seed: 306, tint: '#5d6f8e' });
   } else if (scenario === 'snow') {
     // Neve: campo branco, calçada pisada e a rua mantida (limpa), com o passeio também nevado.
     floors.push({ kind: 'snow', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 401, tint: '#eef4fa' });
     floors.push({ kind: 'snow', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 402, tint: '#dde8f4' });
     floors.push({ kind: 'street', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 403 });
     floors.push({ kind: 'snow', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 404, tint: '#e7eff8' });
-    floors.push({ kind: 'snow', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 405, tint: '#dde8f4' });
-    floors.push({ kind: 'snow', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 406, tint: '#dde8f4' });
+    floors.push({ kind: 'snow', x: px(-3), y: px(corridorY), w: px(3), h: px(5), seed: 405, tint: '#dde8f4' });
+    floors.push({ kind: 'snow', x: px(-3), y: px(corridorY + 5), w: px(2), h: px(south + 2 - corridorY - 5), seed: 406, tint: '#dde8f4' });
   } else if (scenario === 'beach') {
     // Praia: areia no lugar da grama, deck de madeira no lugar da calçada e o mar no lugar da rua.
     floors.push({ kind: 'sand', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 501, tint: '#e8d3a4' });
     floors.push({ kind: 'wood', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 502 });
     floors.push({ kind: 'water', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 503, tint: '#2f8fb0' });
     floors.push({ kind: 'sand', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 504, tint: '#efdcae' });
-    floors.push({ kind: 'wood', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 505 });
-    floors.push({ kind: 'wood', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 506 });
+    floors.push({ kind: 'wood', x: px(-3), y: px(corridorY), w: px(3), h: px(5), seed: 505 });
+    floors.push({ kind: 'wood', x: px(-3), y: px(corridorY + 5), w: px(2), h: px(south + 2 - corridorY - 5), seed: 506 });
   } else {
     floors.push({ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 11, tint: scenario === 'retro' ? '#949c4e' : undefined });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 2), w: px(bounds.w), h: px(2), seed: 12 });
     floors.push({ kind: 'street', x: px(bounds.x), y: px(south + 4), w: px(bounds.w), h: px(5), seed: 13 });
     floors.push({ kind: 'sidewalk', x: px(bounds.x), y: px(south + 9), w: px(bounds.w), h: px(2), seed: 14 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y), w: px(3), h: px(5), seed: 15 });
-    floors.push({ kind: 'sidewalk', x: px(-3), y: px(CORRIDOR_Y + 5), w: px(2), h: px(south + 2 - CORRIDOR_Y - 5), seed: 16 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(corridorY), w: px(3), h: px(5), seed: 15 });
+    floors.push({ kind: 'sidewalk', x: px(-3), y: px(corridorY + 5), w: px(2), h: px(south + 2 - corridorY - 5), seed: 16 });
   }
 
   // Estação orbital: no lugar de árvores e arbustos entram torres, antenas e caixas de carga.
@@ -127,8 +127,8 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
   for (const side of [-1, 1]) {
     for (const band of orbital ? [0, 8] : [0, 7, 13]) {
       const baseX = side < 0 ? -6 - band : w + 4 + band;
-      for (let y = 1; y < BUILDING_H; y += 3 + Math.floor(rng() * 3)) {
-        if (side < 0 && band === 0 && y >= CORRIDOR_Y - 1 && y <= south + 1) continue;
+      for (let y = 1; y < height; y += 3 + Math.floor(rng() * 3)) {
+        if (side < 0 && band === 0 && y >= corridorY - 1 && y <= south + 1) continue;
         props.push({ kind: plant(rng, 0.3), x: px(baseX + Math.floor(rng() * 5)), y: px(y + 1), seed: Math.floor(rng() * 1e9) });
         if (band === 0 && rng() < 0.5) props.push({ kind: shrub(), x: px(side < 0 ? -2 : w + 1), y: px(y + 2), seed: Math.floor(rng() * 1e9) });
       }
@@ -155,11 +155,11 @@ export function layoutExterior(cols: number, scenario: ScenarioTheme = 'city'): 
       if (scenario === 'forest' && rng() < 0.4) props.push({ kind: stone(), x: px(x + 1), y: px(south + row + 3), seed: Math.floor(rng() * 1e9) });
     }
   }
-  props.push({ kind: 'bench', x: px(-4), y: px(CORRIDOR_Y + 3) + 6, seed: 1 });
+  props.push({ kind: 'bench', x: px(-4), y: px(corridorY + 3) + 6, seed: 1 });
   // totem com a marca na entrada principal (oeste)
-  props.push({ kind: 'totem', x: px(-3) + 6, y: px(CORRIDOR_Y + 1), seed: 2 });
+  props.push({ kind: 'totem', x: px(-3) + 6, y: px(corridorY + 1), seed: 2 });
   // canteiros sob as janelas também viram caixas de carga no convés
-  if (orbital) props.push({ kind: 'crate', x: px(-2) + 8, y: px(CORRIDOR_Y + 8), seed: 77 });
+  if (orbital) props.push({ kind: 'crate', x: px(-2) + 8, y: px(corridorY + 8), seed: 77 });
   // Praia: guarda-sóis e pedras na areia; Neve: bonecos de neve espalhados.
   if (beach) {
     props.push({ kind: 'parasol', x: px(4), y: px(south + 12), seed: 3 });

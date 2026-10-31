@@ -295,6 +295,39 @@ async function run(): Promise<void> {
     await page.screenshot({ path: screenshotPath });
     console.log(`captura: ${screenshotPath}`);
 
+    // Visita a um prédio do Habblaud World (cidade simulada): o prédio empilhado e o trilho de andares.
+    console.log('→ visita: abrindo a cidade simulada');
+    await page.goto(`${base}/?mock=1&world=approved&scene=city`, { waitUntil: 'load', timeout: PAGE_TIMEOUT_MS });
+    const dice = page.getByRole('button', { name: 'Visitar um prédio aleatório' });
+    await dice.waitFor({ state: 'visible', timeout: 15_000 });
+    await dice.click({ timeout: 10_000 });
+    await delay(2_500);
+    await page.keyboard.press('e');
+    const visitTitle = page.locator('.ui-visit-bar__title');
+    await visitTitle.waitFor({ state: 'visible', timeout: 15_000 });
+    const buildingTitle = await visitTitle.innerText();
+    if (!buildingTitle.startsWith('Prédio de')) throw new Error(`a visita não abriu (título: ${buildingTitle})`);
+    console.log(`✓ visita abriu (${buildingTitle})`);
+
+    const rail = page.locator('.ui-floor-rail');
+    await rail.waitFor({ state: 'visible', timeout: 10_000 });
+    const floors = page.locator('.ui-floor-rail__option');
+    const floorCount = await floors.count();
+    if (floorCount !== 3) throw new Error(`o trilho deveria listar 3 andares, listou ${floorCount}`);
+    const groundLabel = await page.locator('.ui-floor-rail__option[aria-selected="true"]').getAttribute('aria-label');
+    if (!groundLabel?.startsWith('Térreo')) throw new Error(`a visita deveria abrir no térreo, abriu em "${groundLabel}"`);
+    console.log(`✓ trilho com 3 andares, aberto no térreo (${groundLabel})`);
+
+    // Sobe para o andar do topo pelo trilho: o item ativo e o rótulo acompanham.
+    await floors.filter({ hasText: 'Projeto Aurora' }).click({ timeout: 10_000 });
+    await delay(500);
+    const topLabel = await page.locator('.ui-floor-rail__option[aria-selected="true"]').getAttribute('aria-label');
+    if (!topLabel?.startsWith('Andar 2 de 3, Projeto Aurora')) throw new Error(`o trilho não trocou de andar: "${topLabel}"`);
+    console.log(`✓ troca de andar pelo trilho (${topLabel})`);
+    const visitScreenshotPath = join(tmpdir(), `habblaud-e2e-visit-${process.pid}.png`);
+    await page.screenshot({ path: visitScreenshotPath });
+    console.log(`captura da visita: ${visitScreenshotPath}`);
+
     if (consoleErrors.length) {
       throw new Error(`erros no console (${consoleErrors.length}):\n${consoleErrors.slice(0, 10).join('\n')}`);
     }

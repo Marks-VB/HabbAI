@@ -275,7 +275,8 @@ describe('bloqueio por construção', () => {
     const files = importGraph('world/visit/index.ts');
     expect(files.has('world/index.ts')).toBe(true);
     const ui = [...files].filter((f) => f.startsWith('ui/'));
-    expect(ui).toEqual(['ui/dom.ts']);
+    // do ui/: só o DOM básico, o trilho de andares e a fila de anúncios (sem contexto/preferências do escritório)
+    expect(ui.sort()).toEqual(['ui/announce-queue.ts', 'ui/dom.ts', 'ui/floors.ts']);
     // e, da rede, só o store (que nunca conecta): nem o cliente das rotas do World (net/world.ts) nem o stream
     expect([...files].filter((f) => f.startsWith('net/')).sort()).toEqual(['net/store.ts']);
   });
