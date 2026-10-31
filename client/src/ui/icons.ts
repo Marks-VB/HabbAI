@@ -260,6 +260,19 @@ export const ICONS = {
     '..######..',
     '..........',
   ]),
+  // Sino da central de notificações (contador de não lidas no canto).
+  bell: pixelIcon([
+    '...####...',
+    '..#....#..',
+    '..#....#..',
+    '..#....#..',
+    '..#....#..',
+    '.##....##.',
+    '#........#',
+    '#........#',
+    '.#......#.',
+    '..######..',
+  ]),
   // Ampulheta (esperando o shell): moldura na cor do texto e areia âmbar caindo.
   hourglass: pixelIcon(
     [

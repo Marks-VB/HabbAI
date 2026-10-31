@@ -14,6 +14,7 @@ vi.mock('./help');
 vi.mock('./history');
 vi.mock('./hovertip');
 vi.mock('./notify');
+vi.mock('./notifications');
 vi.mock('./overlays');
 vi.mock('./settings');
 vi.mock('./sidebar');
@@ -24,7 +25,7 @@ vi.mock('./version');
 vi.mock('./update');
 vi.mock('./viewport');
 vi.mock('./topbar', () => ({ TopBar: class {
-  panelGroup = { prepend() {} };
+  panelGroup = { prepend() {}, insertBefore() {} };
   addPanelButton() {}
   addStatus() {}
   render() {}

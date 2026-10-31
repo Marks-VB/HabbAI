@@ -102,7 +102,7 @@ describe('corpo por serviço', () => {
     await expect(sendWebhook({ telegramToken: 'secret/tok', telegramChatId: '12345' }, payload, fetchFn as unknown as typeof fetch)).resolves.toEqual({ ok: true });
     const [url, init] = fetchFn.mock.calls[0];
     expect(url).toBe('https://api.telegram.org/botsecret%2Ftok/sendMessage');
-    expect(JSON.parse(String(init.body))).toEqual({
+    expect(JSON.parse(String(init?.body))).toEqual({
       chat_id: '12345',
       text: '🚨 *HabbAI: Permissão necessária*\n*Agente:* Rafael\nBash: git push origin main\n[Abrir HabbAI](http://localhost:4747)',
       parse_mode: 'Markdown',
