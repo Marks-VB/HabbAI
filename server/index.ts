@@ -20,6 +20,9 @@ import { codexDirsRefused, isDefaultDir } from './accounts/detect';
 import { AccountsService } from './accounts/service';
 import { isTruthy, loadConfig, messagesOffReason, terminalOffReason, worldSocketUrl } from './config';
 import { createApiHandler, sendJson } from './http/app';
+import { createBudgetRoutes } from './budget/http';
+import { BudgetStore } from './budget/limits';
+import { BudgetTracker } from './budget/tracker';
 import { createRequestGuard, isLoopbackHost } from './http/guard';
 import { createObservabilityHandler } from './http/observability';
 import { createRemoteGate, isRemoteRequest, loadSecret, RemoteSessions, startRemoteListener, type RemoteListener } from './http/remote';
@@ -282,6 +285,33 @@ const notifications =
     : undefined;
 late.notifications = notifications;
 const notificationRoutes = notificationInbox && notificationPrefs ? createNotificationRoutes({ inbox: notificationInbox, prefs: notificationPrefs }) : undefined;
+// Orçamento: limites em <dataDir>/budget.json (ver budget/limits.ts). Ao passar de 80% e de 100% de um limite, o mesmo
+// canal de avisos do webhook é usado, uma vez por período e escopo (budget/tracker.ts guarda o que já foi avisado).
+const budgetStore = new BudgetStore(join(config.dataDir, 'budget.json'));
+budgetStore.load();
+const budget = new BudgetTracker({
+  store: budgetStore,
+  stats,
+  alertFile: join(config.dataDir, 'budget-alerts.json'),
+  notify: (alert) => {
+    if (!webhookConfig.url && !webhookConfig.telegramToken) return;
+    const scope = alert.scope === 'global' ? tr('escritório') : alert.scope === 'project' ? tr('projeto {0}', [alert.name ?? alert.id ?? '']) : tr('conta {0}', [alert.name ?? alert.id ?? '']);
+    const period = alert.period === 'day' ? tr('diário') : tr('mensal');
+    const metric = alert.metric === 'costUSD' ? tr('custo') : tr('tokens');
+    const amount = (v: number) => (alert.metric === 'costUSD' ? `US$ ${v.toFixed(2)}` : String(Math.round(v)));
+    const percent = Math.round(alert.percent);
+    // O canal do webhook conhece hoje só permissão e erro de agente; o evento do orçamento vai como está no JSON
+    // (o webhook genérico repassa o payload inteiro) sem alterar notifications/webhook.ts.
+    const payload = {
+      event: 'budget_alert',
+      title: alert.milestone >= 100 ? tr('Orçamento estourado') : tr('Orçamento em {0}%', [percent]),
+      text: tr('{0} ({1}, {2}): {3} de {4} ({5}% do limite).', [scope, period, metric, amount(alert.used), amount(alert.limit), percent]),
+      timestamp: alert.timestamp,
+    };
+    void sendWebhook(webhookConfig, payload as unknown as Parameters<typeof sendWebhook>[1]);
+  },
+});
+
 const permissions = config.terminal
   ? new PermissionRegistry({
       office,
@@ -386,6 +416,7 @@ if (timeline) {
 permissions?.start();
 messages?.start();
 stats.start();
+budget.start();
 updates.start();
 worldUplink?.start();
 const ticker = setInterval(() => {
@@ -442,6 +473,7 @@ const api = createApiHandler({
   },
   codexLive,
   stats,
+  budget: createBudgetRoutes(budget),
   updates,
   remote: config.remote ? { is: isRemoteRequest, allows: (f) => config.remote!.allow.has(f) } : undefined,
   world: world ? createWorldRoutes(world, worldViewer, worldSocial) : undefined,
@@ -635,6 +667,7 @@ function shutdown(signal: string): void {
   log.info(tr('Encerrando ({0})…', [signal]));
   clearInterval(ticker);
   stats.stop();
+  budget.stop();
   agents.stop();
   accounts.stop();
   hub.stop();

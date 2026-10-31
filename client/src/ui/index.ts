@@ -27,6 +27,7 @@ import { hasCodexPermission } from './provider';
 import { Notifier } from './notify';
 import { NotificationsPanel } from './notifications';
 import { ConnectionBanner, EmptyState, Splash } from './overlays';
+import { BudgetBanner } from './budget';
 import { focusPermission, nextPermissionAgent } from './permission';
 import { loadPrefs, safeLocalStorage, savePrefs, worldOptionsFrom, type UiPrefs } from './prefs';
 import { SettingsPopover } from './settings';
@@ -295,6 +296,7 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   world.onRoomContextMenu?.((id, at) => renamer.open(id, at));
   const empty = new EmptyState(ctx);
   const banner = new ConnectionBanner(ctx);
+  const budget = new BudgetBanner(ctx);
   const update = new UpdateBanner(store);
   const tip = new HoverTip(ctx);
   const splash = new Splash(ctx);
@@ -303,7 +305,7 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
 
   root.classList.add('ui-root');
   applyContrast();
-  root.append(timelapse.vignette, topbar.el, sidebar.el, scrim, feed.el, drawer.el, terminal.el, pty.el, timelapse.el, timelapse.badge, toasts.el, banner.el, update.el, empty.el, popups.el, tip.el, settings.el, worldDialog.el, history.el, deliveries.el, notifications.el, help.el, renamer.el, live, splash.el);
+  root.append(timelapse.vignette, topbar.el, sidebar.el, scrim, feed.el, drawer.el, terminal.el, pty.el, timelapse.el, timelapse.badge, toasts.el, banner.el, budget.el, update.el, empty.el, popups.el, tip.el, settings.el, worldDialog.el, history.el, deliveries.el, notifications.el, help.el, renamer.el, live, splash.el);
   area = new FreeArea(world, { root, topbar: topbar.el, sidebar: sidebar.el, drawer: drawer.el, feed: feed.el }, () => ({
     sidebar: panels.sidebar,
     feed: panels.feed,
@@ -312,7 +314,7 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   }));
   drawer.onLayoutChange = () => applyLayout();
 
-  const components: UiComponent[] = [topbar, sidebar, drawer, terminal, pty, history, deliveries, notifications, feed, toasts, settings, empty, banner, tip, notifier, splash, timelapse, sound, day, updateToaster, worldDialog, popups, worldChip];
+  const components: UiComponent[] = [topbar, sidebar, drawer, terminal, pty, history, deliveries, notifications, feed, toasts, settings, empty, banner, budget, tip, notifier, splash, timelapse, sound, day, updateToaster, worldDialog, popups, worldChip];
   if (scene) components.push(scene);
   root.append(worldSocial.el);
   components.push(worldSocial);
