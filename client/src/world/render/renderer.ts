@@ -23,6 +23,8 @@ import { carSprite, propSprite, shadowSprite } from './props';
 import { countBadge, fallbackIcon } from './shell-sprites';
 import { decorateElevator, drawSeasonalLights, drawSeasonalWindow, seasonalCostume, seasonalFurniture } from './seasonal';
 import { buildAreaVis, furnitureSprites, opaqueBounds, paintShell, toWallVis, WALL_MARGIN, wallItemOrigin, wallSprites, type AreaVis, type FurnVis, type WallVis } from './scene';
+import { PetSprites } from '../../art/pet';
+import type { OfficePet } from '../sim/pet';
 
 const enum K {
   FurnBase,
@@ -30,6 +32,7 @@ const enum K {
   Char,
   Prop,
   Car,
+  Pet,
 }
 
 /** Ladrilho do vazio ao redor da estação orbital: fundo escuro, estrelas e uma nebulosa tênue. */
@@ -71,7 +74,7 @@ function starTile(): HTMLCanvasElement {
 interface Ent {
   k: K;
   y: number;
-  ref: FurnVis | Character | ExteriorProp | Car | null;
+  ref: FurnVis | Character | ExteriorProp | Car | OfficePet | null;
   area: AreaVis | null;
   scale: number;
 }
@@ -115,6 +118,8 @@ export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   readonly areas = new Map<string, AreaVis>();
   readonly heads = new Map<string, HeadInfo>();
+  /** Movimento reduzido (preferência do sistema): os anéis de seleção não pulsam. */
+  private readonly reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   exterior: ExteriorLayout;
   shells: SlotShell[] = [];
   shellWindows: WallVis[] = [];
@@ -133,6 +138,7 @@ export class Renderer {
   private icons: { x: number; y: number; name: IconName; bounce: number; alpha: number; badge: number }[] = [];
   /** Pipoca, confete e chuva (pool fixo). */
   readonly particles = new Particles();
+  private readonly petSprites = new PetSprites();
   /** Festa e alarme das salas (eventos do GitHub). */
   private readonly roomFx = new RoomFxRenderer();
   /** dt do frame atual (s), para as partículas emitidas durante o desenho. */
@@ -506,7 +512,7 @@ export class Renderer {
 
   // =================================================================== frame
 
-  frame(now: number, dt: number, opts: WorldOptions, sel: { agent: string | null; room: string | null; hover: string | null }): void {
+  frame(now: number, dt: number, opts: WorldOptions, sel: { agent: string | null; room: string | null; hover: string | null; keyboard?: boolean }): void {
     const { ctx, camera } = this;
     this.date.setTime(this.clock());
     this.dt = dt;
@@ -652,6 +658,7 @@ export class Renderer {
       }
     }
     for (const car of this.cars) if (visible(car.x - 24, car.y - 24, 48, 28)) push(K.Car, car.y, car, null, 1);
+    if (this.sim.pet?.x && visible(this.sim.pet.x - 8, this.sim.pet.y - 8, 16, 16)) push(K.Pet, this.sim.pet.y, this.sim.pet, null, 1);
     ents.sort((a, b) => a.y - b.y || a.k - b.k);
 
     this.iconCount = 0;
@@ -668,6 +675,9 @@ export class Renderer {
           break;
         case K.Prop:
           this.drawProp(e.ref as ExteriorProp, e.scale, this.scenario);
+          break;
+        case K.Pet:
+          this.drawPet(e.ref as OfficePet, now);
           break;
         case K.Car:
           this.drawCar(e.ref as Car);
@@ -1009,7 +1019,17 @@ export class Renderer {
     ctx.globalAlpha = 1;
   }
 
-  private drawCharacter(ch: Character, now: number, sel: { agent: string | null; hover: string | null }): void {
+  private drawPet(pet: OfficePet, _now: number): void {
+    const sprite = this.petSprites.get(pet.pose, pet.dir, pet.frame);
+    this.ctx.drawImage(sprite, Math.round(pet.x - 8), Math.round(pet.y - 12));
+    if (pet.purrTimer > 0) {
+      this.ctx.fillStyle = '#ff4d6d';
+      this.ctx.font = '8px monospace';
+      this.ctx.fillText('♥', Math.round(pet.x - 2), Math.round(pet.y - 14));
+    }
+  }
+
+  private drawCharacter(ch: Character, now: number, sel: { agent: string | null; hover: string | null; keyboard?: boolean }): void {
     const { ctx } = this;
     const head = this.headOf(ch);
     // faixa lateral de quem anda (dois no mesmo caminho não viram um boneco de duas cabeças)
@@ -1018,8 +1038,11 @@ export class Renderer {
     ctx.globalAlpha = ch.alpha;
     // anéis no chão (seleção, hover, alerta)
     if (ch.mode === 'wait') this.drawAlertRing(x, y, now);
-    if (sel.agent === ch.id) this.drawRing(x, y, '#7fe3ff', now, true);
-    else if (sel.hover === ch.id) this.drawRing(x, y, '#ffffff', now, false);
+    if (sel.agent === ch.id) {
+      // Selecionado pelo teclado: além do anel do mouse, um anel de foco branco (visível em qualquer piso).
+      if (sel.keyboard) this.drawFocusRing(x, y);
+      this.drawRing(x, y, '#7fe3ff', now, true);
+    } else if (sel.hover === ch.id) this.drawRing(x, y, '#ffffff', now, false);
     if (!ch.seated) {
       const sh = shadowSprite();
       ctx.drawImage(sh.canvas, x - sh.ax, y - sh.ay);
@@ -1266,7 +1289,7 @@ export class Renderer {
 
   private drawRing(x: number, y: number, color: string, now: number, pulse: boolean): void {
     const { ctx } = this;
-    const k = pulse ? 1 + Math.sin(now / 220) * 0.08 : 1;
+    const k = pulse && !this.reducedMotion ? 1 + Math.sin(now / 220) * 0.08 : 1;
     ctx.save();
     ctx.globalAlpha *= pulse ? 0.95 : 0.6;
     ctx.strokeStyle = color;
@@ -1274,6 +1297,23 @@ export class Renderer {
     ctx.beginPath();
     ctx.ellipse(x, y, 8 * k, 3.5 * k, 0, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawFocusRing(x: number, y: number): void {
+    const { ctx } = this;
+    ctx.save();
+    // Dois traços: o escuro separa o branco do piso claro.
+    for (const [width, color] of [
+      [3, '#0b0e14'],
+      [1.5, '#ffffff'],
+    ] as const) {
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 9.5, 4.5, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 

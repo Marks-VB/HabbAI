@@ -55,6 +55,46 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Alto contraste (Configurações › Aparência): opt-in. Texto, bordas e cores de status mais fortes e painéis quase
+   opacos, para o conteúdo continuar legível sobre o escritório. Os tons abaixo passam AA (>= 4,5:1) no fundo dos
+   painéis (#07090d); o tema escuro translúcido continua o padrão. */
+.ui-root.is-high-contrast {
+  --ui-bg: rgba(7, 9, 13, 0.97);
+  --ui-bg-solid: #07090d;
+  --ui-bg-soft: rgba(255, 255, 255, 0.08);
+  --ui-bg-hover: rgba(255, 255, 255, 0.14);
+  --ui-line: rgba(228, 235, 247, 0.4);
+  --ui-line-strong: rgba(238, 243, 252, 0.65);
+  --ui-text: #f7f9fd;
+  --ui-muted: #d3dbeb;
+  --ui-faint: #c2cbdd;
+  --ui-accent: #a8e0ff;
+  --ui-accent-soft: rgba(168, 224, 255, 0.24);
+
+  --st-working: #6cf0b0;
+  --st-waiting: #ffc766;
+  --st-shell: #64f0ea;
+  --st-idle: #b9c4d8;
+  --st-done: #94c2ff;
+  --st-offline: #aab4c6;
+
+  --lv-ok: #6cf0b0;
+  --lv-warn: #ffc766;
+  --lv-crit: #ff9b9b;
+}
+
+/* Menos translucidez: sem o desfoque do fundo e com as bordas à mostra. */
+.ui-root.is-high-contrast :where(.ui-panel, .ui-topbar, .ui-sidebar, .ui-feed, .ui-drawer, .ui-popover, .ui-term, .ui-toast, .ui-banner, .ui-lapse, .ui-day, .ui-settings, .ui-world-dialog, .ui-tip) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-color: var(--ui-line-strong);
+}
+
+.ui-root.is-high-contrast :focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
 .ui-root *,
 .ui-root *::before,
 .ui-root *::after {
@@ -11406,4 +11446,26 @@ html.is-replay #world {
   .ui-day__export .ui-btn {
     transition: none;
   }
+}
+
+/* ------------------------------------------------------------------ foco visível (teclado) */
+
+/* Setas, Tab e o foco devolvido por um diálogo precisam de um anel consistente. O anel global já cobre o
+   resto; aqui ficam os campos que trocam o outline por uma borda no :focus e os links. */
+.ui-root :where(input, textarea, select):focus-visible,
+.ui-root :where(a[href], summary, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* A busca esconde o anel do input (o foco é do campo, mas o contorno é do contêiner). */
+.ui-root .ui-search:has(.ui-search__input:focus-visible) {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* O canvas do escritório também recebe foco: as setas percorrem os agentes (world/nav.ts). */
+#world:focus-visible {
+  outline: 3px solid #9ed8ff;
+  outline-offset: -3px;
 }

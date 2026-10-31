@@ -302,6 +302,8 @@ export const ICONS = {
   arrowDown: pixelIcon(['...##...', '...##...', '...##...', '#######.', '.#####..', '..###...', '...#....'].map((r) => r.padEnd(8, '.'))),
   /** Cidade do Habblaud World (botão Mundo): prédios de alturas diferentes. */
   city: pixelIcon(['......##..', '..##..##..', '..##.####.', '####.#..#.', '#..#.####.', '####.#..#.', '#..#.####.', '####.#..#.', '##########']),
+  /** Ordem geral / Transmissão: megafone. */
+  broadcast: pixelIcon(['..##......', '.####.....', '#######...', '#######.##', '#######..#', '#######.##', '#######...', '..##..#...', '..##......']),
   /** O escritório (botão de volta da cidade): um prédio com porta. */
   office: pixelIcon(['..######..', '..#.##.#..', '..######..', '..#.##.#..', '..######..', '..#.##.#..', '..##..##..', '..##..##..', '##########']),
 } as const;

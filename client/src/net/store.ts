@@ -90,7 +90,7 @@ export class OfficeStore {
   connection: ConnectionState = 'connecting';
   readonly mock: boolean;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: listeners com assinaturas variadas por evento
   private listeners = new Map<keyof StoreEvents, Set<(value: any) => void>>();
   private agentIndex = new Map<string, AgentInfo>();
   private roomIndex = new Map<string, RoomInfo>();
@@ -273,12 +273,12 @@ export class OfficeStore {
    * Grava o personagem do projeto (PUT /api/agents/:id/character). Devolve undefined se deu certo, ou a mensagem de
    * erro (nome em uso, acesso que não é local...).
    */
-  async saveCharacter(id: string, body: { name: string; seed: number; parts: AppearanceParts }): Promise<string | undefined> {
+  saveCharacter(id: string, body: { name: string; seed: number; parts: AppearanceParts }): Promise<string | undefined> {
     return this.characterRequest(id, 'PUT', body);
   }
 
   /** "Voltar ao sorteio": apaga o personagem do projeto (DELETE /api/agents/:id/character). */
-  async resetCharacter(id: string): Promise<string | undefined> {
+  resetCharacter(id: string): Promise<string | undefined> {
     return this.characterRequest(id, 'DELETE', {});
   }
 

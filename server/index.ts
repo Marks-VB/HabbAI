@@ -1,3 +1,4 @@
+import { loadWebhookConfig, sendWebhook } from './notifications/webhook';
 import { AntigravitySource } from './sources/antigravity/source';
 import { AntigravityHistory } from './sources/antigravity/history';
 import { GeminiSource } from './sources/gemini/source';
@@ -251,6 +252,7 @@ const timelineDir = join(config.dataDir, TIMELINE_DIR);
 const timeline = config.timeline ? new TimelineRecorder({ dir: timelineDir }) : undefined;
 if (timeline) hub.onSnapshot((snap) => timeline.ingest(snap));
 // Responder pelo escritório (hook PermissionRequest): age sobre as sessões, então segue a mesma trava.
+const webhookConfig = loadWebhookConfig();
 const permissions = config.terminal
   ? new PermissionRegistry({
       office,
@@ -262,6 +264,19 @@ const permissions = config.terminal
       codexAccount: (account, codexHome) => codexAccountOf(accounts.entriesOf('codex'), account, codexHome),
       demoDecide: (id, d) => office.decideDemoPermission(id, d),
       demoDetail: (id) => office.demoPermission(id),
+      onPermissionRequested: (info, agentId) => {
+        if (!webhookConfig.url && !webhookConfig.telegramToken) return;
+        const agent = office.get(agentId);
+        void sendWebhook(webhookConfig, {
+          event: 'permission_request',
+          agentName: agent?.name,
+          title: info.title,
+          text: info.text,
+          tool: info.tool,
+          url: `http://localhost:${config.port}`,
+          timestamp: info.createdAt,
+        });
+      },
     })
   : undefined;
 late.permissions = permissions;
@@ -291,6 +306,7 @@ const messages = config.messages
   ? new MessageRegistry({
       office,
       demoAgent: (id) => office.demoAgent(id),
+      demoAgents: () => office.demoAgents(),
       demoDeliver: (id, text) => office.deliverDemoMessage(id, text),
       codex: {
         run: codexBin ? createCodexQueueRunner(codexBin) : undefined,

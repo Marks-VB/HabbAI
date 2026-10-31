@@ -15,6 +15,8 @@ export interface UiPrefs {
   theme: NonNullable<WorldOptions['theme']>;
   /** Cenário ao redor do escritório (área externa e janelas). */
   scenario: ScenarioTheme;
+  /** Contraste da interface: o normal (escuro) ou o alto contraste, com texto e bordas mais fortes e painéis opacos. */
+  contrast: 'normal' | 'high';
   /** Sons sintetizados (interruptor geral; desligado por padrão). */
   sound: boolean;
   /** Volume mestre e categorias dos sons. */
@@ -36,6 +38,7 @@ export const DEFAULT_PREFS: UiPrefs = {
   daylight: 'auto',
   theme: 'auto',
   scenario: 'city',
+  contrast: 'normal',
   sound: false,
   sounds: DEFAULT_SOUND_SETTINGS,
   browserNotifications: false,
@@ -63,6 +66,7 @@ export function sanitizePrefs(raw: unknown): UiPrefs {
     daylight: oneOf(o.daylight, ['auto', 'day', 'night'] as const, o.dayNight === false ? 'day' : d.daylight),
     theme: oneOf(o.theme, ['auto', 'seasons', 'none', 'christmas', 'halloween', 'cyberpunk', 'retro', 'orbital', 'spring', 'autumn', 'junina'] as const, d.theme),
     scenario: oneOf(o.scenario, ['city', 'forest', 'cyberpunk', 'retro', 'orbital', 'snow', 'beach'] as const, d.scenario),
+    contrast: oneOf(o.contrast, ['normal', 'high'] as const, d.contrast),
     sound: bool(o.sound, d.sound),
     sounds: sanitizeSoundSettings(o.sounds),
     browserNotifications: bool(o.browserNotifications, d.browserNotifications),

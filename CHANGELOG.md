@@ -12,6 +12,12 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Ordem Geral (Broadcast de mensagens)**: botão de megafone na barra superior e rota POST /api/messages/broadcast para enviar uma instrução em lote para todos os agentes principais ativos no escritório.
+- **Contratar agente com um clique na mesa vazia (Spawner Visual)**: clicar em qualquer mesa vaga de uma sala abre diretamente o painel de novo agente com o caminho do projeto daquela sala pré-selecionado.
+- **Notificações por Webhook e Telegram**: suporte a HABBLAUD_WEBHOOK_URL (com payloads adaptados para Discord, Slack e genérico) e HABBLAUD_TELEGRAM_BOT_TOKEN / HABBLAUD_TELEGRAM_CHAT_ID para alertar em tempo real quando um agente pede permissão para rodar comandos ou ferramentas.
+- **Mascote no Escritório (Pets em Pixel Art)**: um gatinho malhado laranja passeia pelo corredor e lounge, dorme nos tapetes quando relaxado e ronrona/solta corações ao receber um clique com o mouse.
+- **Acessibilidade do escritório**: leitor de tela agora anuncia o que muda (agente começou a esperar uma permissão, voltou a trabalhar, terminou e erro de conexão), numa fila de no máximo um aviso a cada 2 s; o canvas recebe foco e as setas percorrem os agentes (por sala e depois por nome), com Enter abrindo os detalhes, Esc limpando a seleção e um anel de foco no agente escolhido; e Configurações › Aparência ganhou **Alto contraste** (opt-in, texto e bordas mais fortes e painéis sem transparência). O foco de teclado também ficou visível em botões, links e campos.
+
 - **"Meu dia" com exportação: o dia inteiro em CSV ou em texto, para levar para uma retro ou um relatório.**
   - **Exportar CSV** baixa um arquivo com os tempos por status, tarefas concluídas, sessões e subagentes, tokens e
     custo — uma linha por projeto, uma por conta e uma de total. Vem com BOM UTF-8 e vírgula decimal, para o Excel em

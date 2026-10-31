@@ -488,6 +488,13 @@ export const FR: Readonly<Record<string, string>> = {
   "Nenhum pedido de permissão ou pergunta para responder agora.": "Aucune demande de permission ni question à traiter pour le moment.",
   "Selecione um agente para abrir o terminal.": "Sélectionnez un agent pour ouvrir le terminal.",
 
+  // client/src/ui/announce.ts
+  "{0} ({1})": "{0} ({1})",
+  "{0} está esperando você: pedido de permissão.": "{0} vous attend : demande d'autorisation.",
+  "{0} voltou a trabalhar.": "{0} a repris le travail.",
+  "{0} terminou.": "{0} a terminé.",
+  "Sem conexão com o HabbAI: tentando reconectar.": "Pas de connexion à HabbAI : nouvelle tentative de connexion.",
+
   // client/src/ui/model.ts
   "Concluído": "Terminé",
   "Saindo": "Sur le départ",
@@ -670,6 +677,9 @@ export const FR: Readonly<Record<string, string>> = {
   "Modo demonstração ligado.": "Mode démonstration activé.",
   "Modo demonstração desligado.": "Mode démonstration désactivé.",
   "Não foi possível mudar o modo demonstração.": "Impossible de changer le mode démonstration.",
+  "Contraste": "Contraste",
+  "Alto contraste": "Contraste élevé",
+  "Alto contraste: texto e bordas mais fortes e painéis sem transparência, sobre o escritório. O tema escuro continua o padrão.": "Contraste élevé : texte et bordures plus marqués et panneaux sans transparence, par-dessus le bureau. Le thème sombre reste celui par défaut.",
 
   // client/src/ui/sidebar.ts
   "Atalho: /": "Raccourci : /",
@@ -935,6 +945,17 @@ export const FR: Readonly<Record<string, string>> = {
   "Subagente: {0}{1}": "Sous-agent : {0}{1}",
   " (em segundo plano)": " (en arrière-plan)",
   "Sem atividade ainda": "Pas encore d'activité",
+
+  // client/src/world/index.ts
+  "Agentes no escritório": "Agents dans le bureau",
+  "Setas: percorrer os agentes. Enter: abrir os detalhes. Esc: limpar a seleção.": "Flèches : parcourir les agents. Entrée : ouvrir les détails. Échap : effacer la sélection.",
+  "sem sala": "sans salle",
+  "{0}, {1}: {2}": "{0}, {1} : {2}",
+  "Agente {0} de {1}: {2}, {3}, {4}.": "Agent {0} sur {1} : {2}, {3}, {4}.",
+  "{0}, {1}, {2}.": "{0}, {1}, {2}.",
+  "Nenhum agente no escritório agora.": "Aucun agent dans le bureau pour le moment.",
+  "Detalhes de {0}.": "Détails de {0}.",
+  "Seleção limpa.": "Sélection effacée.",
 
   // client/src/world/render/overlay.ts
   "Recepção": "Accueil",
@@ -3397,4 +3418,17 @@ export const FR: Readonly<Record<string, string>> = {
 
   // server/spawn/spawn.ts
   "o claude deste computador é um atalho .cmd e não achei o programa por trás dele": "le claude de cet ordinateur est un raccourci .cmd et je n'ai pas trouvé le programme derrière",
+
+  // broadcast
+  "Digite uma instrução para todos os agentes do escritório...": "Tapez une instruction pour tous les agents du bureau...",
+  "Transmitir ordem": "Diffuser l'ordre",
+  "Ordem geral para os agentes": "Ordre général pour les agents",
+  "{0} agentes principais receberão esta mensagem.": "{0} agents principaux recevront ce message.",
+  "Digite uma instrução antes de enviar.": "Tapez une instruction avant d'envoyer.",
+  "Transmitindo...": "Diffusion en cours...",
+  "Ordem transmitida com sucesso para {0} agentes.": "Ordre diffusé avec succès à {0} agents.",
+  "Falha ao transmitir ordem: {0}": "Échec de la diffusion de l'ordre : {0}",
+  "Ordem geral: envia uma instrução para todos os agentes": "Ordre général : envoyer une instruction à tous les agents",
+  "esperado {text}": "attendu {text}",
+  "o texto passa de {0} caracteres": "le texte dépasse {0} caractères",
 };

@@ -495,6 +495,13 @@ export const EN: Readonly<Record<string, string>> = {
   "Nenhum pedido de permissão ou pergunta para responder agora.": "No permission requests or questions to answer right now.",
   "Selecione um agente para abrir o terminal.": "Select an agent to open the terminal.",
 
+  // client/src/ui/announce.ts
+  "{0} ({1})": "{0} ({1})",
+  "{0} está esperando você: pedido de permissão.": "{0} is waiting for you: permission request.",
+  "{0} voltou a trabalhar.": "{0} is back to work.",
+  "{0} terminou.": "{0} finished.",
+  "Sem conexão com o HabbAI: tentando reconectar.": "No connection to HabbAI: reconnecting.",
+
   // client/src/ui/model.ts
   "Concluído": "Done",
   "Saindo": "Leaving",
@@ -712,6 +719,9 @@ export const EN: Readonly<Record<string, string>> = {
   "Modo demonstração ligado.": "Demo mode on.",
   "Modo demonstração desligado.": "Demo mode off.",
   "Não foi possível mudar o modo demonstração.": "Couldn't change demo mode.",
+  "Contraste": "Contrast",
+  "Alto contraste": "High contrast",
+  "Alto contraste: texto e bordas mais fortes e painéis sem transparência, sobre o escritório. O tema escuro continua o padrão.": "High contrast: stronger text and borders and panels without transparency, over the office. The dark theme remains the default.",
 
   // client/src/ui/sidebar.ts
   "Atalho: /": "Shortcut: /",
@@ -998,6 +1008,17 @@ export const EN: Readonly<Record<string, string>> = {
   "Subagente: {0}{1}": "Subagent: {0}{1}",
   " (em segundo plano)": " (in the background)",
   "Sem atividade ainda": "No activity yet",
+
+  // client/src/world/index.ts
+  "Agentes no escritório": "Agents in the office",
+  "Setas: percorrer os agentes. Enter: abrir os detalhes. Esc: limpar a seleção.": "Arrow keys: move through agents. Enter: open the details. Esc: clear the selection.",
+  "sem sala": "no room",
+  "{0}, {1}: {2}": "{0}, {1}: {2}",
+  "Agente {0} de {1}: {2}, {3}, {4}.": "Agent {0} of {1}: {2}, {3}, {4}.",
+  "{0}, {1}, {2}.": "{0}, {1}, {2}.",
+  "Nenhum agente no escritório agora.": "No agents in the office right now.",
+  "Detalhes de {0}.": "Details for {0}.",
+  "Seleção limpa.": "Selection cleared.",
 
   // client/src/world/render/overlay.ts
   "Recepção": "Reception",
@@ -3380,4 +3401,17 @@ export const EN: Readonly<Record<string, string>> = {
 
   // server/spawn/spawn.ts
   "o claude deste computador é um atalho .cmd e não achei o programa por trás dele": "this computer's claude is a .cmd shortcut and I couldn't find the program behind it",
+
+  // broadcast
+  "Digite uma instrução para todos os agentes do escritório...": "Type an instruction for all office agents...",
+  "Transmitir ordem": "Broadcast order",
+  "Ordem geral para os agentes": "Broadcast order to agents",
+  "{0} agentes principais receberão esta mensagem.": "{0} main agents will receive this message.",
+  "Digite uma instrução antes de enviar.": "Type an instruction before sending.",
+  "Transmitindo...": "Broadcasting...",
+  "Ordem transmitida com sucesso para {0} agentes.": "Order successfully broadcast to {0} agents.",
+  "Falha ao transmitir ordem: {0}": "Failed to broadcast order: {0}",
+  "Ordem geral: envia uma instrução para todos os agentes": "Broadcast: send an instruction to all agents",
+  "esperado {text}": "expected {text}",
+  "o texto passa de {0} caracteres": "text exceeds {0} characters",
 };

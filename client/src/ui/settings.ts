@@ -105,6 +105,7 @@ export class SettingsPopover implements UiComponent {
   private daylight: ReturnType<typeof segmented<UiPrefs['daylight']>>;
   private theme: ReturnType<typeof segmented<UiPrefs['theme']>>;
   private scenario: ReturnType<typeof segmented<UiPrefs['scenario']>>;
+  private contrast: ReturnType<typeof segmented<UiPrefs['contrast']>>;
   private language: ReturnType<typeof segmented<LanguageChoice>>;
   private soundGroup: SoundSettingsGroup;
   private demoGroup: HTMLElement;
@@ -197,6 +198,20 @@ export class SettingsPopover implements UiComponent {
     this.scenario.row.append(
       h('span', { class: 'ui-set__hint', text: tr('Altera o cenário e arredores do prédio (rua, árvores e janelas) sem modificar o interior do escritório.') }),
     );
+    this.contrast = segmented<UiPrefs['contrast']>(
+      tr('Contraste'),
+      [
+        ['normal', tr('Normal')],
+        ['high', tr('Alto contraste')],
+      ],
+      (v) => ctx.updatePrefs({ contrast: v }),
+    );
+    this.contrast.row.append(
+      h('span', {
+        class: 'ui-set__hint',
+        text: tr('Alto contraste: texto e bordas mais fortes e painéis sem transparência, sobre o escritório. O tema escuro continua o padrão.'),
+      }),
+    );
     this.soundGroup = new SoundSettingsGroup(ctx, sound);
 
     // Nomes dos idiomas sempre na própria língua, para quem não entende o idioma atual achar o seu.
@@ -242,7 +257,7 @@ export class SettingsPopover implements UiComponent {
       'div',
       { class: 'ui-popover ui-settings', role: 'dialog', tabIndex: -1, attrs: { 'aria-label': tr('Configurações'), id: 'ui-settings', popover: 'auto' } },
       h('div', { class: 'ui-popover__head' }, h('h2', { text: tr('Configurações') }), close),
-      h('div', { class: 'ui-set-group' }, h('h3', { text: tr('Aparência') }), this.theme.row, this.scenario.row),
+      h('div', { class: 'ui-set-group' }, h('h3', { text: tr('Aparência') }), this.theme.row, this.scenario.row, this.contrast.row),
       h(
         'div',
         { class: 'ui-set-group' },
@@ -332,6 +347,7 @@ export class SettingsPopover implements UiComponent {
     this.daylight.set(p.daylight);
     this.theme.set(p.theme);
     this.scenario.set(p.scenario);
+    this.contrast.set(p.contrast);
     this.language.set(savedLanguage());
     this.soundGroup.render();
     setHidden(this.demoGroup, this.ctx.store.mock || access().remote);

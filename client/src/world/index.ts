@@ -11,6 +11,7 @@ import { BUILDING_H, COL_W } from './constants';
 import { RECEPTION_ID } from './layout/core';
 import { inRect } from './layout/geometry';
 import { attachInput, type Hit } from './input';
+import { navigationOrder, nextNavIndex, statusText } from './nav';
 import type { AgentInfo } from '../../../shared/types';
 import { rebaseSnapshot } from './playback';
 import { Overlay } from './render/overlay';
@@ -18,6 +19,7 @@ import { Renderer } from './render/renderer';
 import { Sim, type VisitLight } from './sim/sim';
 import { NO_INTENT, VISITOR_ID, visitorInfo, type VisitorIntent } from './sim/visitor';
 import { SoundCues } from './sound-cues';
+import { tr } from '../../../shared/i18n';
 
 export * from './api';
 export type { WorldDebug } from './debug';
@@ -67,9 +69,12 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const socialCbs = new Set<(e: SocialEvent) => void>();
   const soundCbs = new Set<(c: SoundCue) => void>();
   const roomMenuCbs = new Set<(roomId: string, at: { x: number; y: number }) => void>();
+  const deskClickCbs = new Set<(roomId: string, folder?: string) => void>();
   let cues = new SoundCues(sim, camera);
   let selection: Selection = null;
   let hover: string | null = null;
+  /** A seleção atual veio do teclado: além do anel do mouse, o agente selecionado ganha o anel de foco. */
+  let navFocused = false;
   let mouse: { x: number; y: number } | null = null;
   let raf = 0;
   let lastTs = 0;
@@ -81,6 +86,83 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   let framed = false;
   let lastCols = -1;
   const abort = new AbortController();
+
+  // ------------------------------------------------------------------ leitor de tela
+  // O canvas é um "application" com uma lista oculta de agentes (aria-owns): as setas percorrem a lista, Enter
+  // abre os detalhes e Esc limpa a seleção. Quem recebeu o foco é anunciado pela região viva (aria-live).
+  // Sem DOM (os testes do mundo rodam no Node) a navegação por teclado continua funcionando, sem a camada ARIA.
+
+  const canUseDom =
+    !visitMode &&
+    typeof document !== 'undefined' &&
+    typeof document.createElement === 'function' &&
+    typeof canvas.setAttribute === 'function' &&
+    typeof canvas.after === 'function';
+  const a11y = canUseDom ? document.createElement('div') : null;
+  const liveRegion = canUseDom ? document.createElement('div') : null;
+  const worldHelp = canUseDom ? document.createElement('p') : null;
+  if (a11y && liveRegion && worldHelp) {
+    a11y.id = 'world-a11y';
+    a11y.className = 'ui-sr';
+    a11y.setAttribute('role', 'listbox');
+    a11y.setAttribute('aria-label', tr('Agentes no escritório'));
+    liveRegion.id = 'world-live';
+    liveRegion.className = 'ui-sr';
+    liveRegion.setAttribute('role', 'status');
+    liveRegion.setAttribute('aria-live', 'polite');
+    worldHelp.id = 'world-help';
+    worldHelp.className = 'ui-sr';
+    worldHelp.textContent = tr('Setas: percorrer os agentes. Enter: abrir os detalhes. Esc: limpar a seleção.');
+    canvas.after(a11y, liveRegion, worldHelp);
+    canvas.tabIndex = 0;
+    canvas.setAttribute('role', 'application');
+    canvas.setAttribute('aria-label', tr('Escritório'));
+    canvas.setAttribute('aria-describedby', 'world-help');
+    canvas.setAttribute('aria-owns', 'world-a11y');
+  }
+
+  /** Id da opção oculta de um agente (só letras, números e `_`: o id do agente tem `:`). */
+  const agentOptionId = (id: string) => `world-agent-${encodeURIComponent(id).replace(/%/g, '_')}`;
+
+  const roomNameOf = (roomId: string) => store.snapshot?.rooms.find((r) => r.id === roomId)?.name ?? tr('sem sala');
+
+  let a11ySig = '';
+  /** Lista oculta e atributos ARIA do canvas: quem está no escritório e quem está em foco. */
+  const syncA11y = () => {
+    if (!a11y) return;
+    const agents = navigationOrder(store.snapshot?.agents ?? [], store.snapshot?.rooms ?? []);
+    const rooms = new Map((store.snapshot?.rooms ?? []).map((r) => [r.id, r.name]));
+    const sig = agents.map((a) => `${a.id}|${a.name}|${a.status}|${a.roomId}`).join('\n');
+    if (sig !== a11ySig) {
+      a11ySig = sig;
+      a11y.replaceChildren(
+        ...agents.map((a) => {
+          const option = document.createElement('div');
+          option.id = agentOptionId(a.id);
+          option.setAttribute('role', 'option');
+          option.setAttribute('aria-selected', 'false');
+          option.textContent = tr('{0}, {1}: {2}', [a.name, rooms.get(a.roomId) ?? tr('sem sala'), statusText(a.status)]);
+          return option;
+        }),
+      );
+    }
+    const active = selection?.type === 'agent' ? agentOptionId(selection.id) : null;
+    if (active) canvas.setAttribute('aria-activedescendant', active);
+    else canvas.removeAttribute('aria-activedescendant');
+    for (const option of a11y.querySelectorAll('[role="option"]')) option.setAttribute('aria-selected', String(option.id === active));
+  };
+
+  let liveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Fala uma frase na região viva (o texto é limpo antes para a mesma frase ser relida). */
+  const announceLive = (text: string) => {
+    if (!liveRegion) return;
+    if (liveTimer) clearTimeout(liveTimer);
+    liveRegion.textContent = '';
+    liveTimer = setTimeout(() => {
+      liveTimer = null;
+      if (liveRegion) liveRegion.textContent = text;
+    }, 30);
+  };
 
   // ------------------------------------------------------------------ tamanho/DPR
 
@@ -141,6 +223,8 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const setSelection = (sel: Selection, focus = false) => {
     const same = sameSelection(sel, selection);
     selection = sel;
+    // sem seleção não há anel de foco do teclado
+    if (!sel) navFocused = false;
     // com "seguir selecionado" ligado, a câmera acompanha o agente escolhido (ou para de seguir)
     if (options.followSelected) camera.follow = sel?.type === 'agent' ? sel.id : null;
     if (focus && sel) {
@@ -148,6 +232,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       else focusRoom(sel.id);
     }
     if (!same) emitSelect();
+    syncA11y();
   };
 
   const focusAgent = (id: string, opts: { follow?: boolean } = {}) => {
@@ -178,6 +263,55 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     camera.zoomAt(camera.stepZoom(steps), sx, sy, Date.now(), true);
   };
 
+  // ------------------------------------------------------------------ teclado do escritório
+
+  /** Agentes na ordem da navegação (sala e depois nome), sem quem está saindo. */
+  const navAgents = () => navigationOrder(store.snapshot?.agents ?? [], store.snapshot?.rooms ?? []);
+
+  const selectByKeyboard = (agent: AgentInfo, index: number, total: number) => {
+    navFocused = true;
+    setSelection({ type: 'agent', id: agent.id }, true);
+    const room = roomNameOf(agent.roomId);
+    announceLive(
+      total > 1
+        ? tr('Agente {0} de {1}: {2}, {3}, {4}.', [index + 1, total, agent.name, room, statusText(agent.status)])
+        : tr('{0}, {1}, {2}.', [agent.name, room, statusText(agent.status)]),
+    );
+  };
+
+  /**
+   * Setas/Home/End percorrem os agentes, Enter abre os detalhes do agente em foco (a gaveta) e Esc limpa a
+   * seleção. Devolve true quando tratou a tecla (o canvas está focado: ver input.ts).
+   */
+  const onNavKey = (key: string): boolean => {
+    const list = navAgents();
+    if (key === 'Enter') {
+      if (!list.length) {
+        announceLive(tr('Nenhum agente no escritório agora.'));
+        return true;
+      }
+      const selectedId = selection?.type === 'agent' ? selection.id : null;
+      const current = selectedId ? list.findIndex((a) => a.id === selectedId) : -1;
+      const agent = list[Math.max(0, current)];
+      navFocused = true;
+      setSelection({ type: 'agent', id: agent.id }, true);
+      announceLive(tr('Detalhes de {0}.', [agent.name]));
+      return true;
+    }
+    if (key === 'Escape') {
+      if (!selection) return true;
+      setSelection(null);
+      announceLive(tr('Seleção limpa.'));
+      return true;
+    }
+    const selectedId = selection?.type === 'agent' ? selection.id : null;
+    const current = selectedId ? list.findIndex((a) => a.id === selectedId) : -1;
+    const index = nextNavIndex(current >= 0 ? current : null, list.length, key);
+    if (index === null) return false;
+    selectByKeyboard(list[index], index, list.length);
+    return true;
+  };
+
   // ------------------------------------------------------------------ hit-test
 
   const pick = (sx: number, sy: number): Hit => {
@@ -194,9 +328,18 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       }
     }
     if (best) return { type: 'agent', id: best };
+    if (sim.pet?.x && Math.hypot(w.x - sim.pet.x, w.y - (sim.pet.y - 4)) < 12) return { type: 'pet', id: 'pet' };
     const tx = Math.floor(w.x / TILE);
     const ty = Math.floor(w.y / TILE);
-    for (const room of sim.rooms.values()) if (room.present && !room.ghost && inRect(room.layout.rect, tx, ty)) return { type: 'room', id: room.id };
+    for (const room of sim.rooms.values()) {
+      if (room.present && !room.ghost && inRect(room.layout.rect, tx, ty)) {
+        const deskSpot = room.layout.spots.find(
+          (s) => s.kind === 'desk' && ((s.tx === tx && s.ty === ty) || (s.side === 'S' && s.tx === tx && s.ty - 1 === ty) || (s.side === 'N' && s.tx === tx && s.ty + 1 === ty))
+        );
+        if (deskSpot && sim.spots.isFree(deskSpot.id)) return { type: 'desk', id: deskSpot.id, roomId: room.id, folder: room.info.path };
+        return { type: 'room', id: room.id };
+      }
+    }
     return null;
   };
 
@@ -222,8 +365,14 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
 
   const detachInput = attachInput(canvas, camera, {
     pick,
-    click: (hit, at) => (visitMode ? visitClick(hit, at) : setSelection(hit)),
+    click: (hit, at) => {
+      navFocused = false;
+      if (hit?.type === 'pet') return void sim.pet.pet();
+      if (hit?.type === 'desk') return void deskClickCbs.forEach((cb) => cb(hit.roomId, hit.folder));
+      return visitMode ? visitClick(hit, at) : setSelection(hit);
+    },
     doubleClick: (hit) => {
+      navFocused = false;
       if (hit?.type === 'agent') {
         setSelection(hit);
         focusAgent(hit.id, { follow: true });
@@ -242,6 +391,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     zoomStep,
     active: () => !suspended,
     keys: () => !visitMode,
+    nav: onNavKey,
   });
 
   // ------------------------------------------------------------------ dados
@@ -256,6 +406,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     } catch (err) {
       console.error('[mundo] snapshot inválido ignorado', err);
     }
+    syncA11y();
   };
   const offSnapshot = store.on('snapshot', onSnapshot);
   if (store.snapshot) onSnapshot();
@@ -305,7 +456,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       const followCh = camera.follow ? sim.person(camera.follow) : undefined;
       if (camera.follow && !followCh) camera.follow = null;
       camera.update(real, followCh ? camera.centerFor(followCh.x, followCh.y - 12, camera.zoom) : null, realDt);
-      renderer.frame(now, dt, options, { agent: selection?.type === 'agent' ? selection.id : null, room: selection?.type === 'room' ? selection.id : null, hover });
+      renderer.frame(now, dt, options, { agent: selection?.type === 'agent' ? selection.id : null, room: selection?.type === 'room' ? selection.id : null, hover, keyboard: navFocused });
       overlay.draw(now, options, { agent: selection?.type === 'agent' ? selection.id : null, room: selection?.type === 'room' ? selection.id : null, hover });
       renderer.pruneHeads();
       // No timelapse o mundo fica mudo: o teclado e o elevador em alta velocidade só fariam barulho.
@@ -388,6 +539,10 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   return {
     select: (sel, opts) => setSelection(sel, !!opts?.focus),
     getSelection: () => selection,
+    onDeskClick: (cb: (roomId: string, folder?: string) => void) => {
+      deskClickCbs.add(cb);
+      return () => void deskClickCbs.delete(cb);
+    },
     onSelect: (cb) => {
       selectCbs.add(cb);
       return () => void selectCbs.delete(cb);
@@ -469,6 +624,10 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       abort.abort();
       offSnapshot();
       detachInput();
+      if (liveTimer) clearTimeout(liveTimer);
+      a11y?.remove();
+      liveRegion?.remove();
+      worldHelp?.remove();
       window.removeEventListener('resize', resize);
       canvas.removeEventListener('contextmenu', onContextMenu);
       document.removeEventListener('visibilitychange', onVisibility);

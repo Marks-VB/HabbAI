@@ -31,6 +31,18 @@ interface OpencodeSession {
   model?: string;
 }
 
+interface OpencodeSessionItem {
+  id?: string;
+  time?: { updated?: number; created?: number };
+  location?: { directory?: string };
+  agent?: string;
+  outcome?: string;
+  parentID?: string;
+  tokens?: { input?: number; output?: number; reasoning?: number; cache?: { read?: number } };
+  cost?: number;
+  model?: { id?: string };
+}
+
 interface OpencodeServiceConfig {
   url: string;
   password?: string;
@@ -45,7 +57,7 @@ export class OpencodeSource implements AgentSource {
   private readonly sessions = new Map<string, OpencodeSession>();
   private running = false;
   private timer: NodeJS.Timeout | null = null;
-  private sseReq: any = null;
+  private sseReq: ReturnType<typeof httpRequest> | null = null;
   private service: OpencodeServiceConfig | null = null;
 
   constructor(private readonly opts: OpencodeSourceOptions) {
@@ -167,7 +179,7 @@ export class OpencodeSource implements AgentSource {
       });
       if (!res.ok) return;
 
-      const body = (await res.json()) as { data?: Array<Record<string, any>> };
+      const body = (await res.json()) as { data?: OpencodeSessionItem[] };
       if (!Array.isArray(body?.data)) return;
 
       const now = Date.now();

@@ -75,6 +75,14 @@ describe('preferências', () => {
       expect(worldOptionsFrom(loadPrefs(st)).theme).toBe(theme);
     }
   });
+  it('contraste: normal por padrão; alto contraste é opt-in e sobrevive ao recarregar', () => {
+    expect(DEFAULT_PREFS.contrast).toBe('normal');
+    expect(sanitizePrefs({ contrast: 'high' }).contrast).toBe('high');
+    expect(sanitizePrefs({ contrast: 'muito' }).contrast).toBe('normal');
+    const st = memoryStorage();
+    savePrefs(st, { ...DEFAULT_PREFS, contrast: 'high' });
+    expect(loadPrefs(st).contrast).toBe('high');
+  });
   it('sons: desligados por padrão; volume e categorias validados', () => {
     expect(DEFAULT_PREFS.sound).toBe(false);
     const p = sanitizePrefs({ sound: true, sounds: { volume: 3, keys: false, elevator: 'sim' } });

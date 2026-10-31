@@ -215,6 +215,15 @@ export class SpawnPanel {
     }
   }
 
+  open(anchor: HTMLElement, folder?: string): void {
+    if (this.isOpen) {
+      if (folder) this.pick(folder);
+      return;
+    }
+    this.toggle(anchor);
+    if (folder) this.pick(folder);
+  }
+
   toggle(anchor: HTMLElement): void {
     this.anchor = anchor;
     if (this.isOpen) return this.hide();

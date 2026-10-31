@@ -1,7 +1,7 @@
 // Entrada: arrastar (mouse/toque), roda/pinça (zoom no cursor), clique/duplo clique e teclado.
 import type { Camera } from './camera';
 
-export type Hit = { type: 'agent'; id: string } | { type: 'room'; id: string } | null;
+export type Hit = { type: 'agent'; id: string } | { type: 'room'; id: string } | { type: 'desk'; id: string; roomId: string; folder?: string } | { type: 'pet'; id: 'pet' } | null;
 
 export interface InputHandlers {
   pick(sx: number, sy: number): Hit;
@@ -17,6 +17,11 @@ export interface InputHandlers {
   active?(): boolean;
   /** (Opcional) O teclado mexe na câmera? (Na visita, as setas e o WASD andam com o visitante.) Padrão: sim. */
   keys?(): boolean;
+  /**
+   * (Opcional) Teclado do escritório com o canvas focado: setas percorrem os agentes, Enter abre os detalhes e
+   * Esc limpa a seleção. Devolve true quando tratou a tecla (a câmera não se mexe).
+   */
+  nav?(key: string): boolean;
 }
 
 const DRAG_THRESHOLD = 5;
@@ -174,6 +179,11 @@ export function attachInput(canvas: HTMLCanvasElement, camera: Camera, h: InputH
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.getAttribute?.('role') === 'radio')) return;
     // modal/popover aberto (ajuda, configurações...): o teclado é dele, não da câmera
     if (modalOpen(t)) return;
+    // canvas focado: as setas são do escritório (navegar entre agentes), não da câmera
+    if (h.nav && e.target === canvas && h.nav(e.key)) {
+      e.preventDefault();
+      return;
+    }
     let dx = 0;
     let dy = 0;
     switch (e.key) {
