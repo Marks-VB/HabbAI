@@ -118,6 +118,8 @@ export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   readonly areas = new Map<string, AreaVis>();
   readonly heads = new Map<string, HeadInfo>();
+  /** Movimento reduzido (preferência do sistema): os anéis de seleção não pulsam. */
+  private readonly reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   exterior: ExteriorLayout;
   shells: SlotShell[] = [];
   shellWindows: WallVis[] = [];
@@ -510,7 +512,7 @@ export class Renderer {
 
   // =================================================================== frame
 
-  frame(now: number, dt: number, opts: WorldOptions, sel: { agent: string | null; room: string | null; hover: string | null }): void {
+  frame(now: number, dt: number, opts: WorldOptions, sel: { agent: string | null; room: string | null; hover: string | null; keyboard?: boolean }): void {
     const { ctx, camera } = this;
     this.date.setTime(this.clock());
     this.dt = dt;
@@ -1027,7 +1029,7 @@ export class Renderer {
     }
   }
 
-  private drawCharacter(ch: Character, now: number, sel: { agent: string | null; hover: string | null }): void {
+  private drawCharacter(ch: Character, now: number, sel: { agent: string | null; hover: string | null; keyboard?: boolean }): void {
     const { ctx } = this;
     const head = this.headOf(ch);
     // faixa lateral de quem anda (dois no mesmo caminho não viram um boneco de duas cabeças)
@@ -1036,8 +1038,11 @@ export class Renderer {
     ctx.globalAlpha = ch.alpha;
     // anéis no chão (seleção, hover, alerta)
     if (ch.mode === 'wait') this.drawAlertRing(x, y, now);
-    if (sel.agent === ch.id) this.drawRing(x, y, '#7fe3ff', now, true);
-    else if (sel.hover === ch.id) this.drawRing(x, y, '#ffffff', now, false);
+    if (sel.agent === ch.id) {
+      // Selecionado pelo teclado: além do anel do mouse, um anel de foco branco (visível em qualquer piso).
+      if (sel.keyboard) this.drawFocusRing(x, y);
+      this.drawRing(x, y, '#7fe3ff', now, true);
+    } else if (sel.hover === ch.id) this.drawRing(x, y, '#ffffff', now, false);
     if (!ch.seated) {
       const sh = shadowSprite();
       ctx.drawImage(sh.canvas, x - sh.ax, y - sh.ay);
@@ -1284,7 +1289,7 @@ export class Renderer {
 
   private drawRing(x: number, y: number, color: string, now: number, pulse: boolean): void {
     const { ctx } = this;
-    const k = pulse ? 1 + Math.sin(now / 220) * 0.08 : 1;
+    const k = pulse && !this.reducedMotion ? 1 + Math.sin(now / 220) * 0.08 : 1;
     ctx.save();
     ctx.globalAlpha *= pulse ? 0.95 : 0.6;
     ctx.strokeStyle = color;
@@ -1292,6 +1297,23 @@ export class Renderer {
     ctx.beginPath();
     ctx.ellipse(x, y, 8 * k, 3.5 * k, 0, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawFocusRing(x: number, y: number): void {
+    const { ctx } = this;
+    ctx.save();
+    // Dois traços: o escuro separa o branco do piso claro.
+    for (const [width, color] of [
+      [3, '#0b0e14'],
+      [1.5, '#ffffff'],
+    ] as const) {
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 9.5, 4.5, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 

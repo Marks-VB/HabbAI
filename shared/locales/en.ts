@@ -495,6 +495,13 @@ export const EN: Readonly<Record<string, string>> = {
   "Nenhum pedido de permissão ou pergunta para responder agora.": "No permission requests or questions to answer right now.",
   "Selecione um agente para abrir o terminal.": "Select an agent to open the terminal.",
 
+  // client/src/ui/announce.ts
+  "{0} ({1})": "{0} ({1})",
+  "{0} está esperando você: pedido de permissão.": "{0} is waiting for you: permission request.",
+  "{0} voltou a trabalhar.": "{0} is back to work.",
+  "{0} terminou.": "{0} finished.",
+  "Sem conexão com o HabbAI: tentando reconectar.": "No connection to HabbAI: reconnecting.",
+
   // client/src/ui/model.ts
   "Concluído": "Done",
   "Saindo": "Leaving",
@@ -712,6 +719,9 @@ export const EN: Readonly<Record<string, string>> = {
   "Modo demonstração ligado.": "Demo mode on.",
   "Modo demonstração desligado.": "Demo mode off.",
   "Não foi possível mudar o modo demonstração.": "Couldn't change demo mode.",
+  "Contraste": "Contrast",
+  "Alto contraste": "High contrast",
+  "Alto contraste: texto e bordas mais fortes e painéis sem transparência, sobre o escritório. O tema escuro continua o padrão.": "High contrast: stronger text and borders and panels without transparency, over the office. The dark theme remains the default.",
 
   // client/src/ui/sidebar.ts
   "Atalho: /": "Shortcut: /",
@@ -998,6 +1008,17 @@ export const EN: Readonly<Record<string, string>> = {
   "Subagente: {0}{1}": "Subagent: {0}{1}",
   " (em segundo plano)": " (in the background)",
   "Sem atividade ainda": "No activity yet",
+
+  // client/src/world/index.ts
+  "Agentes no escritório": "Agents in the office",
+  "Setas: percorrer os agentes. Enter: abrir os detalhes. Esc: limpar a seleção.": "Arrow keys: move through agents. Enter: open the details. Esc: clear the selection.",
+  "sem sala": "no room",
+  "{0}, {1}: {2}": "{0}, {1}: {2}",
+  "Agente {0} de {1}: {2}, {3}, {4}.": "Agent {0} of {1}: {2}, {3}, {4}.",
+  "{0}, {1}, {2}.": "{0}, {1}, {2}.",
+  "Nenhum agente no escritório agora.": "No agents in the office right now.",
+  "Detalhes de {0}.": "Details for {0}.",
+  "Seleção limpa.": "Selection cleared.",
 
   // client/src/world/render/overlay.ts
   "Recepção": "Reception",

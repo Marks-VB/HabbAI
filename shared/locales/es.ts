@@ -495,6 +495,13 @@ export const ES: Readonly<Record<string, string>> = {
   "Nenhum pedido de permissão ou pergunta para responder agora.": "No hay solicitudes de permiso ni preguntas para responder ahora.",
   "Selecione um agente para abrir o terminal.": "Selecciona un agente para abrir la terminal.",
 
+  // client/src/ui/announce.ts
+  "{0} ({1})": "{0} ({1})",
+  "{0} está esperando você: pedido de permissão.": "{0} te está esperando: solicitud de permiso.",
+  "{0} voltou a trabalhar.": "{0} volvió a trabajar.",
+  "{0} terminou.": "{0} terminó.",
+  "Sem conexão com o HabbAI: tentando reconectar.": "Sin conexión con HabbAI: intentando reconectar.",
+
   // client/src/ui/model.ts
   "Concluído": "Completado",
   "Saindo": "Saliendo",
@@ -712,6 +719,9 @@ export const ES: Readonly<Record<string, string>> = {
   "Modo demonstração ligado.": "Modo demostración activado.",
   "Modo demonstração desligado.": "Modo demostración desactivado.",
   "Não foi possível mudar o modo demonstração.": "No se pudo cambiar el modo demostración.",
+  "Contraste": "Contraste",
+  "Alto contraste": "Alto contraste",
+  "Alto contraste: texto e bordas mais fortes e painéis sem transparência, sobre o escritório. O tema escuro continua o padrão.": "Alto contraste: texto y bordes más fuertes y paneles sin transparencia, sobre la oficina. El tema oscuro sigue siendo el predeterminado.",
 
   // client/src/ui/sidebar.ts
   "Atalho: /": "Atajo: /",
@@ -998,6 +1008,17 @@ export const ES: Readonly<Record<string, string>> = {
   "Subagente: {0}{1}": "Subagente: {0}{1}",
   " (em segundo plano)": " (en segundo plano)",
   "Sem atividade ainda": "Sin actividad aún",
+
+  // client/src/world/index.ts
+  "Agentes no escritório": "Agentes en la oficina",
+  "Setas: percorrer os agentes. Enter: abrir os detalhes. Esc: limpar a seleção.": "Flechas: recorrer los agentes. Enter: abrir los detalles. Esc: limpiar la selección.",
+  "sem sala": "sin sala",
+  "{0}, {1}: {2}": "{0}, {1}: {2}",
+  "Agente {0} de {1}: {2}, {3}, {4}.": "Agente {0} de {1}: {2}, {3}, {4}.",
+  "{0}, {1}, {2}.": "{0}, {1}, {2}.",
+  "Nenhum agente no escritório agora.": "No hay agentes en la oficina ahora.",
+  "Detalhes de {0}.": "Detalles de {0}.",
+  "Seleção limpa.": "Selección limpiada.",
 
   // client/src/world/render/overlay.ts
   "Recepção": "Recepción",

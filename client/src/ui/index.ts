@@ -11,6 +11,7 @@ import './styles.css';
 
 import type { OfficeStore } from '../net/store';
 import type { Selection, WorldApi } from '../world/api';
+import { LiveAnnouncer } from './announce';
 import type { PanelName, TerminalRouter, UiComponent, UiContext } from './context';
 import { DayLauncher } from './daystats-launcher';
 import { RoomRenamer } from './roomrename';
@@ -73,6 +74,11 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
 
   const live = h('div', { class: 'ui-sr', role: 'status', attrs: { 'aria-live': 'polite' } });
 
+  /** Alto contraste opt-in (Configurações › Aparência): as variáveis CSS dos painéis ficam em styles.css. */
+  const applyContrast = (): void => {
+    root.classList.toggle('is-high-contrast', prefs.contrast === 'high');
+  };
+
   let topbar: TopBar;
   let sidebar: Sidebar;
   let drawer: Drawer;
@@ -97,6 +103,7 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
     updatePrefs(patch) {
       prefs = { ...prefs, ...patch };
       savePrefs(storage, prefs);
+      applyContrast();
       world.setOptions(worldOptionsFrom(prefs));
       invalidate();
     },
@@ -171,6 +178,9 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   };
 
   // ---------------------------------------------------------------- componentes
+  // Leitor de tela: as transições do escritório (permissão, volta ao trabalho, fim, conexão) viram avisos
+  // educados, com fila de 2 s (ui/announce.ts). Vive enquanto a página viver.
+  new LiveAnnouncer(ctx);
   const sound = new SoundControl(ctx);
   const notifier = new Notifier(ctx, sound.board);
   topbar = new TopBar(ctx);
@@ -292,6 +302,7 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   const scrim = h('div', { class: 'ui-scrim', attrs: { 'aria-hidden': 'true' }, on: { click: () => ctx.togglePanel('sidebar', false) } });
 
   root.classList.add('ui-root');
+  applyContrast();
   root.append(timelapse.vignette, topbar.el, sidebar.el, scrim, feed.el, drawer.el, terminal.el, pty.el, timelapse.el, timelapse.badge, toasts.el, banner.el, update.el, empty.el, popups.el, tip.el, settings.el, worldDialog.el, history.el, deliveries.el, notifications.el, help.el, renamer.el, live, splash.el);
   area = new FreeArea(world, { root, topbar: topbar.el, sidebar: sidebar.el, drawer: drawer.el, feed: feed.el }, () => ({
     sidebar: panels.sidebar,
