@@ -33,6 +33,8 @@ flowchart LR
    desenho fica em [`client/src/world/`](../client/src/world/index.ts) com a arte procedural de
    [`client/src/art/`](../client/src/art/index.ts) (personagens, móveis e o mascote), a interface em
    [`client/src/ui/`](../client/src/ui/index.ts) e o som sintetizado em [`client/src/audio/`](../client/src/audio/synth.ts).
+   A visita a um prédio do World monta uma cena própria em [`client/src/world/visit/`](../client/src/world/visit/index.ts),
+   com um andar por tela e o trilho de andares (`client/src/world/floors/`).
    O ponto de entrada é [`client/src/main.ts`](../client/src/main.ts), que carrega o dicionário do idioma antes do app.
 
 ## Os diretórios
@@ -47,7 +49,7 @@ flowchart LR
 | [`shared/`](../shared/types.ts) | Contratos (`types.ts`), atividades, aparência, i18n e o simulador de demonstração. |
 | [`shared/locales/`](../shared/locales/en.ts) | Traduções de `en`, `es` e `fr`; o português é a chave, escrita no próprio `tr()`. |
 | [`shared/world/`](../shared/world/projection.ts) | Protocolo, schema, geometria da cidade e a projeção do prédio (o único lugar que monta o pacote). |
-| [`client/src/`](../client/src/app.ts) | `ui/`, `world/`, `art/`, `net/` e `audio/`. |
+| [`client/src/`](../client/src/app.ts) | `ui/`, `world/` (inclui `visit/` e `floors/`), `art/`, `net/` e `audio/`. |
 | [`scripts/`](../scripts/docker-up.ts) | Build, Docker, instaladores (`mod`, hooks, Codex, statusline), `remote-setup`, `release` e capturas. |
 | [`mod/`](../mod/README.md) | O mod e os plugins de permissões e de mensagens que rodam dentro do Claude Code. |
 

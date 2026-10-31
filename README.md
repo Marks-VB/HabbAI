@@ -871,6 +871,13 @@ your building stays dark, but you can still walk around the city. In demo mode (
 only fictional buildings and people): [the city](docs/screenshots/world-cidade.png) and
 [a building's card](docs/screenshots/world-cartao.png).
 
+**Floors.** The visit opens on the ground floor (reception, kitchen, restroom and lounge) and stacks one room per floor
+above, exactly as the World package already describes. The rail on the left lists the floors with a status dot and the
+agent count; click to jump, use `↑`/`↓`, `Home`/`End` or `PageUp`/`PageDown`, and `▲`/`▼` to move one floor. The change
+goes through a short elevator transition (doors, fade and arrival in 300 ms; with "reduce motion" in the system, a hard
+cut) and rapid clicks keep the last one. On phones the rail becomes a strip of chips at the bottom. Your own office keeps
+the usual corridor; floors are visit-only, and the number sent to the World is still the real room count.
+
 **Visits.** Near a building's door, **Enter (E)** takes you inside: the owner's live office, with rooms under made-up
 names and the agents in their current status, view only (no terminal, messages or permissions, and nothing about the
 work); a building closed to visits can only be seen from outside. On yours, you see "N visitors now" (only the count,

@@ -908,6 +908,14 @@ fuera del mundo, tu edificio queda apagado, pero puedes pasear por la ciudad. En
 (`?mock=1&world=approved&scene=city`, solo edificios y personas ficticios): [la ciudad](docs/screenshots/world-cidade.png)
 y [la tarjeta de un edificio](docs/screenshots/world-cartao.png).
 
+**Plantas.** La visita se abre en la planta baja (recepción, cocina, baño y sala de estar) y apila una sala por planta
+arriba, tal como ya describe el paquete del World. La barra de la izquierda lista las plantas con el punto de estado y el
+número de agentes; haz clic para saltar, usa `↑`/`↓`, `Home`/`End` o `PageUp`/`PageDown`, y `▲`/`▼` para subir o bajar una
+planta. El cambio pasa por una transición corta de ascensor (puertas, fundido y llegada en 300 ms; con "reducir
+movimiento" en el sistema, corte seco) y los clics seguidos se quedan con el último. En el móvil la barra se convierte en
+una franja de pastillas abajo. Tu oficina sigue con el pasillo de siempre; las plantas son solo de la visita y el número
+enviado al World sigue siendo el de salas reales.
+
 **Visitas.** Cerca de la puerta de un edificio, **Entrar (E)** te lleva adentro: la oficina del dueño en vivo, con salas
 de nombres ficticios y los agentes en su estado de ahora, solo para mirar (sin terminal, mensajes ni permisos, y nada
 del trabajo); un edificio cerrado a visitas solo se ve por fuera. En el tuyo ves "N visitantes ahora" (solo el número,

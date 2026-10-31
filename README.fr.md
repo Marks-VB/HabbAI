@@ -917,6 +917,14 @@ ou hors du monde, votre immeuble reste éteint, mais vous pouvez vous promener d
 (`?mock=1&world=approved&scene=city`, seulement des immeubles et des personnes fictifs) :
 [la ville](docs/screenshots/world-cidade.png) et [la carte d'un immeuble](docs/screenshots/world-cartao.png).
 
+**Étages.** La visite s'ouvre au rez-de-chaussée (accueil, cuisine, salle de bain et salon) et empile une salle par étage
+au-dessus, comme le paquet du World le décrit déjà. La barre à gauche liste les étages avec la pastille de statut et le
+nombre d'agents ; cliquez pour sauter, utilisez `↑`/`↓`, `Home`/`End` ou `PageUp`/`PageDown`, et `▲`/`▼` pour monter ou
+descendre d'un étage. Le changement passe par une courte transition d'ascenseur (portes, fondu et arrivée en 300 ms ;
+avec « réduire les animations » dans le système, coupe nette) et les clics rapides gardent le dernier. Sur mobile, la barre
+devient une bande de pastilles en bas. Votre bureau garde le couloir habituel ; les étages ne concernent que la visite, et
+le nombre envoyé au World reste celui des salles réelles.
+
 **Visites.** Près de la porte d'un immeuble, **Entrer (E)** vous fait entrer : le bureau du propriétaire en direct, avec
 des salles aux noms fictifs et les agents dans leur statut du moment, en lecture seule (ni terminal, ni messages, ni
 permissions, et rien du travail) ; un immeuble fermé aux visites ne se voit que de l'extérieur. Sur le vôtre, vous voyez

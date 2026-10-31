@@ -871,6 +871,13 @@ prédio fica apagado, mas dá para andar pela cidade. No modo demonstração (`?
 prédios e pessoas fictícios): [a cidade](docs/screenshots/world-cidade.png) e
 [o cartão de um prédio](docs/screenshots/world-cartao.png).
 
+**Andares.** A visita abre no térreo (recepção, copa, banheiro e lounge) e empilha uma sala por andar acima, como o
+pacote do World já descreve. O trilho à esquerda lista os andares com a bolinha de status e a contagem de agentes; clique
+para pular, use `↑`/`↓`, `Home`/`End` ou `PageUp`/`PageDown`, e `▲`/`▼` para andar um andar. A troca passa por uma
+transição curta de elevador (porta, escurecimento e chegada em 300 ms; com "reduzir movimento" no sistema, corte seco) e
+cliques seguidos valem o último. No celular o trilho vira uma faixa de chips na base. O escritório da sua máquina continua
+no corredor de sempre; os andares são só da visita, e o número enviado ao World continua sendo o de salas reais.
+
 **Visitas.** Perto da porta de um prédio, **Entrar (E)** leva para dentro: o escritório do dono ao vivo, com as salas de
 nomes fictícios e os agentes no status de agora, só para ver (nada de terminal, mensagens ou permissões, e nada do
 trabalho); prédio fechado a visitas só se vê por fora. No seu, você vê "N visitantes agora" (só a contagem, nunca quem).
