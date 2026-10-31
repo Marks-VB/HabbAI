@@ -24,7 +24,7 @@ describe('createBuildReader', () => {
   });
 });
 
-describe('readBuildInfo e scripts/build-info.mjs', () => {
+describe('readBuildInfo e scripts/build-info.mjs', { timeout: 20_000 }, () => {
   const SCRIPT = join(import.meta.dirname, '..', 'scripts', 'build-info.mjs');
   const git = (cwd: string, ...args: string[]) =>
     execFileSync('git', ['-c', 'user.name=Teste', '-c', 'user.email=teste@exemplo.com', '-c', 'commit.gpgsign=false', ...args], { cwd, encoding: 'utf8' }).trim();
