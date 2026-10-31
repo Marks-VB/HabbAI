@@ -3,7 +3,7 @@
 import * as artModule from '../art';
 import { TILE, type ArtModule } from '../art/api';
 import type { OfficeStore } from '../net/store';
-import { DEFAULT_WORLD_OPTIONS, seasonalThemeFor, type Selection, type SocialEvent, type SoundCue, type WorldApi, type WorldOptions, type WorldPlayback } from './api';
+import { DEFAULT_WORLD_OPTIONS, seasonalThemeFor, type FloorWorld, type Selection, type SocialEvent, type SoundCue, type WorldApi, type WorldOptions, type WorldPlayback } from './api';
 import { loadWorldAssets, type WorldAssets } from './assets';
 import { Camera, overviewFrame } from './camera';
 import { createDebug, type WorldDebug } from './debug';
@@ -63,12 +63,17 @@ export interface CreateWorldOptions {
   visit?: boolean;
 }
 
-export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: CreateWorldOptions = {}): WorldApi & { debug: WorldDebug; visit: VisitWorld } {
+export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: CreateWorldOptions = {}): WorldApi & { debug: WorldDebug; visit: VisitWorld; floors: FloorWorld } {
   let options: WorldOptions = { ...DEFAULT_WORLD_OPTIONS };
   const visitMode = !!o.visit;
+  /** Escritório local em andares (opt-in): o prédio empilhado da visita, com a simulação de sempre. */
+  let floorsOn = !visitMode && !!options.floors;
+  /** A câmera, o clique e o teclado trabalham por andar (visita sempre; escritório local com a opção ligada). */
+  const floorScoped = () => visitMode || floorsOn;
   const camera = new Camera();
+  const simMode = () => ({ visit: visitMode, floors: floorsOn });
   // Simulação e desenho são recriados quando o timelapse entra, pula ou sai (rebuild).
-  let sim = new Sim(artNow(), () => options, undefined, { visit: visitMode });
+  let sim = new Sim(artNow(), () => options, undefined, simMode());
   let renderer = new Renderer(canvas, artNow(), sim, camera);
   let overlay = new Overlay(renderer.ctx, sim, renderer, camera);
   let assets: WorldAssets | null = null;
@@ -144,8 +149,11 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   /** Lista oculta e atributos ARIA do canvas: quem está no escritório e quem está em foco. */
   const syncA11y = () => {
     if (!a11y) return;
-    const agents = navigationOrder(store.snapshot?.agents ?? [], store.snapshot?.rooms ?? []);
-    const rooms = new Map((store.snapshot?.rooms ?? []).map((r) => [r.id, r.name]));
+    const roomsNow = store.snapshot?.rooms ?? [];
+    // no escritório em andares a lista fala a mesma ordem do teclado (por andar)
+    const ordered = floorsOn && !visitMode ? roomsNow.map((r) => (sim.floorOf(r.id) >= 0 ? { ...r, floor: sim.floorOf(r.id) } : r)) : roomsNow;
+    const agents = navigationOrder(store.snapshot?.agents ?? [], ordered);
+    const rooms = new Map(roomsNow.map((r) => [r.id, r.name]));
     const sig = agents.map((a) => `${a.id}|${a.name}|${a.status}|${a.roomId}`).join('\n');
     if (sig !== a11ySig) {
       a11ySig = sig;
@@ -199,29 +207,36 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     return { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
   };
 
-  /** O que a câmera enquadra: o prédio inteiro (local) ou a faixa do andar atual (visita). */
+  /** O que a câmera enquadra: o prédio inteiro (corredor único) ou a faixa do andar atual (prédio empilhado). */
   const focusRect = () => {
-    if (!visitMode) return buildingRect();
+    if (!floorScoped()) return buildingRect();
     const r = sim.floorRect(sim.currentFloor);
-    if (sim.currentFloor === 0) return { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
-    // andar de projeto: a sala (coluna do meio) e a metade oeste do poço; o patamar fica fora do
-    // enquadramento inicial, mas a câmera ainda pode passear até ele dentro dos limites do andar
-    return { x: (r.x + COL_W) * TILE, y: r.y * TILE, w: (COL_W + 8) * TILE, h: r.h * TILE };
+    if (visitMode && sim.currentFloor !== 0) {
+      // andar de projeto da visita: a sala (coluna do meio) e a metade oeste do poço; o patamar fica
+      // fora do enquadramento inicial, mas a câmera ainda pode passear até ele dentro dos limites do andar
+      return { x: (r.x + COL_W) * TILE, y: r.y * TILE, w: (COL_W + 8) * TILE, h: r.h * TILE };
+    }
+    return { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
   };
 
-  /** Limites de pans da câmera: o andar inteiro (visita) ou o prédio (local). */
+  /** Limites de pans da câmera: o andar inteiro (prédio empilhado) ou o prédio (corredor único). */
   const cameraBounds = () => {
-    const r = visitMode ? sim.floorRect(sim.currentFloor) : sim.building.rect;
+    const r = floorScoped() ? sim.floorRect(sim.currentFloor) : sim.building.rect;
     const b = { x: r.x * TILE, y: r.y * TILE, w: r.w * TILE, h: r.h * TILE };
-    return visitMode
-      ? { x: b.x - 7 * TILE, y: b.y - 1.5 * TILE, w: b.w + 14 * TILE, h: b.h + 4 * TILE }
-      : { x: b.x - 7 * TILE, y: b.y - 6 * TILE, w: b.w + 14 * TILE, h: b.h + 18 * TILE };
+    if (!floorScoped()) return { x: b.x - 7 * TILE, y: b.y - 6 * TILE, w: b.w + 14 * TILE, h: b.h + 18 * TILE };
+    // a visita usa a mesma folga em todos os andares (como desde a Fase 1)
+    if (visitMode) return { x: b.x - 7 * TILE, y: b.y - 1.5 * TILE, w: b.w + 14 * TILE, h: b.h + 4 * TILE };
+    // no térreo do escritório local sobra a rua e a calçada; os andares de cima são uma faixa só
+    const ground = sim.currentFloor === 0;
+    return ground
+      ? { x: b.x - 7 * TILE, y: b.y - 6 * TILE, w: b.w + 14 * TILE, h: b.h + 18 * TILE }
+      : { x: b.x - 7 * TILE, y: b.y - 1.5 * TILE, w: b.w + 14 * TILE, h: b.h + 4 * TILE };
   };
 
   const updateBounds = () => {
     camera.bounds = cameraBounds();
     const fit = camera.fitZoom(focusRect(), 16);
-    camera.minZoom = visitMode ? Math.max(0.25, fit) : Math.min(1, Math.max(0.25, fit));
+    camera.minZoom = floorScoped() ? Math.max(0.25, fit) : Math.min(1, Math.max(0.25, fit));
     camera.clamp();
   };
 
@@ -230,8 +245,8 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     const fit = Math.max(camera.minZoom, f.zoom);
     const snapped = camera.snapZoom(fit, 'down');
     const zoom = snapped >= fit * 0.82 ? snapped : fit;
-    // na visita o zoom nunca fica abaixo do que enquadra o andar: senão a câmera mostraria o prédio inteiro
-    const z = visitMode ? Math.max(camera.minZoom, Math.min(zoom, 4)) : Math.min(zoom, 4);
+    // no prédio empilhado o zoom nunca fica abaixo do que enquadra o andar: senão a câmera mostraria o prédio inteiro
+    const z = floorScoped() ? Math.max(camera.minZoom, Math.min(zoom, 4)) : Math.min(zoom, 4);
     const c = camera.centerFor(f.cx, f.cy, z);
     // as margens de tela (pílulas acima, meio-fio abaixo) não são simétricas
     return { x: c.x, y: c.y - f.dy / z, zoom: z };
@@ -239,7 +254,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
 
   const emitFloor = () => floorCbs.forEach((cb) => cb(sim.currentFloor));
 
-  /** Enquadra a faixa do andar atual (visita) e esquece o "seguir" até o usuário mexer de novo. */
+  /** Enquadra a faixa do andar atual (prédio empilhado) e esquece o "seguir" até o usuário mexer de novo. */
   const focusFloor = () => {
     updateBounds();
     const o = overviewTarget();
@@ -290,8 +305,8 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const focusAgent = (id: string, opts: { follow?: boolean } = {}) => {
     const ch = sim.person(id);
     if (!ch) return;
-    if (visitMode) {
-      // o agente pode estar num andar diferente (na copa, por exemplo): a visita sobe/desce até ele
+    if (floorScoped()) {
+      // o agente pode estar num andar diferente (na copa, por exemplo): a câmera sobe/desce até ele
       const floor = sim.floorAtY(ch.ty);
       if (floor !== sim.currentFloor) {
         sim.goToFloor(floor);
@@ -309,7 +324,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const focusRoom = (id: string) => {
     const room = sim.rooms.get(id);
     if (!room) return;
-    if (visitMode) {
+    if (floorScoped()) {
       const floor = sim.floorOf(id);
       if (floor >= 0 && floor !== sim.currentFloor) {
         sim.goToFloor(floor);
@@ -334,8 +349,16 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
 
   // ------------------------------------------------------------------ teclado do escritório
 
-  /** Agentes na ordem da navegação (sala e depois nome), sem quem está saindo. */
-  const navAgents = () => navigationOrder(store.snapshot?.agents ?? [], store.snapshot?.rooms ?? []);
+  /**
+   * Agentes na ordem da navegação (andar/sala e depois nome), sem quem está saindo. No escritório em
+   * andares, a ordem das salas é a dos andares: as setas descem/sobem o prédio e a câmera acompanha o
+   * andar do agente escolhido (ver focusAgent).
+   */
+  const navAgents = () => {
+    const rooms = store.snapshot?.rooms ?? [];
+    const ordered = floorsOn && !visitMode ? rooms.map((r) => (sim.floorOf(r.id) >= 0 ? { ...r, floor: sim.floorOf(r.id) } : r)) : rooms;
+    return navigationOrder(store.snapshot?.agents ?? [], ordered);
+  };
 
   const selectByKeyboard = (agent: AgentInfo, index: number, total: number) => {
     navFocused = true;
@@ -385,13 +408,13 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
 
   const pick = (sx: number, sy: number): Hit => {
     const w = camera.screenToWorld(sx, sy);
-    const floor = visitMode ? sim.currentFloor : -1;
+    const floor = floorScoped() ? sim.currentFloor : -1;
     let best: string | null = null;
     let bestDepth = Number.NEGATIVE_INFINITY;
     const slack = Math.max(1, 3 / camera.zoom);
     for (const [id, h] of renderer.heads) {
       if (!h.visible || id === VISITOR_ID) continue;
-      if (visitMode && sim.floorAtY(h.feetY / TILE) !== floor) continue;
+      if (floorScoped() && sim.floorAtY(h.feetY / TILE) !== floor) continue;
       if (w.x < h.bx - slack || w.x > h.bx + h.bw + slack || w.y < h.by - slack || w.y > h.by + h.bh + slack) continue;
       if (h.depth > bestDepth) {
         bestDepth = h.depth;
@@ -399,12 +422,12 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
       }
     }
     if (best) return { type: 'agent', id: best };
-    if (sim.pet?.x && (!visitMode || sim.floorAtY(sim.pet.y / TILE) === floor) && Math.hypot(w.x - sim.pet.x, w.y - (sim.pet.y - 4)) < 12) return { type: 'pet', id: 'pet' };
+    if (sim.pet?.x && (!floorScoped() || sim.floorAtY(sim.pet.y / TILE) === floor) && Math.hypot(w.x - sim.pet.x, w.y - (sim.pet.y - 4)) < 12) return { type: 'pet', id: 'pet' };
     const tx = Math.floor(w.x / TILE);
     const ty = Math.floor(w.y / TILE);
     for (const room of sim.rooms.values()) {
       if (!room.present || room.ghost) continue;
-      if (visitMode && sim.floorOf(room.id) !== floor) continue;
+      if (floorScoped() && sim.floorOf(room.id) !== floor) continue;
       if (inRect(room.layout.rect, tx, ty)) {
         const deskSpot = room.layout.spots.find(
           (s) => s.kind === 'desk' && ((s.tx === tx && s.ty === ty) || (s.side === 'S' && s.tx === tx && s.ty - 1 === ty) || (s.side === 'N' && s.tx === tx && s.ty + 1 === ty))
@@ -519,7 +542,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
         events.length = 0;
       }
       renderer.sync(seasonalThemeFor(options.theme, new Date()), options.scenario ?? 'city');
-      if (visitMode) {
+      if (floorScoped()) {
         // o prédio empilhado mudou (sala nova, sala que saiu): reenquadra o andar atual
         if (sim.layoutVersion !== lastLayoutVersion) {
           lastLayoutVersion = sim.layoutVersion;
@@ -530,14 +553,27 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
           } else if (!userMoved) overview(false);
           emitFloor();
         }
-        // atravessando o poço, o andar em que o visitante está vira o andar atual (a câmera o segue)
-        const v = sim.visitor;
-        if (v && !sim.visitorBusy) {
-          const floor = sim.floorAtY(v.ty);
-          if (floor !== sim.currentFloor) {
-            sim.currentFloor = floor;
-            updateBounds();
-            emitFloor();
+        if (visitMode) {
+          // atravessando o poço, o andar em que o visitante está vira o andar atual (a câmera o segue)
+          const v = sim.visitor;
+          if (v && !sim.visitorBusy) {
+            const floor = sim.floorAtY(v.ty);
+            if (floor !== sim.currentFloor) {
+              sim.currentFloor = floor;
+              updateBounds();
+              emitFloor();
+            }
+          }
+        } else {
+          // escritório local: a câmera acompanha o agente seguido entre andares
+          const followed = camera.follow ? sim.person(camera.follow) : undefined;
+          if (followed && !followed.inside) {
+            const floor = sim.floorAtY(followed.ty);
+            if (floor !== sim.currentFloor) {
+              sim.currentFloor = floor;
+              updateBounds();
+              emitFloor();
+            }
           }
         }
       } else if (sim.building.cols !== lastCols) {
@@ -594,7 +630,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
         ? hit.id
         : hit?.type === 'agent'
           ? (sim.chars.get(hit.id)?.roomId ?? null)
-          : ([...sim.rooms.values()].find((room) => room.present && !room.ghost && (!visitMode || sim.floorOf(room.id) === sim.currentFloor) && inRect(room.layout.rect, Math.floor(w.x / TILE), Math.floor(w.y / TILE)))?.id ?? null);
+          : ([...sim.rooms.values()].find((room) => room.present && !room.ghost && (!floorScoped() || sim.floorOf(room.id) === sim.currentFloor) && inRect(room.layout.rect, Math.floor(w.x / TILE), Math.floor(w.y / TILE)))?.id ?? null);
     if (!roomId || !sim.rooms.has(roomId)) return;
     e.preventDefault();
     roomMenuCbs.forEach((cb) => cb(roomId, { x: e.clientX, y: e.clientY }));
@@ -619,7 +655,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
   const rebuild = () => {
     // As carteiras ao vivo gravam a cada 5 s: não perde o que mudou desde a última vez (no replay, não grava nada).
     sim.social.wallets.save(Date.now());
-    sim = new Sim(artNow(), () => options, playback ? null : undefined, { visit: visitMode });
+    sim = new Sim(artNow(), () => options, playback ? null : undefined, simMode());
     renderer = new Renderer(canvas, artNow(), sim, camera);
     if (assets) renderer.setAssets(assets);
     if (playback) {
@@ -666,8 +702,20 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     },
     getOptions: () => ({ ...options }),
     setOptions: (o) => {
+      // ligar/desligar os andares do escritório local recomeça o mundo (como o timelapse): o layout,
+      // a grade e os caminhos mudam por inteiro, e ninguém fica preso entre dois prédios
+      const toggleFloors = !visitMode && o.floors !== undefined && !!o.floors !== floorsOn;
       options = { ...options, ...o };
       if (o.followSelected !== undefined) camera.follow = o.followSelected && selection?.type === 'agent' ? selection.id : null;
+      if (toggleFloors) {
+        floorsOn = !!o.floors;
+        framed = false;
+        userMoved = false;
+        rebuild();
+        if (store.snapshot) onSnapshot();
+        updateBounds();
+        emitFloor();
+      }
     },
     setViewInsets: (ins) => {
       const v = (n: number | undefined, cur: number) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, n) : cur);
@@ -737,6 +785,35 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
     },
     get debug() {
       return debug;
+    },
+    floors: {
+      enabled: () => floorScoped(),
+      count: () => sim.floorCount(),
+      current: () => sim.currentFloor,
+      set: (floor) => {
+        if (!floorScoped()) return;
+        sim.goToFloor(floor);
+        focusFloor();
+        emitFloor();
+      },
+      floorOf: (roomId) => sim.floorOf(roomId),
+      rooms: () => {
+        if (!floorScoped()) return [];
+        const present = [...sim.rooms.values()]
+          .filter((r) => r.present && !r.ghost)
+          .sort((a, b) => a.slot - b.slot || a.info.createdAt - b.info.createdAt);
+        return present.map((r) => ({
+          id: r.id,
+          name: r.info.name,
+          agents: [...sim.chars.values()]
+            .filter((c) => c.roomId === r.id && !c.leaving && !c.gone && c.info.status !== 'offline')
+            .map((c) => ({ status: c.info.status })),
+        }));
+      },
+      onFloor: (cb) => {
+        floorCbs.add(cb);
+        return () => void floorCbs.delete(cb);
+      },
     },
     visit: {
       setVisitor: (me) => {

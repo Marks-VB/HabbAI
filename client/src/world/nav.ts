@@ -17,17 +17,20 @@ export interface NavRoom {
   id: string;
   name: string;
   slot?: number;
+  /** Andar (0 = térreo) no escritório em andares; sem ele, o `slot` dá a ordem de sempre. */
+  floor?: number;
 }
 
 /** Comparação de nomes estável e sem depender do locale do sistema. */
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
 
 /**
- * Agentes na ordem da navegação por teclado: por sala (`slot`, e depois nome) e, dentro da sala, por nome.
- * Quem está saindo (`offline`) fica fora: não há personagem no escritório para o foco encontrar.
+ * Agentes na ordem da navegação por teclado: por sala (o andar no escritório empilhado, senão o `slot`, e depois
+ * nome) e, dentro da sala, por nome. Quem está saindo (`offline`) fica fora: não há personagem no escritório para
+ * o foco encontrar.
  */
 export function navigationOrder<T extends NavAgent>(agents: readonly T[], rooms: readonly NavRoom[]): T[] {
-  const roomRank = new Map(rooms.map((r) => [r.id, r.slot ?? Number.MAX_SAFE_INTEGER]));
+  const roomRank = new Map(rooms.map((r) => [r.id, r.floor ?? r.slot ?? Number.MAX_SAFE_INTEGER]));
   const roomName = new Map(rooms.map((r) => [r.id, r.name]));
   const rank = (a: T) => roomRank.get(a.roomId) ?? Number.MAX_SAFE_INTEGER;
   return agents

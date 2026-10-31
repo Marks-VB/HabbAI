@@ -59,6 +59,11 @@ export interface SimMode {
    * de quem está à toa há muito tempo, cronômetro do balão); mais o visitante e as luzes da visita.
    */
   visit?: boolean;
+  /**
+   * Escritório local em andares (opt-in): o mesmo prédio empilhado da visita, mas com a simulação de
+   * sempre (tempo do status, vida social, passeios). Desligado, o escritório é o corredor único.
+   */
+  floors?: boolean;
 }
 
 /** Luzes da visita: 'away' (pausado) apaga tudo; 'discreet' acende as salas vazias; 'live' é o `Sim` de sempre. */
@@ -137,6 +142,10 @@ export class Sim {
   private nextHousekeeping = 0;
   /** Visita a um prédio do mundo (SimMode.visit). */
   readonly visit: boolean;
+  /** Escritório local em andares (SimMode.floors): empilhado, com a simulação de sempre. */
+  readonly floors: boolean;
+  /** Prédio empilhado (visita ou escritório local em andares): uma sala por andar. */
+  readonly stacked: boolean;
   /** Mascote do escritório (gato em pixel art). */
   readonly pet = new OfficePet();
   /** Visita: o meu personagem (fora de `chars`: nem snapshot, nem vida social, nem lugar reservado). */
@@ -158,8 +167,11 @@ export class Sim {
     mode: SimMode = {},
   ) {
     this.visit = !!mode.visit;
+    // a visita já é empilhada; `floors` é o opt-in do escritório local (nunca os dois ao mesmo tempo)
+    this.floors = !!mode.floors && !this.visit;
+    this.stacked = this.visit || this.floors;
     this.social = new Social(this, storage);
-    this.building = this.visit ? stackedBuilding([], 0, CORE_COLS + 1, 0) : assembleBuilding(columnsFor([]), [], 0);
+    this.building = this.stacked ? stackedBuilding([], 0, CORE_COLS + 1, 0) : assembleBuilding(columnsFor([]), [], 0);
     this.finder = new PathFinder(this.building.grid);
     this.spots.setSpots(this.building.spots);
     for (const s of this.spots.ofKind('elevator')) this.elevators.push(new Elevator(this.elevators.length, s.id));
@@ -266,7 +278,7 @@ export class Sim {
       theme = FALLBACK_THEME;
     }
     // a primeira vaga livre do prédio (o slot do servidor só dá a ordem de chegada)
-    const slot = this.visit ? this.visitSlot(r) : this.freeSlot();
+    const slot = this.stacked ? this.stackSlot(r) : this.freeSlot();
     const layout = layoutProjectRoom({ id: r.id, slot, seed: r.seed }, theme);
     const rs = new RoomState(r, theme, layout, first ? 'ready' : 'building', now, first, slot);
     this.rooms.set(r.id, rs);
@@ -282,8 +294,8 @@ export class Sim {
     return slot;
   }
 
-  /** Visita: a vaga é a ordem do andar no pacote (sem buracos; um andar novo entra no fim). */
-  private visitSlot(r: RoomInfo): number {
+  /** Prédio empilhado: a vaga é a ordem do andar no pacote (sem buracos; um andar novo entra no fim). */
+  private stackSlot(r: RoomInfo): number {
     const used = new Set<number>();
     for (const room of this.rooms.values()) if (room.phase !== 'gone') used.add(room.slot);
     let slot = Math.max(0, Math.floor(r.slot));
@@ -536,8 +548,9 @@ export class Sim {
   /** Recalcula o prédio (largura, grade, spots) a partir das salas presentes. */
   relayout(force = false): void {
     const present = [...this.rooms.values()].filter((r) => r.present);
-    // ---- visita: uma sala por andar, empilhadas (layout/floors.ts)
-    if (this.visit) {
+    // ---- prédio empilhado (visita e escritório local em andares): uma sala por andar (layout/floors.ts)
+    if (this.stacked) {
+      const groundBefore = this.building.groundY ?? 0;
       present.sort((a, b) => a.slot - b.slot || a.info.createdAt - b.info.createdAt);
       const before = new Map(present.map((r) => [r.id, { ...r.layout.rect }]));
       for (let i = 0; i < present.length; i++) {
@@ -554,7 +567,8 @@ export class Sim {
       present.forEach((room, i) => {
         if (building.rooms[i]) room.layout = building.rooms[i];
       });
-      // um andar que saiu desloca os de cima: quem estava na sala vai junto (sentado ou em pé)
+      // um andar que entra ou sai desloca os outros: quem estava na sala vai junto (sentado ou em pé)
+      const moved = new Set<string>();
       for (const room of present) {
         const old = before.get(room.id)!;
         const now = room.layout.rect;
@@ -573,7 +587,32 @@ export class Sim {
             ch.y += dy * TILE;
             if (ch.standTile) ch.standTile = { x: ch.standTile.x + dx, y: ch.standTile.y + dy };
           }
+          moved.add(ch.id);
           this.interrupt(ch);
+        }
+      }
+      // um andar novo empurra o prédio inteiro para baixo: núcleo, corredor, poço e visitante descem juntos
+      const groundDy = (building.groundY ?? 0) - groundBefore;
+      if (groundDy !== 0) {
+        const shift = (ch: Character): void => {
+          ch.ty += groundDy;
+          ch.y += groundDy * TILE;
+          if (ch.standTile) ch.standTile = { x: ch.standTile.x, y: ch.standTile.y + groundDy };
+          for (const s of ch.step ? [ch.step, ...ch.queue] : ch.queue) {
+            if (s.t !== 'go') continue;
+            s.ty += groundDy;
+            s.path = undefined;
+          }
+          this.interrupt(ch);
+        };
+        for (const ch of this.chars.values()) if (!ch.gone && !moved.has(ch.id)) shift(ch);
+        if (this.visitor && !this.visitor.gone) shift(this.visitor);
+        // o mascote também mora no térreo: acompanha o bloco quando o prédio cresce ou encolhe
+        if (this.pet.x || this.pet.y) {
+          this.pet.x += groundDy * TILE;
+          this.pet.y += groundDy * TILE;
+          this.pet.targetX += groundDy * TILE;
+          this.pet.targetY += groundDy * TILE;
         }
       }
       this.building = building;
@@ -582,6 +621,13 @@ export class Sim {
       this.floorIndex = new Map(present.map((r, i) => [r.id, i]));
       this.current = Math.max(0, Math.min(Math.max(0, present.length - 1), this.current));
       this.afterRelayout();
+      // quem estava sentado num lugar do térreo (lounge, banco do corredor) continua no mesmo lugar, na cópia deslocada
+      if (groundDy !== 0) {
+        for (const ch of [...this.chars.values(), ...(this.visitor ? [this.visitor] : [])]) {
+          const spot = ch.atSpot ? this.spots.get(ch.atSpot) : undefined;
+          if (spot) this.snapTo(ch, spot);
+        }
+      }
       return;
     }
     let cols = columnsFor(present.map((r) => r.slot));
@@ -640,15 +686,15 @@ export class Sim {
     }
   }
 
-  // =================================================================== andares (visita)
+  // =================================================================== andares
 
-  /** Visita: andar atual (0 = térreo); fora da visita, 0. O setter valida o intervalo. */
+  /** Andar atual (0 = térreo); no corredor único, sempre 0. O setter valida o intervalo. */
   get currentFloor(): number {
-    return this.visit ? this.current : 0;
+    return this.stacked ? this.current : 0;
   }
 
   set currentFloor(floor: number) {
-    if (!this.visit) {
+    if (!this.stacked) {
       this.current = 0;
       return;
     }
@@ -656,25 +702,25 @@ export class Sim {
     this.current = max < 0 ? 0 : Math.max(0, Math.min(max, Math.floor(floor) || 0));
   }
 
-  /** Visita: quantos andares o prédio tem agora (o térreo incluso; 0 sem salas). */
+  /** Quantos andares o prédio tem agora (o térreo incluso; 0 sem salas). */
   floorCount(): number {
-    return this.visit ? this.floorIndex.size : 1;
+    return this.stacked ? this.floorIndex.size : 1;
   }
 
-  /** Visita: andar (0 = térreo) de uma sala; -1 se ela não está no prédio. */
+  /** Andar (0 = térreo) de uma sala; -1 se ela não está no prédio. */
   floorOf(roomId: string): number {
-    return this.visit ? (this.floorIndex.get(roomId) ?? -1) : 0;
+    return this.stacked ? (this.floorIndex.get(roomId) ?? -1) : 0;
   }
 
   /** Faixa (tiles) de um andar: o bloco do térreo ou a sala + corredor de cima. */
   floorRect(floor = this.currentFloor): TileRect {
-    if (!this.visit) return { x: 0, y: 0, w: this.building.cols * COL_W, h: BUILDING_H };
+    if (!this.stacked) return { x: 0, y: 0, w: this.building.cols * COL_W, h: BUILDING_H };
     return stackedFloorRect(floor, this.floorCount(), this.building.cols);
   }
 
   /** Andar em que um tile (y) está; fora do prédio empilhado, o térreo. */
   floorAtY(ty: number): number {
-    if (!this.visit) return 0;
+    if (!this.stacked) return 0;
     const n = this.floorCount();
     if (n <= 1) return 0;
     const ground = this.building.groundY ?? 0;
@@ -696,11 +742,11 @@ export class Sim {
   }
 
   /**
-   * Visita: vai para um andar. O visitante que estava em outro andar desce/sube no poço na hora (é a
-   * troca por corte da Fase 1; o elevador animado fica para a Fase 2). Devolve o andar aplicado.
+   * Vai para um andar. Na visita, o visitante que estava em outro andar desce/sube no poço na hora; no
+   * escritório local, só o andar atual muda (os agentes seguem a própria rotina). Devolve o andar aplicado.
    */
   goToFloor(floor: number): number {
-    if (!this.visit) return 0;
+    if (!this.stacked) return 0;
     const n = this.floorCount();
     if (n <= 0) return 0;
     // saindo do prédio, a troca de andar não cancela a saída (o callback do elevador tem de rodar)
@@ -807,8 +853,8 @@ export class Sim {
       }
     }
     if (dirty) this.relayout();
-    // na visita o andar é a ordem do pacote: uma sala que sai não puxa a mais distante para o buraco
-    if (!this.visit) this.compact(now);
+    // no prédio empilhado o andar é a ordem do pacote: uma sala que sai não puxa a mais distante para o buraco
+    if (!this.stacked) this.compact(now);
   }
 
   // =================================================================== mudança de sala

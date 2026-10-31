@@ -231,8 +231,9 @@ export class Renderer {
     this.baseHeight = height;
     this.baseGroundY = groundY;
     this.exterior = layoutExterior(cols, this.scenario, height, groundY + CORRIDOR_Y);
-    // No escritório local a camada cobre o prédio inteiro (como sempre). Na visita, só o entorno do
-    // térreo: os andares de cima são desenhados sobre a grama e não precisam de uma tela de 20 andares.
+    // No corredor único a camada cobre o prédio inteiro (como sempre). No prédio empilhado (visita e
+    // escritório local em andares), só o entorno do térreo: os andares de cima são desenhados sobre a
+    // grama e não precisam de uma tela de 20 andares.
     const ext = this.exterior.bounds;
     this.baseBounds = { x: ext.x, y: groundY - EXT_NORTH, w: ext.w, h: BUILDING_H + EXT_NORTH + EXT_SOUTH };
     const b = this.baseBounds;
@@ -263,8 +264,8 @@ export class Renderer {
     }
     this.shells = [];
     this.shellWindows = [];
-    // Na visita o prédio é a pilha de andares (não há "slots" vazios): nada de pátios atrás das salas.
-    if (!this.sim.visit) {
+    // No prédio empilhado (visita e escritório local em andares) não há "slots" vazios: nada de pátios atrás das salas.
+    if (!this.sim.stacked) {
       for (let col = CORE_COLS; col < cols; col++) {
         for (const side of ['north', 'south'] as const) {
           const sh = slotShell(slotAt(col, side), col === cols - 1, this.scenario);

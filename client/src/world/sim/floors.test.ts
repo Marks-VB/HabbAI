@@ -3,11 +3,14 @@
 import { describe, expect, it } from 'vitest';
 import { applyBuildingPatch, officeFromBuilding } from '../../../../shared/world/office-from-world';
 import { sampleBuildingDetail } from '../../../../shared/world/visit-sample';
+import type { AgentInfo, OfficeSnapshot, RoomInfo } from '../../../../shared/types';
 import type { Appearance, ArtModule, RoomTheme } from '../../art/api';
 import { DEFAULT_WORLD_OPTIONS } from '../api';
 import { BUILDING_H, CORRIDOR_Y } from '../constants';
+import { LOUNGE_ID } from '../layout/core';
 import { FLOOR_H } from '../layout/floors';
 import { inRect } from '../layout/geometry';
+import { PathFinder } from '../path/astar';
 import { Sim } from './sim';
 import { visitorInfo } from './visitor';
 
@@ -56,6 +59,166 @@ function visit() {
   run(sim, clock, 2);
   return { sim, clock, snap };
 }
+
+function localRoom(id: string, slot: number): RoomInfo {
+  return { id, name: id.replace('/', ''), path: id, slot, seed: slot * 99 + 7, createdAt: T0 };
+}
+
+function localAgent(id: string, roomId: string): AgentInfo {
+  return {
+    id,
+    kind: 'main',
+    roomId,
+    name: id,
+    look: 'f',
+    role: 'Agente principal',
+    sessionId: `s-${id}`,
+    account: '.claude',
+    status: 'working',
+    recent: [],
+    tasks: [],
+    startedAt: T0,
+    lastEventAt: T0,
+    statusSince: T0,
+    stats: { toolCalls: 0, tokensIn: 0, tokensOut: 0, subagents: 0 },
+    seed: id.length * 1234567,
+  };
+}
+
+function localSnapshot(rooms: RoomInfo[]): OfficeSnapshot {
+  return {
+    rev: 1,
+    serverTime: T0,
+    rooms,
+    agents: rooms.map((r) => localAgent(`ag${r.slot}`, r.id)),
+    accounts: [{ id: '.claude', short: 'C', name: 'Conta C', color: '#f08a3c', configDir: '~/.claude', sessions: 1, usageStatus: 'ok' }],
+    meta: { demo: true, sources: [], startedAt: T0, version: 't' },
+  };
+}
+
+/** Escritório local com a opção "Andares" ligada (nada de visita: a simulação é a de sempre). */
+function localFloors() {
+  const sim = new Sim(art, () => ({ ...DEFAULT_WORLD_OPTIONS, liveliness: 'calm' }), null, { floors: true });
+  const clock = { now: T0 };
+  const snap = localSnapshot([localRoom('/a', 0), localRoom('/b', 1), localRoom('/c', 2)]);
+  sim.applySnapshot(snap, clock.now);
+  run(sim, clock, 2);
+  return { sim, clock, snap };
+}
+
+describe('andares do escritório local no Sim (opção "Andares")', () => {
+  it('é o prédio empilhado da visita com a simulação de sempre: térreo com o núcleo e uma sala por andar', () => {
+    const { sim } = localFloors();
+    expect(sim.visit).toBe(false);
+    expect(sim.floors).toBe(true);
+    expect(sim.stacked).toBe(true);
+    expect(sim.floorCount()).toBe(3);
+    expect(sim.building.floorCount).toBe(3);
+    expect(sim.floorOf('/a')).toBe(0);
+    expect(sim.floorOf('/b')).toBe(1);
+    expect(sim.floorOf('/c')).toBe(2);
+    expect(sim.floorOf('/nao-existe')).toBe(-1);
+    // a sala do andar 2 fica a 2 * FLOOR_H acima do térreo
+    const ground = sim.building.groundY!;
+    const top = sim.rooms.get('/c')!.layout.rect;
+    expect(ground - top.y).toBe(2 * FLOOR_H);
+    expect(top.y).toBe(sim.floorRect(2).y);
+    // o térreo mantém o núcleo inteiro (recepção, banheiro, copa e lounge)
+    expect(sim.building.core).toHaveLength(4);
+    expect(sim.building.core.find((a) => a.id === LOUNGE_ID)!.rect.y).toBe(ground + 17);
+    // os agentes continuam de verdade: um por sala, sentado na própria mesa
+    expect(sim.chars.size).toBe(3);
+    for (const id of ['/a', '/b', '/c']) expect(sim.chars.get(`ag${sim.rooms.get(id)!.slot}`)!.roomId).toBe(id);
+    const topAgent = sim.chars.get('ag2')!;
+    expect(sim.floorAtY(topAgent.ty)).toBe(2);
+    expect(inRect(sim.floorRect(2), topAgent.tx, topAgent.ty)).toBe(true);
+  });
+
+  it('um andar novo empurra o térreo para baixo e ninguém fica preso entre dois andares', () => {
+    const { sim, clock, snap } = localFloors();
+    // um agente sem sala espera na recepção (o térreo, que desce quando o prédio cresce)
+    const lobby = localAgent('sem-sala', 'nao-existe');
+    sim.applySnapshot({ ...snap, agents: [...snap.agents, lobby] }, clock.now);
+    run(sim, clock, 1);
+    const ch = sim.chars.get('sem-sala')!;
+    const before = { tx: ch.tx, ty: ch.ty };
+    expect(sim.floorAtY(before.ty)).toBe(0);
+    expect(sim.building.grid.walkable(before.tx, before.ty)).toBe(true);
+    // chega uma sala nova: o prédio inteiro desce FLOOR_H e o agente vai junto
+    sim.applySnapshot(
+      {
+        ...snap,
+        rev: 2,
+        rooms: [...snap.rooms, localRoom('/d', 3)],
+        agents: [...snap.agents, localAgent('ag3', '/d'), lobby],
+      },
+      clock.now,
+    );
+    run(sim, clock, 0.2);
+    expect(sim.floorCount()).toBe(4);
+    expect(sim.floorAtY(ch.ty)).toBe(0);
+    expect(sim.building.grid.walkable(ch.tx, ch.ty)).toBe(true);
+    // (o agente pode dar um passo na recepção; o andar é o mesmo e ele continua no térreo deslocado)
+    expect(ch.ty).toBeGreaterThanOrEqual(before.ty + FLOOR_H);
+    // todo mundo continua no chão de um andar válido e caminhável
+    for (const c of sim.chars.values()) {
+      expect(sim.floorAtY(c.ty)).toBeGreaterThanOrEqual(0);
+      expect(sim.building.grid.walkable(c.tx, c.ty), `${c.id} em ${c.tx},${c.ty}`).toBe(true);
+    }
+  });
+
+  it('A* entre andares: da sala do andar 2 ao lounge do térreo, pelo poço e sem atalho por parede', () => {
+    const { sim } = localFloors();
+    const room = [...sim.rooms.values()].find((r) => r.id === '/c')!;
+    // um lugar (cadeira/mesa) da sala do andar 2 -> um lugar do lounge no térreo
+    const from = room.layout.spots.find((s) => s.kind === 'desk') ?? room.layout.spots[0];
+    const lounge = sim.building.core.find((a) => a.id === LOUNGE_ID)!.spots[0];
+    const finder = new PathFinder(sim.building.grid);
+    const path: number[] = [];
+    expect(finder.find(from.tx, from.ty, lounge.tx, lounge.ty, path)).toBe(true);
+    expect(path.length).toBeGreaterThan(0);
+    // cada passo é caminhável e vizinho de 4 direções (nada de atravessar parede)
+    let px = from.tx;
+    let py = from.ty;
+    for (let i = 0; i < path.length; i += 2) {
+      const x = path[i];
+      const y = path[i + 1];
+      expect(sim.building.grid.walkable(x, y), `passo ${x},${y}`).toBe(true);
+      expect(Math.abs(x - px) + Math.abs(y - py)).toBe(1);
+      px = x;
+      py = y;
+    }
+    expect([px, py]).toEqual([lounge.tx, lounge.ty]);
+    // o caminho desce pelo poço (a coluna leste do térreo), e não por dentro da recepção/copa
+    const shaftX = (sim.building.cols - 1) * 16;
+    const inShaft = (i: number) => path[i] >= shaftX + 1 && path[i] < shaftX + 16 - 1;
+    const ground = sim.building.groundY!;
+    const throughShaft = Array.from({ length: path.length / 2 }, (_, k) => k).some(
+      (k) => inShaft(k * 2) && path[k * 2 + 1] >= ground && path[k * 2 + 1] < ground + CORRIDOR_Y,
+    );
+    expect(throughShaft).toBe(true);
+  });
+
+  it('com a opção desligada, o escritório continua o corredor único de sempre', () => {
+    const sim = new Sim(art, () => ({ ...DEFAULT_WORLD_OPTIONS }), null);
+    const clock = { now: T0 };
+    sim.applySnapshot(localSnapshot([localRoom('/a', 0), localRoom('/b', 1)]), clock.now);
+    run(sim, clock, 1);
+    expect(sim.floors).toBe(false);
+    expect(sim.stacked).toBe(false);
+    expect(sim.floorCount()).toBe(1);
+    expect(sim.floorOf('/b')).toBe(0);
+    expect(sim.building.shafts).toBeUndefined();
+    expect(sim.building.groundY).toBeUndefined();
+    expect(sim.floorRect()).toEqual({ x: 0, y: 0, w: 3 * 16, h: BUILDING_H });
+    // as salas continuam lado a lado no corredor (uma ao norte, outra ao sul da mesma coluna)
+    expect(sim.building.cols).toBe(3);
+    const a = sim.rooms.get('/a')!.layout.rect;
+    const b = sim.rooms.get('/b')!.layout.rect;
+    expect(a.x).toBe(b.x);
+    expect(Math.abs(a.y - b.y)).toBe(17);
+  });
+});
 
 describe('andares da visita no Sim', () => {
   it('um andar por sala, com o térreo embaixo e o telhado no topo', () => {

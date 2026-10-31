@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RoomTheme } from '../../art/api';
 import { BUILDING_H, COL_W, CORRIDOR_Y, TILE } from '../constants';
-import { RECEPTION_ID, RESTROOM_ID } from './core';
+import { LOUNGE_ID, RECEPTION_ID, RESTROOM_ID } from './core';
 import { FLOOR_H, floorRect, floorTop, groundTop, offsetArea, stackedBuilding } from './floors';
 import { layoutProjectRoom } from './room';
 import type { AreaLayout } from './types';
@@ -162,5 +162,48 @@ describe('stackedBuilding', () => {
     expect(floorRect(-4, 3, 3).y).toBe(2 * FLOOR_H);
     // sem salas: só o térreo, sem andares para empilhar
     expect(floorRect(0, 0, 3)).toEqual({ x: 0, y: 0, w: 3 * COL_W, h: BUILDING_H });
+  });
+});
+
+describe('stackedBuilding no escritório local (opção Andares)', () => {
+  // O escritório local gera as salas por slot horizontal (0, 1, 2...); o Sim as regenera com slot
+  // ímpar no térreo e par nos andares de cima, como a visita. Aqui só a geometria, sem simulação.
+  const local = rooms(3).map((r, i) => layoutProjectRoom({ id: r.id, slot: i === 0 ? 1 : 0, seed: 1000 + i * 77 }, theme));
+  const b = stackedBuilding(local, local.length, 3);
+
+  it('empilha a sala de cada vaga, com o núcleo inteiro no térreo', () => {
+    expect(b.floorCount).toBe(3);
+    expect(b.floorHeight).toBe(FLOOR_H);
+    expect(b.rect).toEqual({ x: 0, y: 0, w: 3 * COL_W, h: 2 * FLOOR_H + BUILDING_H });
+    // térreo: núcleo + a primeira sala na fileira sul, na coluna de projeto
+    expect(b.core.map((a) => a.id).sort()).toEqual([LOUNGE_ID, RECEPTION_ID, RESTROOM_ID, 'core:copa'].sort());
+    for (const area of b.core) expect(area.rect.y).toBe(b.groundY! + (area.id === RECEPTION_ID || area.id === 'core:copa' ? 0 : 17));
+    expect(b.rooms[0].rect.y).toBe(b.groundY! + 17);
+    expect(b.rooms[0].side).toBe('south');
+    // andar 2 no telhado, a 2 * FLOOR_H do térreo; andar 1 logo acima dele
+    expect(b.rooms[1].rect.y).toBe(b.groundY! - FLOOR_H);
+    expect(b.rooms[2].rect.y).toBe(b.groundY! - 2 * FLOOR_H);
+    expect(b.groundY! - b.rooms[2].rect.y).toBe(2 * FLOOR_H);
+    // cada sala mora na faixa do seu andar
+    for (let f = 0; f < 3; f++) {
+      const band = floorRect(f, 3, 3);
+      expect(b.rooms[f].rect.y).toBeGreaterThanOrEqual(band.y);
+      expect(b.rooms[f].rect.y + b.rooms[f].rect.h).toBeLessThanOrEqual(band.y + band.h);
+    }
+  });
+
+  it('o poço liga o lounge do térreo ao corredor de todos os andares', () => {
+    const lounge = b.core.find((a) => a.id === LOUNGE_ID)!.spots[0];
+    const reach = b.grid.reachableFrom(lounge.tx, lounge.ty);
+    const ok = (x: number, y: number) => reach[y * b.grid.w + x] === 1;
+    // cada corredor e cada sala é alcançável a pé pelo poço (sem atalho por dentro de parede)
+    for (let f = 0; f < 3; f++) {
+      const band = floorRect(f, 3, 3);
+      expect(ok(40, band.y + 14), `corredor do andar ${f}`).toBe(true);
+      for (const s of b.rooms[f].spots) expect(ok(s.tx, s.ty), `${b.rooms[f].id} ${s.id}`).toBe(true);
+      expect(ok(b.rooms[f].door!.x, b.rooms[f].door!.y + 1), `porta do andar ${f}`).toBe(true);
+    }
+    // o poço é uma coluna contínua do telhado ao corredor do térreo
+    for (let y = 0; y < b.groundY! + 12; y++) expect(b.grid.walkable(40, y), `poço em y=${y}`).toBe(true);
   });
 });

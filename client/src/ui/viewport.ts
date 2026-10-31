@@ -103,6 +103,8 @@ function isTyping(t: EventTarget | null): boolean {
 
 export class FreeArea {
   private applied: ViewInsets | null = null;
+  /** Margem extra à esquerda (px): o trilho de andares, quando visível. Somada à área livre medida. */
+  extraLeft = 0;
   private probe: HTMLElement;
   private probeFeedOpen: HTMLElement;
   private probeFeedClosed: HTMLElement;
@@ -180,6 +182,8 @@ export class FreeArea {
     const f = this.flags();
     const g = this.measure();
     const insets = computeInsets(g, { ...f, drawer: f.drawer && !this.guarding });
+    // o trilho de andares fica sobre o canvas: o mundo enquadra o andar fora dele
+    if (this.extraLeft > insets.left) insets.left = this.extraLeft;
     this.placeToasts(insets, g);
     if (sameInsets(this.applied, insets)) return;
     this.applied = insets;

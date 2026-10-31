@@ -10,6 +10,10 @@ do meio (0.**3**.0).
 
 ## [Não lançado]
 
+### Adicionado
+
+- **Escritório local por andares (opt-in)**: Configurações › Aparência ganhou **Andares**, desligado por padrão. Ligado, o seu escritório vira o mesmo prédio empilhado da visita — uma sala de projeto por andar, com recepção, banheiro, copa e lounge no térreo — e o poço do elevador liga os corredores (ninguém atravessa parede para trocar de andar). A câmera acompanha o agente entre andares, o clique e a navegação por teclado respeitam o andar atual, e o trilho lateral lista os andares com status e contagem de agentes. Com a opção desligada, o escritório continua exatamente o corredor de sempre; o número de andares enviado ao Habblaud World não muda (continua sendo o de salas reais).
+
 ### Corrigido
 
 - **`npm run release` no fork**: o script agora usa **HabbAI** no título da release e passa `--repo` com o repositório

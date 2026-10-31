@@ -49,6 +49,8 @@ import { worldSectionMode } from './world/world-model';
 import { SceneSwitch, type CitySceneHost } from './world/scene-switch';
 import { worldSource } from '../net/world';
 import { FreeArea } from './viewport';
+import { mountFloorRail, type FloorRail } from './floors';
+import { buildRail } from '../world/floors/rail';
 import { tr } from '../../../shared/i18n';
 
 /** Relógio dos tempos relativos ("há 5 s"). */
@@ -87,6 +89,8 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   let worldDialog: WorldDialog;
   let help: HelpDialog;
   let area: FreeArea;
+  /** Trilho de andares do escritório local (só com Configurações › Aparência › Andares ligado). */
+  let floorRail: FloorRail | null = null;
   let timelapse: TimelapsePlayer;
   /** A seleção em curso partiu da UI (lista, feed, aviso...), não de um clique no canvas. */
   let uiSelecting = false;
@@ -314,6 +318,53 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
   }));
   drawer.onLayoutChange = () => applyLayout();
 
+  // ---------------------------------------------------------------- andares do escritório local
+
+  /** Modelo do trilho (world/floors/rail.ts) a partir das salas/agentes que o mundo expõe. */
+  function floorModel() {
+    const api = world.floors;
+    if (!api?.enabled() || inCity()) return { floors: [], current: 0, total: 0 };
+    const rooms = api.rooms();
+    // um andar só não precisa de trilho (o corredor de sempre, com a opção ligada num escritório pequeno)
+    if (rooms.length < 2) return { floors: [], current: 0, total: 0 };
+    return buildRail(rooms, api.current());
+  }
+
+  /**
+   * Monta/atualiza o trilho conforme a opção "Andares" (Aparência). Com ele visível, a área livre do mundo
+   * começa à direita dele, para a câmera não enquadrar o andar debaixo do trilho.
+   */
+  function syncFloorRail(): void {
+    const api = world.floors;
+    if (!api?.enabled()) {
+      if (!floorRail) return;
+      floorRail.destroy();
+      floorRail = null;
+      area.extraLeft = 0;
+      area.sync();
+      return;
+    }
+    if (!floorRail) {
+      floorRail = mountFloorRail({
+        model: floorModel,
+        go: (floor) => api.set(floor),
+        current: () => api.current(),
+        focusWorld: () => (document.getElementById('world') as HTMLElement | null)?.focus(),
+      });
+      floorRail.el.classList.add('ui-floor-rail--office');
+      root.append(floorRail.el);
+    }
+    floorRail.update();
+    // no celular o trilho vira uma faixa na base (não rouba largura); no desktop ele ocupa a esquerda
+    const wide = typeof window === 'undefined' || window.innerWidth > 760;
+    const next = !floorRail.el.hidden && wide ? Math.ceil(floorRail.el.getBoundingClientRect().right + 8) : 0;
+    if (next !== area.extraLeft) {
+      area.extraLeft = next;
+      area.sync();
+    }
+  }
+  world.floors?.onFloor(() => syncFloorRail());
+
   const components: UiComponent[] = [topbar, sidebar, drawer, terminal, pty, history, deliveries, notifications, feed, toasts, settings, empty, banner, budget, tip, notifier, splash, timelapse, sound, day, updateToaster, worldDialog, popups, worldChip];
   if (scene) components.push(scene);
   root.append(worldSocial.el);
@@ -332,6 +383,7 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
         console.error('[ui] falha ao renderizar', c.constructor.name, err);
       }
     }
+    syncFloorRail();
   }
 
   function invalidate(): void {

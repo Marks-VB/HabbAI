@@ -3142,6 +3142,7 @@ export const ES: Readonly<Record<string, string>> = {
   "Seu prédio, como os outros veem": "Tu edificio, como lo ven los demás",
   "Prédio de {0}": "Edificio de {0}",
   "Andares": "Pisos",
+  "Uma sala por andar, com a recepção, o banheiro, a copa e o lounge no térreo. Ligado, a câmera acompanha o andar do agente e o trilho lateral troca de andar pelo elevador. Desligado, o escritório continua no corredor de sempre.": "Una sala por piso, con recepción, baño, office y lounge en la planta baja. Activado, la cámara acompaña el piso del agente y el riel lateral cambia de piso por el ascensor. Desactivado, la oficina sigue en el pasillo de siempre.",
   "Andares do prédio": "Pisos del edificio",
   "Térreo": "Planta baja",
   "Andar acima": "Piso de arriba",

@@ -3141,6 +3141,7 @@ export const EN: Readonly<Record<string, string>> = {
   "Seu prédio, como os outros veem": "Your building, as others see it",
   "Prédio de {0}": "{0}'s building",
   "Andares": "Floors",
+  "Uma sala por andar, com a recepção, o banheiro, a copa e o lounge no térreo. Ligado, a câmera acompanha o andar do agente e o trilho lateral troca de andar pelo elevador. Desligado, o escritório continua no corredor de sempre.": "One room per floor, with reception, restroom, pantry and lounge on the ground floor. When on, the camera follows the agent's floor and the side rail changes floors by elevator. When off, the office stays the usual single corridor.",
   "Andares do prédio": "Building floors",
   "Térreo": "Ground floor",
   "Andar acima": "Floor up",

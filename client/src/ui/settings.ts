@@ -118,6 +118,8 @@ export class SettingsPopover implements UiComponent {
   private theme: ReturnType<typeof segmented<UiPrefs['theme']>>;
   private scenario: ReturnType<typeof segmented<UiPrefs['scenario']>>;
   private contrast: ReturnType<typeof segmented<UiPrefs['contrast']>>;
+  /** Interruptor "Andares" (Aparência), opt-in do escritório local. */
+  private floorsSwitch: HTMLElement;
   private language: ReturnType<typeof segmented<LanguageChoice>>;
   private soundGroup: SoundSettingsGroup;
   private budgetGroup: HTMLElement;
@@ -233,6 +235,12 @@ export class SettingsPopover implements UiComponent {
         text: tr('Alto contraste: texto e bordas mais fortes e painéis sem transparência, sobre o escritório. O tema escuro continua o padrão.'),
       }),
     );
+    this.floorsSwitch = sw(
+      'floors',
+      tr('Andares'),
+      tr('Uma sala por andar, com a recepção, o banheiro, a copa e o lounge no térreo. Ligado, a câmera acompanha o andar do agente e o trilho lateral troca de andar pelo elevador. Desligado, o escritório continua no corredor de sempre.'),
+      flip('floors'),
+    );
     this.soundGroup = new SoundSettingsGroup(ctx, sound);
 
     // Orçamento: limites do escritório inteiro (dia/mês, custo/tokens). Os escopos por projeto e por conta só pelo
@@ -314,7 +322,7 @@ export class SettingsPopover implements UiComponent {
       'div',
       { class: 'ui-popover ui-settings', role: 'dialog', tabIndex: -1, attrs: { 'aria-label': tr('Configurações'), id: 'ui-settings', popover: 'auto' } },
       h('div', { class: 'ui-popover__head' }, h('h2', { text: tr('Configurações') }), close),
-      h('div', { class: 'ui-set-group' }, h('h3', { text: tr('Aparência') }), this.theme.row, this.scenario.row, this.contrast.row),
+      h('div', { class: 'ui-set-group' }, h('h3', { text: tr('Aparência') }), this.theme.row, this.scenario.row, this.contrast.row, this.floorsSwitch),
       h(
         'div',
         { class: 'ui-set-group' },

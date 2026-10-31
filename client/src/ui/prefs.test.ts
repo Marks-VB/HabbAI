@@ -54,8 +54,18 @@ describe('preferências', () => {
     expect(() => savePrefs(broken, DEFAULT_PREFS)).not.toThrow();
   });
   it('extrai só as opções do mundo', () => {
-    expect(worldOptionsFrom({ ...DEFAULT_PREFS, daylight: 'day' })).toEqual({ showNames: true, bubbles: 'important', liveliness: 'normal', dayNight: false, daylight: 'day', theme: 'auto', scenario: 'city' });
+    expect(worldOptionsFrom({ ...DEFAULT_PREFS, daylight: 'day' })).toEqual({ showNames: true, bubbles: 'important', liveliness: 'normal', dayNight: false, daylight: 'day', theme: 'auto', scenario: 'city', floors: false });
     expect(worldOptionsFrom({ ...DEFAULT_PREFS, daylight: 'night' })).toMatchObject({ dayNight: true, daylight: 'night' });
+  });
+  it('andares: desligado por padrão; a opção persiste e vai para o mundo', () => {
+    expect(DEFAULT_PREFS.floors).toBe(false);
+    expect(sanitizePrefs({ floors: 'sim' }).floors).toBe(false);
+    expect(sanitizePrefs({ floors: true }).floors).toBe(true);
+    const st = memoryStorage();
+    savePrefs(st, { ...DEFAULT_PREFS, floors: true });
+    expect(loadPrefs(st).floors).toBe(true);
+    expect(worldOptionsFrom(loadPrefs(st)).floors).toBe(true);
+    expect(worldOptionsFrom({ ...DEFAULT_PREFS, floors: false }).floors).toBe(false);
   });
   it('ciclo dia/noite: valida o modo e migra o interruptor antigo', () => {
     expect(DEFAULT_PREFS.daylight).toBe('auto');

@@ -17,6 +17,8 @@ export interface UiPrefs {
   scenario: ScenarioTheme;
   /** Contraste da interface: o normal (escuro) ou o alto contraste, com texto e bordas mais fortes e painéis opacos. */
   contrast: 'normal' | 'high';
+  /** Escritório local em andares (opt-in): uma sala por andar, térreo com o núcleo. Desligado por padrão. */
+  floors: boolean;
   /** Sons sintetizados (interruptor geral; desligado por padrão). */
   sound: boolean;
   /** Volume mestre e categorias dos sons. */
@@ -39,6 +41,7 @@ export const DEFAULT_PREFS: UiPrefs = {
   theme: 'auto',
   scenario: 'city',
   contrast: 'normal',
+  floors: false,
   sound: false,
   sounds: DEFAULT_SOUND_SETTINGS,
   browserNotifications: false,
@@ -67,6 +70,7 @@ export function sanitizePrefs(raw: unknown): UiPrefs {
     theme: oneOf(o.theme, ['auto', 'seasons', 'none', 'christmas', 'halloween', 'cyberpunk', 'retro', 'orbital', 'spring', 'autumn', 'junina'] as const, d.theme),
     scenario: oneOf(o.scenario, ['city', 'forest', 'cyberpunk', 'retro', 'orbital', 'snow', 'beach'] as const, d.scenario),
     contrast: oneOf(o.contrast, ['normal', 'high'] as const, d.contrast),
+    floors: bool(o.floors, d.floors),
     sound: bool(o.sound, d.sound),
     sounds: sanitizeSoundSettings(o.sounds),
     browserNotifications: bool(o.browserNotifications, d.browserNotifications),
@@ -98,7 +102,7 @@ export function savePrefs(storage: StorageLike | null, prefs: UiPrefs): void {
 
 /** Parte das preferências que o mundo (canvas) consome. */
 export function worldOptionsFrom(p: UiPrefs): Partial<WorldOptions> {
-  return { showNames: p.showNames, bubbles: p.bubbles, liveliness: p.liveliness, dayNight: p.daylight !== 'day', daylight: p.daylight, theme: p.theme, scenario: p.scenario };
+  return { showNames: p.showNames, bubbles: p.bubbles, liveliness: p.liveliness, dayNight: p.daylight !== 'day', daylight: p.daylight, theme: p.theme, scenario: p.scenario, floors: p.floors };
 }
 
 /** localStorage com proteção contra navegadores que lançam exceção ao acessá-lo. */

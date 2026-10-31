@@ -16,18 +16,18 @@ export interface BuildingLayout {
   rooms: AreaLayout[];
   grid: WalkGrid;
   spots: SpotDef[];
-  /** Visita por andares (layout/floors.ts): um corredor por andar, inclusos o do térreo e o poço. */
+  /** Prédio empilhado (visita ou escritório local em andares): um corredor por andar, inclusos o do térreo e o poço. */
   corridors?: AreaLayout[];
   /**
-   * Visita por andares: as fatias do poço do elevador (ligação caminhável entre os corredores) e a
-   * geometria das faixas. No escritório local ficam indefinidas (um andar só, o corredor de sempre).
+   * Prédio empilhado: as fatias do poço do elevador (ligação caminhável entre os corredores) e a
+   * geometria das faixas. No corredor único ficam indefinidas (um andar só, o corredor de sempre).
    */
   shafts?: AreaLayout[];
-  /** Topo (tiles) do bloco do térreo; 0 no escritório local. */
+  /** Topo (tiles) do bloco do térreo; 0 no corredor único. */
   groundY?: number;
-  /** Altura (tiles) de um andar de projeto; indefinida no escritório local. */
+  /** Altura (tiles) de um andar de projeto; indefinida no corredor único. */
   floorHeight?: number;
-  /** Número de andares da visita (o térreo incluso); indefinido no escritório local. */
+  /** Número de andares do prédio empilhado (o térreo incluso); indefinido no corredor único. */
   floorCount?: number;
 }
 

@@ -42,6 +42,17 @@ describe('ordem dos agentes para a navegação', () => {
     const order = navigationOrder([agent('1', 'Zeca', 'x'), agent('2', 'Ana', 'y')], []);
     expect(order.map((a) => a.name)).toEqual(['Ana', 'Zeca']);
   });
+
+  it('no escritório em andares, a sala vale pelo andar (e não pelo slot de chegada)', () => {
+    const stacked: NavRoom[] = [
+      { id: 't', name: 'Térreo', slot: 2, floor: 0 },
+      { id: 'c', name: 'Projeto C', slot: 0, floor: 2 },
+      { id: 'a', name: 'Projeto A', slot: 1, floor: 1 },
+    ];
+    const order = navigationOrder([agent('1', 'Zeca', 'c'), agent('2', 'Ana', 't'), agent('3', 'Bruno', 'a')], stacked);
+    // térreo primeiro, depois andar 1 e andar 2, mesmo com slots fora de ordem
+    expect(order.map((a) => a.name)).toEqual(['Ana', 'Bruno', 'Zeca']);
+  });
 });
 
 describe('passo das setas na lista', () => {

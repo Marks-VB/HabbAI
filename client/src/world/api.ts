@@ -21,6 +21,33 @@ export interface WorldOptions {
   theme?: OfficeTheme;
   /** Cenário do lado de fora do escritório (arredores: rua, árvores, janelas): cidade, floresta, cyberpunk, retrô, orbital, neve ou praia. */
   scenario?: ScenarioTheme;
+  /**
+   * (Opcional, aditivo) Escritório local em andares (opt-in, desligado por padrão): uma sala por andar,
+   * com o térreo para a recepção, o banheiro, a copa e o lounge. Desligado, o escritório é o corredor de
+   * sempre, exatamente como antes.
+   */
+  floors?: boolean;
+}
+
+/**
+ * (Opcional, aditivo) Navegação por andares do escritório local, montada só com `WorldOptions.floors`
+ * ligado. A visita tem a sua própria interface (`VisitWorld`), com o visitante e as luzes do prédio.
+ */
+export interface FloorWorld {
+  /** A navegação por andares está ativa (a opção está ligada). */
+  enabled(): boolean;
+  /** Quantos andares o prédio tem agora (o térreo incluso; 0 sem salas). */
+  count(): number;
+  /** Andar atual (0 = térreo). */
+  current(): number;
+  /** Vai para um andar (valida o intervalo e reenquadra a câmera). */
+  set(floor: number): void;
+  /** Andar de uma sala; -1 se ela não está no prédio. */
+  floorOf(roomId: string): number;
+  /** As salas na ordem dos andares (térreo primeiro), com os agentes de cada uma: o modelo do trilho. */
+  rooms(): { id: string; name: string; agents: { status: string }[] }[];
+  /** Disparado quando o andar atual muda (trilho, teclado, agente seguido entre andares). */
+  onFloor(cb: (floor: number) => void): () => void;
 }
 
 export type ScenarioTheme = 'city' | 'forest' | 'cyberpunk' | 'retro' | 'orbital' | 'snow' | 'beach';
@@ -117,6 +144,8 @@ export interface WorldApi {
   setPlayback?(p: WorldPlayback | null): void;
   /** (Opcional, aditivo) Sons do ambiente: teclado de quem trabalha à vista, elevador, rodas. */
   onSound?(cb: (cue: SoundCue) => void): () => void;
+  /** (Opcional, aditivo) Andares do escritório local (só com a opção "Andares" ligada). */
+  floors?: FloorWorld;
   /**
    * (Opcional, aditivo) Escritório fora da tela (a cena da cidade está aberta): para o desenho e o teclado da
    * câmera; ao voltar, a simulação avança o tempo que passou (como com a aba em segundo plano).
@@ -180,4 +209,5 @@ export const DEFAULT_WORLD_OPTIONS: WorldOptions = {
   dayNight: true,
   theme: 'auto',
   scenario: 'city',
+  floors: false,
 };

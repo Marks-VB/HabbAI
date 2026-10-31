@@ -1,6 +1,6 @@
-// Prédio empilhado da visita (PLANO.md, "Andares"): uma sala por andar, com o corredor de cada andar
-// e um poço de elevador ligando os corredores. Só o modo visita usa este módulo; o escritório local
-// continua no corredor único de sempre (layout/building.ts).
+// Prédio empilhado (PLANO.md, "Andares"): uma sala por andar, com o corredor de cada andar e um poço de
+// elevador ligando os corredores. Usado pela visita a um prédio do World e pelo escritório local quando a
+// opção "Andares" está ligada; desligada, o escritório local continua no corredor único (layout/building.ts).
 //
 // A pilha é montada com o TÉRREO EMBAIXO (o chão do prédio fica junto da rua) e os andares de projeto
 // acima, como num corte de edifício. O térreo é o bloco de sempre (núcleo + corredor), com a primeira
@@ -113,7 +113,7 @@ function landingArea(top: number, floor: number): AreaLayout {
 }
 
 /**
- * O prédio da visita: `floors` andares (o térreo + os de projeto), `rooms` na ordem dos andares.
+ * O prédio empilhado: `floors` andares (o térreo + os de projeto), `rooms` na ordem dos andares.
  * A sala do térreo deve ter sido gerada com `slot` ímpar (fileira sul, porta para o corredor) e as
  * dos andares de cima com `slot` par (fileira norte); aqui elas são deslocadas para a faixa certa.
  */

@@ -11353,6 +11353,19 @@ html.is-replay #world {
   display: none;
 }
 
+/* Escritório local: o trilho fica ao lado da barra lateral (na visita, sempre sozinho à esquerda). */
+@media (min-width: 761px) {
+  .has-sidebar .ui-floor-rail--office {
+    left: calc(var(--gap) + var(--side-w) + 12px);
+  }
+}
+
+/* Na visita e na cidade quem manda é a cena: o trilho do escritório local sai da frente. */
+.ui-root.is-visit > .ui-floor-rail--office,
+.ui-root.is-city > .ui-floor-rail--office {
+  display: none !important;
+}
+
 .ui-floor-rail__head {
   display: flex;
   align-items: center;
