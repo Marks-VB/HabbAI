@@ -53,6 +53,11 @@ export interface ApiDeps {
    */
   messages?: (req: IncomingMessage, res: ServerResponse, path: string) => void;
   /**
+   * Rotas da central de notificações (/api/notifications, server/notifications/http.ts). Só com a mesma trava do
+   * terminal (bind local); a trava do Host local é conferida aqui antes de chamá-las.
+   */
+  notifications?: (req: IncomingMessage, res: ServerResponse, path: string) => void;
+  /**
    * Terminal interativo e ações nos agentes (/api/pty/*, POST /api/agents/:id/stop|takeover; http/pty.ts).
    * Ausente = desligado (sem HABBLAUD_PTY=1, Docker, sem node-pty ou sem bind local).
    */
@@ -127,7 +132,9 @@ function isLocalOnlyPath(path: string): boolean {
     path === '/api/mod/inbox/ack' ||
     path === '/api/agents/events' ||
     path.startsWith('/api/codex/') ||
-    path.startsWith('/api/host/')
+    path.startsWith('/api/host/') ||
+    path === '/api/notifications' ||
+    path.startsWith('/api/notifications/')
   );
 }
 
@@ -377,6 +384,7 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
           // O terminal interativo (pty) nunca vale pela porta remota.
           pty: !!deps.pty && !remote,
           messages: !!deps.messages && (!remote || trusted(req, 'messages')),
+          notifications: !!deps.notifications && (!remote || trusted(req)),
           codexEvents: !!deps.codexLive,
           updates: updatesSummary(deps.updates?.status()),
           sources: deps.sources(),
@@ -398,6 +406,7 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
           local: !remote && isLoopbackHost(req.headers.host),
           permissions: !!deps.permissions && trusted(req, 'permissions'),
           messages: !!deps.messages && trusted(req, 'messages'),
+          ...(deps.notifications ? { notifications: trusted(req) } : {}),
           terminal: !!terminals && trusted(req, 'terminal'),
           spawn: !!deps.spawn && trusted(req, 'spawn'),
           world: !!deps.world && !!deps.terminal && !remote && isLoopbackHost(req.headers.host),
@@ -450,6 +459,17 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
         sendJson(res, 403, { error: denied(req, tr('pedidos de permissão só são respondidos pelo próprio computador (http://localhost ou http://127.0.0.1)')) });
       } else {
         deps.permissions(req, res, path);
+      }
+      return true;
+    }
+    if (path === '/api/notifications' || path.startsWith('/api/notifications/')) {
+      // Histórico e preferências locais: as mesmas travas de "responder pelo escritório" (recurso ligado + Host local).
+      if (!deps.notifications) {
+        sendJson(res, 403, { error: tr('central de notificações desligada: só funciona com o HabbAI acessível apenas pelo próprio computador') });
+      } else if (!trusted(req)) {
+        sendJson(res, 403, { error: denied(req, tr('as notificações só abrem pelo próprio computador (http://localhost ou http://127.0.0.1)')) });
+      } else {
+        deps.notifications(req, res, path);
       }
       return true;
     }

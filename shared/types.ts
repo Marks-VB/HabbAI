@@ -379,6 +379,56 @@ export interface OfficeSnapshot {
 }
 
 /**
+ * Central de notificações (server/notifications/): o tipo de cada item guardado no histórico. `waiting` fica para
+ * avisos de espera que não são pedido de permissão nem pergunta.
+ */
+export type NotificationType = 'permission' | 'question' | 'session-end' | 'waiting';
+
+/** Estado de um item da central: novo (conta no sino), lido ou resolvido (o assunto acabou). */
+export type NotificationStatus = 'new' | 'read' | 'resolved';
+
+/**
+ * Um item da central de notificações (GET /api/notifications). O resumo é curto e sem segredos: nunca traz prompts,
+ * comandos ou diffs completos (ver server/notifications/inbox.ts).
+ */
+export interface NotificationItem {
+  id: string;
+  /** Quando aconteceu (ms desde a época). */
+  at: number;
+  type: NotificationType;
+  status: NotificationStatus;
+  title: string;
+  summary?: string;
+  agentId?: string;
+  agentName?: string;
+  account?: string;
+  /** Pasta do projeto (caminho original da sala). */
+  project?: string;
+  tool?: string;
+}
+
+/** Horário de silêncio (HH:MM, hora local); início maior que o fim atravessa a meia-noite. */
+export interface NotificationQuietHours {
+  enabled: boolean;
+  start: string;
+  end: string;
+}
+
+/**
+ * Preferências da central (GET/PUT /api/notifications/prefs). Os mapas são regras por chave: `false` desliga os
+ * alertas externos daquele projeto, conta ou ferramenta; ausente = ligado.
+ */
+export interface NotificationPrefs {
+  types: Record<NotificationType, boolean>;
+  quiet: NotificationQuietHours;
+  /** Só manda alerta externo com uma página do app aberta (o histórico continua sendo gravado). */
+  appWindowOnly: boolean;
+  projects: Record<string, boolean>;
+  accounts: Record<string, boolean>;
+  tools: Record<string, boolean>;
+}
+
+/**
  * O que ESTA página pode fazer (GET /api/access): a porta local libera tudo pelo Host local; a porta remota com login
  * (server/http/remote.ts) só o que HABBLAUD_REMOTE_ALLOW liberar. `local` = aberta pelo próprio computador (editar
  * personagem e renomear salas, que nunca valem pela porta remota).
@@ -389,6 +439,8 @@ export interface AccessInfo {
   permissions: boolean;
   messages: boolean;
   terminal: boolean;
+  /** Central de notificações (GET /api/notifications): só pelo próprio computador. Ausente em servidores antigos. */
+  notifications?: boolean;
   /** Pode abrir agentes novos no app do Claude (POST /api/spawn). */
   spawn: boolean;
   /**

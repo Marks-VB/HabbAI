@@ -80,6 +80,8 @@ export interface OfficeDeps {
   ptys?: () => { status: PtyStatus; list: PtyInfo[] };
   /** Habblaud World (WorldService.meta; ver OfficeSnapshot.meta.world). */
   world?: () => WorldMeta;
+  /** Um agente principal encerrou a sessão (central de notificações: server/notifications/center.ts). */
+  onSessionClosed?: (info: AgentInfo, project: string | undefined) => void;
   now?: () => number;
 }
 
@@ -575,6 +577,8 @@ export class Office {
       sub.removeAt = Math.min(sub.removeAt ?? Number.POSITIVE_INFINITY, rec.removeAt);
     }
     this.notice('leave', id, 'info', tr('🚪 {0} encerrou a sessão', [info.name]), info.roomId);
+    // Cópia: a central grava nome/conta/pasta e o registro segue vivo até o período de graça acabar.
+    this.deps.onSessionClosed?.({ ...info }, this.roomPath(info.roomId));
     this.markDirty();
   }
 
@@ -776,6 +780,11 @@ export class Office {
   }
 
   // ---------------------------------------------------------------- mensagens pelo escritório (server/messages)
+
+  /** Agentes fictícios do demo (só existem no snapshot). */
+  demoAgents(): AgentInfo[] {
+    return this.demoSnap?.agents ?? [];
+  }
 
   /** Agente fictício do demo (só existe no snapshot), para o registro de mensagens. */
   demoAgent(id: string): AgentInfo | undefined {

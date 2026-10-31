@@ -89,6 +89,7 @@ export interface RegistryOptions {
   orphanMs?: number;
   resolvedKeepMs?: number;
   maxPending?: number;
+  onPermissionRequested?: (info: PermissionRequestInfo, agentId: string) => void;
 }
 
 export type SkipReason = 'no-viewers' | 'unknown-session' | 'unsupported-tool' | 'too-many';
@@ -445,6 +446,7 @@ export class PermissionRegistry {
       this.opts.office.noticePermission(target.id, `${desc.text}${by}`);
     }
     this.opts.office.markDirty();
+    this.opts.onPermissionRequested?.(info, target.id);
     return { id, expiresAt: info.expiresAt + EXPIRY_GRACE_MS };
   }
 

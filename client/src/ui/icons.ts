@@ -260,6 +260,19 @@ export const ICONS = {
     '..######..',
     '..........',
   ]),
+  // Sino da central de notificações (contador de não lidas no canto).
+  bell: pixelIcon([
+    '...####...',
+    '..#....#..',
+    '..#....#..',
+    '..#....#..',
+    '..#....#..',
+    '.##....##.',
+    '#........#',
+    '#........#',
+    '.#......#.',
+    '..######..',
+  ]),
   // Ampulheta (esperando o shell): moldura na cor do texto e areia âmbar caindo.
   hourglass: pixelIcon(
     [
@@ -302,6 +315,8 @@ export const ICONS = {
   arrowDown: pixelIcon(['...##...', '...##...', '...##...', '#######.', '.#####..', '..###...', '...#....'].map((r) => r.padEnd(8, '.'))),
   /** Cidade do Habblaud World (botão Mundo): prédios de alturas diferentes. */
   city: pixelIcon(['......##..', '..##..##..', '..##.####.', '####.#..#.', '#..#.####.', '####.#..#.', '#..#.####.', '####.#..#.', '##########']),
+  /** Ordem geral / Transmissão: megafone. */
+  broadcast: pixelIcon(['..##......', '.####.....', '#######...', '#######.##', '#######..#', '#######.##', '#######...', '..##..#...', '..##......']),
   /** O escritório (botão de volta da cidade): um prédio com porta. */
   office: pixelIcon(['..######..', '..#.##.#..', '..######..', '..#.##.#..', '..######..', '..#.##.#..', '..##..##..', '..##..##..', '##########']),
 } as const;

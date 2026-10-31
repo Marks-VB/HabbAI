@@ -62,7 +62,7 @@
           }
         },
         "noExplicitAny": "warn",
-        "useAwait": "warn"
+        "useAwait": "off"
       },
       "complexity": {
         "noBannedTypes": "error",
@@ -90,7 +90,8 @@
       "linter": {
         "rules": {
           "suspicious": {
-            "noExplicitAny": "off"
+            "noExplicitAny": "off",
+            "useAwait": "off"
           }
         }
       }

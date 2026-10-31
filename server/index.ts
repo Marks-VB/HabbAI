@@ -1,3 +1,8 @@
+import { loadWebhookConfig } from './notifications/webhook';
+import { NotificationCenter } from './notifications/center';
+import { createNotificationRoutes } from './notifications/http';
+import { NotificationInbox } from './notifications/inbox';
+import { NotificationPrefsStore } from './notifications/prefs';
 import { AntigravitySource } from './sources/antigravity/source';
 import { AntigravityHistory } from './sources/antigravity/history';
 import { GeminiSource } from './sources/gemini/source';
@@ -86,7 +91,7 @@ const roomAliases = new RoomAliases(join(config.dataDir, 'rooms.json'));
 roomAliases.load();
 
 // Office, contas e fontes de agentes se referenciam (avisos de mudança / fontes): ligação tardia.
-const late: { office?: Office; agents?: SourceSet; permissions?: PermissionRegistry; messages?: MessageRegistry; ptys?: PtyManager; ptyOff?: string } = {};
+const late: { office?: Office; agents?: SourceSet; permissions?: PermissionRegistry; messages?: MessageRegistry; ptys?: PtyManager; ptyOff?: string; notifications?: NotificationCenter } = {};
 // Versão nova: consulta a release mais recente no GitHub a cada 6 h (HABBLAUD_UPDATE_CHECK=0 desliga).
 const updates = new UpdateChecker({
   current: config.version,
@@ -136,6 +141,8 @@ const office = new Office({
   ptys: () => (late.ptys ? { status: late.ptys.status(), list: late.ptys.list() } : { status: { enabled: false, reason: late.ptyOff ?? tr('desligado') }, list: [] }),
   updates: () => updates.status(),
   world: () => world?.meta() ?? { enabled: false, configured: false, state: 'off' },
+  // A sessão terminou: a central resolve o que ficou aberto e grava o aviso (sem alerta externo).
+  onSessionClosed: (info, project) => late.notifications?.sessionEnd({ id: info.id, name: info.name, account: info.account }, project),
 });
 // Fontes de agentes, uma por ferramenta (sources/source.ts): a do Claude Code e, depois dela, a do Codex (quando há
 // pastas do Codex; HABBLAUD_CODEX=0 desliga), com o histórico dela no HistorySet abaixo e as contas registradas por
@@ -251,6 +258,25 @@ const timelineDir = join(config.dataDir, TIMELINE_DIR);
 const timeline = config.timeline ? new TimelineRecorder({ dir: timelineDir }) : undefined;
 if (timeline) hub.onSnapshot((snap) => timeline.ingest(snap));
 // Responder pelo escritório (hook PermissionRequest): age sobre as sessões, então segue a mesma trava.
+const webhookConfig = loadWebhookConfig();
+// Central de notificações (server/notifications/): histórico local em ~/.habblaud, preferências, silêncio e os alertas
+// externos (webhook/Telegram) que já existiam. Mesma trava do terminal; nada sai do computador sem webhook configurado.
+const notificationInbox = config.terminal ? new NotificationInbox(join(config.dataDir, 'notifications.json')) : undefined;
+notificationInbox?.load();
+const notificationPrefs = config.terminal ? new NotificationPrefsStore(join(config.dataDir, 'notifications-prefs.json')) : undefined;
+notificationPrefs?.load();
+const notifications =
+  notificationInbox && notificationPrefs
+    ? new NotificationCenter({
+        inbox: notificationInbox,
+        prefs: notificationPrefs,
+        webhook: webhookConfig,
+        viewers: () => hub.localSize,
+        url: `http://localhost:${config.port}`,
+      })
+    : undefined;
+late.notifications = notifications;
+const notificationRoutes = notificationInbox && notificationPrefs ? createNotificationRoutes({ inbox: notificationInbox, prefs: notificationPrefs }) : undefined;
 const permissions = config.terminal
   ? new PermissionRegistry({
       office,
@@ -262,6 +288,10 @@ const permissions = config.terminal
       codexAccount: (account, codexHome) => codexAccountOf(accounts.entriesOf('codex'), account, codexHome),
       demoDecide: (id, d) => office.decideDemoPermission(id, d),
       demoDetail: (id) => office.demoPermission(id),
+      onPermissionRequested: (info, agentId) => {
+        const agent = office.get(agentId);
+        late.notifications?.permission(info, { id: agentId, name: agent?.name, account: agent?.account }, agent ? office.roomPath(agent.roomId) : undefined);
+      },
     })
   : undefined;
 late.permissions = permissions;
@@ -291,6 +321,7 @@ const messages = config.messages
   ? new MessageRegistry({
       office,
       demoAgent: (id) => office.demoAgent(id),
+      demoAgents: () => office.demoAgents(),
       demoDeliver: (id, text) => office.deliverDemoMessage(id, text),
       codex: {
         run: codexBin ? createCodexQueueRunner(codexBin) : undefined,
@@ -388,6 +419,7 @@ const api = createApiHandler({
   sessions: history,
   timeline: createTimelineHandler({ dir: timelineDir, recording: !!timeline }),
   permissions: permissions ? createPermissionRoutes(permissions) : undefined,
+  notifications: notificationRoutes,
   messages: messages ? createMessageRoutes(messages) : undefined,
   pty: ptys ? createPtyRoutes(ptys) : undefined,
   spawn,
