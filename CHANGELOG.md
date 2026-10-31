@@ -10,6 +10,8 @@ do meio (0.**3**.0).
 
 ## [Não lançado]
 
+## [1.2.0] - 2026-10-31
+
 ### Adicionado
 
 - **Permissões e "ir ao andar" no trilho**: cada andar do trilho ganha um selo com quantos agentes estão com pedido de permissão esperando (o mesmo no escritório local e na visita, quando a origem manda essa informação), com o aviso no rótulo para leitor de tela; com o trilho focado, `Enter` abre o primeiro agente que espera permissão naquele andar e, sem ninguém esperando, só mantém o andar. Na lista lateral, o agente que está noutro andar mostra "Andar 3" (ou "Térreo") e o clique já leva a câmera até ele. Com a opção **Andares** desligada, nada muda.
@@ -752,7 +754,8 @@ Primeira versão publicada.
   Subagentes chegam, trabalham e entregam ao principal. Mostra as duas contas, com o uso de 5 horas e semanal de
   cada uma (tap de statusline), além de feed de atividade, avisos e modo demonstração. Roda no Node ou no Docker local.
 
-[Não lançado]: https://github.com/Marks-VB/HabbAI/compare/v1.1.0...HEAD
+[Não lançado]: https://github.com/Marks-VB/HabbAI/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Marks-VB/HabbAI/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Marks-VB/HabbAI/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/marmottajr/habblaud/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/marmottajr/habblaud/compare/v1.0.1...v1.0.2
