@@ -349,6 +349,8 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
         model: floorModel,
         go: (floor) => api.set(floor),
         current: () => api.current(),
+        // Enter no trilho com alguém esperando permissão: seleciona o agente (a sidebar e a gaveta acompanham)
+        openAgent: (id) => ctx.select({ type: 'agent', id }, { focus: true }),
         focusWorld: () => (document.getElementById('world') as HTMLElement | null)?.focus(),
       });
       floorRail.el.classList.add('ui-floor-rail--office');
@@ -363,7 +365,11 @@ export function createUI(root: HTMLElement, store: OfficeStore, world: WorldApi,
       area.sync();
     }
   }
-  world.floors?.onFloor(() => syncFloorRail());
+  // trocar de andar muda a indicação "Andar N" das linhas de agente: o trilho e a lista se atualizam juntos
+  world.floors?.onFloor(() => {
+    syncFloorRail();
+    invalidate();
+  });
 
   const components: UiComponent[] = [topbar, sidebar, drawer, terminal, pty, history, deliveries, notifications, feed, toasts, settings, empty, banner, budget, tip, notifier, splash, timelapse, sound, day, updateToaster, worldDialog, popups, worldChip];
   if (scene) components.push(scene);

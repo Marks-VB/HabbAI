@@ -43,6 +43,7 @@ import { PermissionCard } from './permission';
 import { canRenameRoom } from './roomrename';
 import { accountChipLabel, accountProvider, CODEX_LIVE_HINT, codexApprovalLabel, providerOf } from './provider';
 import { ptyControllable } from './ptyapi';
+import { floorHint } from '../world/floors/rail';
 import { createAgentRow, updateAgentRow } from './rows';
 import { SocialSection } from './social';
 import { TERMINAL_UNAVAILABLE_HINT, type TerminalControl } from './terminal';
@@ -373,7 +374,7 @@ class AgentView {
     this.team = new KeyedList<AgentInfo>(teamList, {
       key: (a) => a.id,
       create: (a) => createAgentRow(a, (id) => ctx.select({ type: 'agent', id }, { focus: true }), 'sm'),
-      update: (row, a) => updateAgentRow(row, a, ctx.account(a.account), false, ctx.now(), ctx.store.snapshot?.agents),
+      update: (row, a) => updateAgentRow(row, a, ctx.account(a.account), false, ctx.now(), ctx.store.snapshot?.agents, floorOfAgent(ctx, a)),
     });
 
     const tl = h('ol', { class: 'ui-timeline' });
@@ -859,7 +860,7 @@ class RoomView {
     this.agents = new KeyedList<AgentInfo>(agentsList, {
       key: (a) => a.id,
       create: (a) => createAgentRow(a, (id) => ctx.select({ type: 'agent', id }, { focus: true }), 'sm'),
-      update: (row, a) => updateAgentRow(row, a, ctx.account(a.account), false, ctx.now(), ctx.store.snapshot?.agents),
+      update: (row, a) => updateAgentRow(row, a, ctx.account(a.account), false, ctx.now(), ctx.store.snapshot?.agents, floorOfAgent(ctx, a)),
     });
 
     this.tasksBar = createProgress(tr('Progresso das tarefas da sala'));
@@ -1025,4 +1026,12 @@ export class Drawer implements UiComponent {
       this.roomView.render();
     }
   }
+}
+
+/** Andar do agente quando ele está noutro andar (null no atual ou com a opção "Andares" desligada). */
+function floorOfAgent(ctx: UiContext, a: AgentInfo): number | null {
+  const floors = ctx.world.floors;
+  if (!floors?.enabled()) return null;
+  const floor = floors.floorOf(a.roomId);
+  return floor >= 0 ? floorHint(floor, floors.current()) : null;
 }

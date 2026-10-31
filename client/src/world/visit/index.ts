@@ -150,9 +150,12 @@ export function createVisitScene(o: VisitSceneOptions): VisitScene {
   };
 
   const rail = mountFloorRail({
+    // Na visita não há pedido de permissão no pacote do World (privacidade): o campo existe no modelo, mas a
+    // origem não o manda. Se um dia mandar, o selo aparece sem mudar o trilho.
     model: () => buildRail(visitPanel(controller.detail).rooms, world.visit.currentFloor()),
     go: (floor) => goToFloor(floor),
     current: () => world.visit.currentFloor(),
+    openAgent: (id) => selectAgent(id),
     focusWorld: () => canvas.focus(),
   });
   const offFloor = world.visit.onFloor(() => {

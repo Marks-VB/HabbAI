@@ -1,14 +1,19 @@
-// Modelo do trilho de andares: ordem, ocupação por status, rótulos acessíveis, clamp e teclas.
+// Modelo do trilho de andares: ordem, ocupação por status, permissões, rótulos acessíveis, clamp e teclas.
 import { describe, expect, it } from 'vitest';
 import {
   buildRail,
   clampFloor,
+  enterTarget,
   floorDown,
+  floorHint,
+  floorName,
   floorStatus,
   floorUp,
   nextFloor,
   normalizeStatus,
   occupancyText,
+  permissionBadgeText,
+  permissionText,
 } from './rail';
 
 const room = (id: string, name: string, statuses: string[]) => ({
@@ -53,6 +58,78 @@ describe('buildRail', () => {
     expect(m.floors[2].ariaLabel).toBe('Andar 2 de 4, Projeto Aurora, 1 agente à toa');
     expect(m.floors[3].ariaLabel).toBe('Andar 3 de 4, Projeto Cedro, sem agentes');
   });
+
+  it('conta os pedidos de permissão por andar e aponta o primeiro agente que espera', () => {
+    const rooms = [
+      { id: 'f_0', name: 'Projeto Ipê', agents: [{ id: 'a1', status: 'working' }] },
+      {
+        id: 'f_1',
+        name: 'Projeto Jade',
+        agents: [
+          { id: 'a2', status: 'working', permission: false },
+          { id: 'a3', status: 'waiting', permission: true },
+          { id: 'a4', status: 'waiting', permission: true },
+        ],
+      },
+      { id: 'f_2', name: 'Projeto Aurora', agents: [] },
+    ];
+    const m = buildRail(rooms, 1);
+    expect(m.floors.map((f) => f.permissions)).toEqual([0, 2, 0]);
+    expect(m.floors[1].permissionAgent).toBe('a3');
+    expect(m.floors[0].permissionAgent).toBeNull();
+    // o selo só existe quando há alguém esperando
+    expect(m.floors.map((f) => permissionBadgeText(f.permissions))).toEqual([null, '2', null]);
+  });
+
+  it('o rótulo acessível prioriza a permissão pendente', () => {
+    const rooms = [
+      { id: 'f_0', name: 'Projeto Ipê', agents: [{ id: 'a1', status: 'waiting', permission: true }] },
+      { id: 'f_1', name: 'Projeto Jade', agents: [{ id: 'a2', status: 'working' }] },
+      {
+        id: 'f_2',
+        name: 'Projeto Aurora',
+        agents: [{ id: 'a3', status: 'waiting', permission: true }, { id: 'a4', status: 'waiting', permission: true }],
+      },
+    ];
+    const m = buildRail(rooms, 0);
+    expect(m.floors[0].ariaLabel).toBe('Térreo, Projeto Ipê: 1 esperando permissão, 1 agente esperando você');
+    expect(m.floors[1].ariaLabel).toBe('Andar 1 de 3, Projeto Jade, 1 agente trabalhando');
+    expect(m.floors[2].ariaLabel).toBe('Andar 2 de 3, Projeto Aurora: 2 esperando permissão, 2 agentes esperando você');
+  });
+
+  it('agentes sem o campo novo continuam valendo (permissões zeradas)', () => {
+    const m = buildRail(ROOMS, 0);
+    expect(m.floors.every((f) => f.permissions === 0 && f.permissionAgent === null)).toBe(true);
+    expect(m.floors.flatMap((f) => [f.status])).toEqual(['working', 'waiting', 'idle', 'empty']);
+  });
+
+  it('o Enter vai ao primeiro agente esperando permissão do andar; sem ninguém, não há alvo', () => {
+    const rooms = [
+      { id: 'f_0', name: 'Projeto Ipê', agents: [{ id: 'a1', status: 'working' }] },
+      { id: 'f_1', name: 'Projeto Jade', agents: [{ id: 'a2', status: 'waiting', permission: true }] },
+    ];
+    const m = buildRail(rooms, 0);
+    expect(enterTarget(m, 0)).toBeNull();
+    expect(enterTarget(m, 1)).toEqual({ floor: 1, agentId: 'a2' });
+    // sem andar explícito, vale o atual
+    expect(enterTarget(buildRail(rooms, 1))).toEqual({ floor: 1, agentId: 'a2' });
+    // sem id (origem que só manda o status), o selo conta mas o Enter não seleciona
+    expect(enterTarget(buildRail([{ id: 'f_0', name: 'X', agents: [{ status: 'waiting', permission: true }] }], 0))).toBeNull();
+  });
+});
+
+describe('indicação de andar na lista de agentes', () => {
+  it('nomes curtos: térreo e andar', () => {
+    expect(floorName(0)).toBe('Térreo');
+    expect(floorName(3)).toBe('Andar 3');
+  });
+
+  it('só mostra o andar quando é outro', () => {
+    expect(floorHint(2, 1)).toBe(2);
+    expect(floorHint(1, 1)).toBeNull();
+    expect(floorHint(0, 2)).toBe(0);
+    expect(floorHint(-1, 0)).toBeNull();
+  });
 });
 
 describe('status e ocupação (puros)', () => {
@@ -83,6 +160,13 @@ describe('status e ocupação (puros)', () => {
       '1 agente de olho no terminal',
     );
     expect(occupancyText({ agents: 1, working: 0, waiting: 0, shell: 0, idle: 1 })).toBe('1 agente à toa');
+  });
+
+  it('a frase de permissão cobre singular e plural', () => {
+    expect(permissionText(1)).toBe('1 esperando permissão');
+    expect(permissionText(3)).toBe('3 esperando permissão');
+    expect(permissionBadgeText(0)).toBeNull();
+    expect(permissionBadgeText(1)).toBe('1');
   });
 });
 

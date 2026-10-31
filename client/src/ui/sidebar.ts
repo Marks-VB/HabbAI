@@ -9,6 +9,7 @@ import { plural, shortPath } from './format';
 import { ICONS } from './icons';
 import { groupRooms, type AgentNode, type RoomGroup } from './model';
 import { officeIsEmpty } from './overlays';
+import { floorHint } from '../world/floors/rail';
 import { createAgentRow, updateAgentRow } from './rows';
 import { createAccountChip, createDeveloperWatermark, createProgress, updateAccountChip, updateProgress } from './widgets';
 import { tr } from '../../../shared/i18n';
@@ -414,7 +415,23 @@ export class Sidebar implements UiComponent {
 
   private updateRow(row: HTMLElement, a: AgentInfo): void {
     const sel = this.ctx.selection();
-    updateAgentRow(row, a, this.ctx.account(a.account), sel?.type === 'agent' && sel.id === a.id, this.ctx.now(), this.ctx.store.snapshot?.agents);
+    updateAgentRow(
+      row,
+      a,
+      this.ctx.account(a.account),
+      sel?.type === 'agent' && sel.id === a.id,
+      this.ctx.now(),
+      this.ctx.store.snapshot?.agents,
+      this.floorOf(a),
+    );
+  }
+
+  /** Andar do agente quando é outro (o escritório em andares ligado): a linha mostra "Andar 3" e o clique leva. */
+  private floorOf(a: AgentInfo): number | null {
+    const floors = this.ctx.world.floors;
+    if (!floors?.enabled()) return null;
+    const floor = floors.floorOf(a.roomId);
+    return floor >= 0 ? floorHint(floor, floors.current()) : null;
   }
 
   private pick(id: string): void {

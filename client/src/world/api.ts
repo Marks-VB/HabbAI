@@ -44,8 +44,11 @@ export interface FloorWorld {
   set(floor: number): void;
   /** Andar de uma sala; -1 se ela não está no prédio. */
   floorOf(roomId: string): number;
-  /** As salas na ordem dos andares (térreo primeiro), com os agentes de cada uma: o modelo do trilho. */
-  rooms(): { id: string; name: string; agents: { status: string }[] }[];
+  /**
+   * As salas na ordem dos andares (térreo primeiro), com os agentes de cada uma: o modelo do trilho.
+   * `permission` = o agente tem pedido de permissão esperando (o selo do andar); `id` = o alvo do `Enter`.
+   */
+  rooms(): { id: string; name: string; agents: { id: string; status: string; permission?: boolean }[] }[];
   /** Disparado quando o andar atual muda (trilho, teclado, agente seguido entre andares). */
   onFloor(cb: (floor: number) => void): () => void;
 }

@@ -877,8 +877,9 @@ agent count; click to jump, use `↑`/`↓`, `Home`/`End` or `PageUp`/`PageDown`
 goes through a short elevator transition (doors, fade and arrival in 300 ms; with "reduce motion" in the system, a hard
 cut) and rapid clicks keep the last one. On phones the rail becomes a strip of chips at the bottom. In your own office
 the same view is optional: **Settings › Appearance › Floors** stacks one room per floor (the ground floor keeps
-reception, kitchen, restroom and lounge) and shows the rail; off, the office is the usual corridor. The number sent to
-the World remains the real room count.
+reception, kitchen, restroom and lounge) and shows the rail; off, the office is the usual corridor. The rail shows a
+badge on floors with a pending permission (and `Enter` opens the first agent waiting), and in the side list an agent on
+another floor shows "Floor 3" — clicking takes you there. The number sent to the World remains the real room count.
 
 **Visits.** Near a building's door, **Enter (E)** takes you inside: the owner's live office, with rooms under made-up
 names and the agents in their current status, view only (no terminal, messages or permissions, and nothing about the

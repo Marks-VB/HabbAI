@@ -924,8 +924,9 @@ descendre d'un étage. Le changement passe par une courte transition d'ascenseur
 avec « réduire les animations » dans le système, coupe nette) et les clics rapides gardent le dernier. Sur mobile, la barre
 devient une bande de pastilles en bas. Dans votre propre bureau, la même vue est optionnelle : **Réglages › Apparence ›
 Étages** empile une salle par étage (le rez-de-chaussée garde l'accueil, la cuisine, la salle de bain et le salon) et
-affiche la barre ; désactivée, le bureau reste le couloir habituel. Le nombre envoyé au World reste celui des salles
-réelles.
+affiche la barre ; désactivée, le bureau reste le couloir habituel. La barre affiche un badge sur les étages avec une
+autorisation en attente (et `Enter` ouvre le premier agent qui attend), et dans la liste latérale l'agent d'un autre
+étage montre « Étage 3 » : un clic vous y emmène. Le nombre envoyé au World reste celui des salles réelles.
 
 **Visites.** Près de la porte d'un immeuble, **Entrer (E)** vous fait entrer : le bureau du propriétaire en direct, avec
 des salles aux noms fictifs et les agents dans leur statut du moment, en lecture seule (ni terminal, ni messages, ni

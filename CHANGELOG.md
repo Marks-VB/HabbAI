@@ -12,6 +12,8 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Permissões e "ir ao andar" no trilho**: cada andar do trilho ganha um selo com quantos agentes estão com pedido de permissão esperando (o mesmo no escritório local e na visita, quando a origem manda essa informação), com o aviso no rótulo para leitor de tela; com o trilho focado, `Enter` abre o primeiro agente que espera permissão naquele andar e, sem ninguém esperando, só mantém o andar. Na lista lateral, o agente que está noutro andar mostra "Andar 3" (ou "Térreo") e o clique já leva a câmera até ele. Com a opção **Andares** desligada, nada muda.
+
 - **Escritório local por andares (opt-in)**: Configurações › Aparência ganhou **Andares**, desligado por padrão. Ligado, o seu escritório vira o mesmo prédio empilhado da visita — uma sala de projeto por andar, com recepção, banheiro, copa e lounge no térreo — e o poço do elevador liga os corredores (ninguém atravessa parede para trocar de andar). A câmera acompanha o agente entre andares, o clique e a navegação por teclado respeitam o andar atual, e o trilho lateral lista os andares com status e contagem de agentes. Com a opção desligada, o escritório continua exatamente o corredor de sempre; o número de andares enviado ao Habblaud World não muda (continua sendo o de salas reais).
 
 ### Corrigido

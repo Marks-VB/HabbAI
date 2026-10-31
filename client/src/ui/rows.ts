@@ -5,6 +5,7 @@ import { h, setAttr, setHidden, setStyleVar, setText, setTitle, setVariant } fro
 import { formatDuration } from './format';
 import { activityFallback, shellLine, shellWaitIn, statusLabel } from './model';
 import { providerOf } from './provider';
+import { floorName } from '../world/floors/rail';
 import {
   createAccountChip,
   createActivityLine,
@@ -32,6 +33,8 @@ interface RowRefs {
   task: HTMLElement;
   /** Há quanto tempo está ocioso (no lugar do "Principal"). */
   since: HTMLElement;
+  /** Andar do agente quando ele está noutro andar ("Andar 3"; some no andar atual e com a opção desligada). */
+  floor: HTMLElement;
   size: AvatarSize;
 }
 
@@ -47,22 +50,24 @@ export function createAgentRow(agent: AgentInfo, onPick: (id: string) => void, s
   const activity = createActivityLine();
   const task = h('span', { class: 'ui-agent__task', hidden: true });
   const since = h('span', { class: 'ui-agent__since', hidden: true });
+  const floor = h('span', { class: 'ui-agent__floor', hidden: true });
   const row = h(
     'button',
     { class: 'ui-agent', type: 'button' },
     avatar,
-    h('span', { class: 'ui-agent__main' }, h('span', { class: 'ui-agent__top' }, name, chip, prov, since, role), task, activity),
+    h('span', { class: 'ui-agent__main' }, h('span', { class: 'ui-agent__top' }, name, chip, prov, floor, since, role), task, activity),
     dot,
   );
   row.dataset.id = agent.id;
   row.addEventListener('click', () => onPick(row.dataset.id!));
-  refs.set(row, { avatar, name, chip, prov, role, dot, activity, task, since, size });
+  refs.set(row, { avatar, name, chip, prov, role, dot, activity, task, since, floor, size });
   return row;
 }
 
 /**
  * `now` = relógio do servidor (cronômetro do shell e limiar dos comandos longos em primeiro plano);
- * `agents` = agentes do escritório (shells que um subagente deixou rodando contam para o principal).
+ * `agents` = agentes do escritório (shells que um subagente deixou rodando contam para o principal);
+ * `floor` = o andar do agente quando ele está noutro andar (null no atual ou com a opção "Andares" desligada).
  */
 export function updateAgentRow(
   row: HTMLElement,
@@ -71,6 +76,7 @@ export function updateAgentRow(
   selected: boolean,
   now: number,
   agents: readonly AgentInfo[] = [],
+  floor: number | null = null,
 ): void {
   const r = refs.get(row);
   if (!r) return;
@@ -92,6 +98,11 @@ export function updateAgentRow(
   setTitle(r.since, showIdle ? tr('Ocioso há {0}', [formatDuration(idleFor)]) : '');
   setHidden(r.since, !showIdle);
   setHidden(r.role, showIdle);
+  // "Andar 3": só quando o agente está noutro andar (o clique na linha já leva a câmera até ele)
+  const floorText = floor === null ? '' : floorName(floor);
+  setText(r.floor, floorText);
+  setTitle(r.floor, floorText);
+  setHidden(r.floor, !floorText);
   // Esperando um shell (ou parado num comando longo): ampulheta no ponto e o cronômetro na linha de atividade.
   const wait = shellWaitIn(agent, agents, now);
   const status = wait ? 'shell' : agent.status;
@@ -106,6 +117,6 @@ export function updateAgentRow(
   setAttr(
     row,
     'aria-label',
-    `${agent.name}, ${agent.kind === 'main' ? tr('agente principal') : tr('subagente {0}', [agent.role])}, ${account?.name ?? agent.account}${agent.provider === 'codex' ? ' (Codex)' : ''}, ${statusLabel(status)}${doing ? `: ${doing}` : ''}`,
+    `${agent.name}, ${agent.kind === 'main' ? tr('agente principal') : tr('subagente {0}', [agent.role])}, ${account?.name ?? agent.account}${agent.provider === 'codex' ? ' (Codex)' : ''}, ${statusLabel(status)}${floorText ? `, ${floorText}` : ''}${doing ? `: ${doing}` : ''}`,
   );
 }

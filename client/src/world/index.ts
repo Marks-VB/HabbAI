@@ -807,7 +807,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore, o: Cr
           name: r.info.name,
           agents: [...sim.chars.values()]
             .filter((c) => c.roomId === r.id && !c.leaving && !c.gone && c.info.status !== 'offline')
-            .map((c) => ({ status: c.info.status })),
+            .map((c) => ({ id: c.info.id, status: c.info.status, permission: !!c.info.permission })),
         }));
       },
       onFloor: (cb) => {

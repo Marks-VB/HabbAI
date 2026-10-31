@@ -915,7 +915,9 @@ planta. El cambio pasa por una transición corta de ascensor (puertas, fundido y
 movimiento" en el sistema, corte seco) y los clics seguidos se quedan con el último. En el móvil la barra se convierte en
 una franja de pastillas abajo. En tu propia oficina la misma vista es opcional: **Configuración › Apariencia › Plantas**
 apila una sala por planta (la planta baja conserva recepción, cocina, baño y sala de estar) y muestra la barra; apagada,
-la oficina es el pasillo de siempre. El número enviado al World sigue siendo el de salas reales.
+la oficina es el pasillo de siempre. La barra muestra un distintivo en las plantas con un permiso pendiente (y `Enter`
+abre el primer agente que espera), y en la lista lateral el agente de otra planta muestra «Piso 3»: al hacer clic vas
+hasta él. El número enviado al World sigue siendo el de salas reales.
 
 **Visitas.** Cerca de la puerta de un edificio, **Entrar (E)** te lleva adentro: la oficina del dueño en vivo, con salas
 de nombres ficticios y los agentes en su estado de ahora, solo para mirar (sin terminal, mensajes ni permisos, y nada

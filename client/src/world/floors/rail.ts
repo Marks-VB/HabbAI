@@ -8,18 +8,27 @@ export type FloorStatus = 'working' | 'waiting' | 'shell' | 'idle' | 'empty';
 
 export type RailAgentStatus = 'working' | 'waiting' | 'idle' | 'shell';
 
+/** O que o trilho precisa de um agente: o status e, quando a origem sabe, o pedido de permissão pendente. */
+export interface RailAgent {
+  status: string;
+  /** Pedido de permissão esperando resposta (AgentInfo.permission). Ausente = nenhum. */
+  permission?: boolean;
+  /** Id do agente (só o escritório local manda): o `Enter` no trilho abre o primeiro que espera permissão. */
+  id?: string;
+}
+
 /** O que o trilho precisa de uma sala/andar (VisitRoomRow satisfaz). */
 export interface RailRoom {
   id: string;
   name: string;
-  agents: readonly { status: string }[];
+  agents: readonly RailAgent[];
 }
 
 export interface RailFloor {
   /** Andar (0 = térreo). */
   index: number;
   roomId: string;
-  /** Nome fictício do andar (o rótulo da sala). */
+  /** Nome do andar: o projeto no escritório local, o rótulo fictício na visita. */
   name: string;
   /** Rótulo curto do item: "Térreo" ou o nome do andar. */
   label: string;
@@ -29,6 +38,10 @@ export interface RailFloor {
   waiting: number;
   shell: number;
   idle: number;
+  /** Agentes do andar com pedido de permissão pendente (o badge do trilho). */
+  permissions: number;
+  /** Id do primeiro agente esperando permissão no andar (o alvo do `Enter`); null se não há. */
+  permissionAgent: string | null;
   /** Bolinha do item: o status que mais pede atenção (esperando > trabalhando > terminal > à toa). */
   status: FloorStatus;
   /** Frase para o leitor de tela ("Andar 4 de 6, Projeto Ipê, 2 agentes trabalhando"). */
@@ -78,17 +91,45 @@ export function occupancyText(counts: {
   return counts.idle === 1 ? tr('1 agente à toa') : tr('{0} agentes à toa', [counts.idle]);
 }
 
-/** Rótulo acessível do andar (o texto que a região viva anuncia ao trocar de andar). */
+/** "1 esperando permissão", "3 esperando permissão": o texto do badge e do trecho oculto da lista. */
+export function permissionText(permissions: number): string {
+  return permissions === 1 ? tr('1 esperando permissão') : tr('{0} esperando permissão', [permissions]);
+}
+
+/**
+ * Rótulo acessível do andar (o texto que a região viva anuncia ao trocar de andar). Com pedido de
+ * permissão pendente, ele vem primeiro: é o que pede resposta de quem está olhando.
+ */
 export function floorAriaLabel(
   index: number,
   total: number,
   name: string,
-  counts: Parameters<typeof occupancyText>[0],
+  counts: Parameters<typeof occupancyText>[0] & { permissions: number },
 ): string {
   const occupancy = occupancyText(counts);
+  if (counts.permissions > 0) {
+    return index === 0
+      ? tr('Térreo, {0}: {1} esperando permissão, {2}', [name, counts.permissions, occupancy])
+      : tr('Andar {0} de {1}, {2}: {3} esperando permissão, {4}', [index, total, name, counts.permissions, occupancy]);
+  }
   return index === 0
     ? tr('Térreo, {0}, {1}', [name, occupancy])
     : tr('Andar {0} de {1}, {2}, {3}', [index, total, name, occupancy]);
+}
+
+/** Texto do badge: o total quando há alguém esperando, null quando não (o selo some). */
+export function permissionBadgeText(permissions: number): string | null {
+  return permissions > 0 ? String(permissions) : null;
+}
+
+/** "Térreo" ou "Andar 3": o nome curto do andar, para a lista lateral e o `Enter` do trilho. */
+export function floorName(index: number): string {
+  return index === 0 ? tr('Térreo') : tr('Andar {0}', [index]);
+}
+
+/** Indicação discreta na lista de agentes: o andar só aparece quando é outro (null no atual). */
+export function floorHint(index: number, current: number): number | null {
+  return index >= 0 && index !== current ? index : null;
 }
 
 /** Andar válido (0..total-1); sem andares, 0. */
@@ -102,14 +143,22 @@ export function clampFloor(floor: number, total: number): number {
 export function buildRail(rooms: readonly RailRoom[], current: number): RailModel {
   const total = rooms.length;
   const floors: RailFloor[] = rooms.map((room, index) => {
-    const counts = { agents: room.agents.length, working: 0, waiting: 0, shell: 0, idle: 0 };
-    for (const a of room.agents) counts[normalizeStatus(a.status)]++;
+    const counts = { agents: room.agents.length, working: 0, waiting: 0, shell: 0, idle: 0, permissions: 0 };
+    let permissionAgent: string | null = null;
+    for (const a of room.agents) {
+      counts[normalizeStatus(a.status)]++;
+      if (a.permission === true) {
+        counts.permissions++;
+        if (permissionAgent === null && a.id) permissionAgent = a.id;
+      }
+    }
     return {
       index,
       roomId: room.id,
       name: room.name,
       label: index === 0 ? tr('Térreo') : room.name,
       ...counts,
+      permissionAgent,
       status: floorStatus(counts),
       ariaLabel: floorAriaLabel(index, total, room.name, counts),
     };
@@ -124,6 +173,19 @@ export function floorUp(current: number, total: number): number {
 
 export function floorDown(current: number, total: number): number {
   return clampFloor(current - 1, total);
+}
+
+/** Alvo do `Enter` no trilho: o primeiro agente que espera permissão naquele andar (null se não há). */
+export interface RailEnterTarget {
+  floor: number;
+  agentId: string;
+}
+
+/** Andar do `Enter` (o atual, por padrão): quem espera permissão ali, ou null (aí só troca de andar). */
+export function enterTarget(model: RailModel, floor = model.current): RailEnterTarget | null {
+  const f = model.floors[clampFloor(floor, model.total)];
+  if (!f || f.permissions <= 0 || !f.permissionAgent) return null;
+  return { floor: f.index, agentId: f.permissionAgent };
 }
 
 /** Teclas que navegam o trilho; null para uma tecla que não navega (ou sem andares). */

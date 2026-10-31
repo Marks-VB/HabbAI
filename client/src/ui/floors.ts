@@ -2,7 +2,16 @@
 // com bolinha de status e contagem de agentes, o andar atual, teclado (↑/↓, Home/End, PageUp/PageDown)
 // e anúncio por leitor de tela. O modelo é puro (world/floors/rail.ts); aqui é só a camada de DOM.
 import { tr } from '../../../shared/i18n';
-import { clampFloor, floorDown, floorUp, nextFloor, type RailModel } from '../world/floors/rail';
+import {
+  clampFloor,
+  enterTarget,
+  floorDown,
+  floorUp,
+  nextFloor,
+  permissionBadgeText,
+  permissionText,
+  type RailModel,
+} from '../world/floors/rail';
 import { AnnouncementQueue } from './announce-queue';
 import { h, setHidden, setText } from './dom';
 
@@ -13,6 +22,8 @@ export interface FloorRailOptions {
   go(floor: number): void;
   /** Andar atual no mundo. */
   current(): number;
+  /** `Enter` num andar com alguém esperando permissão: abre o agente (a visita é só leitura, mas seleciona). */
+  openAgent?(agentId: string): void;
   /** Esc no trilho: devolve o foco ao canvas do mundo. */
   focusWorld(): void;
 }
@@ -76,7 +87,10 @@ export function mountFloorRail(o: FloorRailOptions): FloorRail {
   );
 
   /** Itens por andar (índice do andar -> elemento) e a assinatura das salas (para recriar só quando muda). */
-  const items = new Map<number, { el: HTMLElement; dot: HTMLElement; label: HTMLElement; count: HTMLElement }>();
+  const items = new Map<
+    number,
+    { el: HTMLElement; dot: HTMLElement; label: HTMLElement; badge: HTMLElement; count: HTMLElement; sr: HTMLElement }
+  >();
   let signature = '';
   let lastCurrent: number | null = null;
   let latest: RailModel = { floors: [], current: 0, total: 0 };
@@ -101,7 +115,11 @@ export function mountFloorRail(o: FloorRailOptions): FloorRail {
       const f = model.floors[i];
       const dot = h('span', { class: `ui-floor-rail__dot is-${f.status}`, attrs: { 'aria-hidden': 'true' } });
       const label = h('span', { class: 'ui-floor-rail__label', text: f.label });
+      // o selo de permissão: o número é informação, nunca só a cor (o aria-label do item diz o resto)
+      const badge = h('span', { class: 'ui-floor-rail__badge', hidden: true, attrs: { 'aria-hidden': 'true' } });
       const count = h('span', { class: 'ui-floor-rail__count', text: String(f.agents) });
+      // o mesmo aviso em texto oculto, para a lista não depender do selo visual
+      const sr = h('span', { class: 'ui-sr' });
       const item = h(
         'div',
         {
@@ -111,9 +129,11 @@ export function mountFloorRail(o: FloorRailOptions): FloorRail {
         },
         dot,
         label,
+        badge,
         count,
+        sr,
       );
-      items.set(f.index, { el: item, dot, label, count });
+      items.set(f.index, { el: item, dot, label, badge, count, sr });
       nodes.push(item);
     }
     list.replaceChildren(...nodes);
@@ -141,6 +161,11 @@ export function mountFloorRail(o: FloorRailOptions): FloorRail {
       it.dot.className = `ui-floor-rail__dot is-${f.status}`;
       setText(it.label, f.label);
       setText(it.count, String(f.agents));
+      const badge = permissionBadgeText(f.permissions);
+      setHidden(it.badge, badge === null);
+      setText(it.badge, badge ?? '');
+      setText(it.sr, f.permissions > 0 ? permissionText(f.permissions) : '');
+      it.el.classList.toggle('has-permission', f.permissions > 0);
       it.el.classList.toggle('is-empty', f.agents === 0);
     }
     if (total > 0) list.setAttribute('aria-activedescendant', optionId(current));
@@ -163,6 +188,19 @@ export function mountFloorRail(o: FloorRailOptions): FloorRail {
       e.preventDefault();
       e.stopPropagation();
       o.focusWorld();
+      return;
+    }
+    // Enter vai ao primeiro agente esperando permissão no andar atual; sem ninguém, só garante o andar (sem selecionar)
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      const target = enterTarget(latest, o.current());
+      if (target && o.openAgent) {
+        if (target.floor !== o.current()) choose(target.floor);
+        o.openAgent(target.agentId);
+      } else {
+        choose(o.current());
+      }
       return;
     }
     const next = nextFloor(o.current(), latest.total, e.key);

@@ -877,8 +877,9 @@ para pular, use `↑`/`↓`, `Home`/`End` ou `PageUp`/`PageDown`, e `▲`/`▼` 
 transição curta de elevador (porta, escurecimento e chegada em 300 ms; com "reduzir movimento" no sistema, corte seco) e
 cliques seguidos valem o último. No celular o trilho vira uma faixa de chips na base. No seu próprio escritório a
 mesma visão é opcional: **Configurações › Aparência › Andares** empilha uma sala por andar (o térreo fica com recepção,
-copa, banheiro e lounge) e mostra o trilho; desligado, o escritório é o corredor de sempre. O número enviado ao World
-continua sendo o de salas reais.
+copa, banheiro e lounge) e mostra o trilho; desligado, o escritório é o corredor de sempre. O trilho ganha um selo nos
+andares com permissão esperando (e `Enter` abre o primeiro agente que espera), e na lista lateral o agente de outro
+andar mostra "Andar 3" — o clique leva até ele. O número enviado ao World continua sendo o de salas reais.
 
 **Visitas.** Perto da porta de um prédio, **Entrar (E)** leva para dentro: o escritório do dono ao vivo, com as salas de
 nomes fictícios e os agentes no status de agora, só para ver (nada de terminal, mensagens ou permissões, e nada do

@@ -7733,6 +7733,18 @@ html.is-replay #world {
 }
 
 /* Há quanto tempo o agente está ocioso, na linha do nome (no lugar do "Principal"). */
+/* Andar do agente na lista ("Andar 3"): indicação discreta de que o clique troca de andar. */
+.ui-agent__floor {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--ui-bg-hover);
+  color: var(--ui-muted);
+  font-size: 10px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
 .ui-agent__since {
   flex: none;
   margin-left: auto;
@@ -11407,7 +11419,7 @@ html.is-replay #world {
 
 .ui-floor-rail__option {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 7px;
   padding: 5px 6px;
@@ -11464,6 +11476,24 @@ html.is-replay #world {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Selo de permissão: número visível + o mesmo aviso no aria-label do item (nunca só a cor). */
+.ui-floor-rail__badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e06772;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.ui-floor-rail__option.has-permission {
+  border-color: rgba(224, 103, 114, 0.5);
 }
 
 .ui-floor-rail__count {
@@ -11537,7 +11567,7 @@ html.is-replay #world {
 
   .ui-floor-rail__option {
     flex: none;
-    grid-template-columns: 8px auto auto;
+    grid-template-columns: 8px auto auto auto;
     padding: 4px 8px;
   }
 
