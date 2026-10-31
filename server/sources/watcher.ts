@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { SPECIAL } from '../../shared/activity';
 import type { Activity, AgentStatus, SourceInfo } from '../../shared/types';
 import type { AccountsService } from '../accounts/service';
+import type { SourceMetrics } from '../metrics/habblaud';
 import { errMsg, log } from '../log';
 import type { Office, TranscriptSummary } from '../model/office';
 import { compareVersions, registryStatus, RegistryReader, SHELL_STATUS_VERSION, type RegistryEntry } from './registry';
@@ -56,6 +57,8 @@ export interface WatcherOptions {
   isAlive?: (pid: number) => boolean;
   /** Desliga o fs.watch (testes). */
   watch?: boolean;
+  /** Métricas (opcional): falhas seguidas no ciclo de leitura viram 'degraded' no /healthz. */
+  metrics?: SourceMetrics;
 }
 
 /** cwd -> nome da pasta em projects/ (todo caractere não alfanumérico vira "-"). */
@@ -199,6 +202,10 @@ export class ClaudeWatcher implements AgentSource {
     this.opts.office.beginBoot();
     try {
       this.poll(true);
+      this.opts.metrics?.sourceOk(this.provider);
+    } catch (err) {
+      this.opts.metrics?.sourceError(this.provider);
+      throw err;
     } finally {
       this.opts.office.endBoot();
     }
@@ -246,7 +253,9 @@ export class ClaudeWatcher implements AgentSource {
   private safePoll(): void {
     try {
       this.poll(false);
+      this.opts.metrics?.sourceOk(this.provider);
     } catch (err) {
+      this.opts.metrics?.sourceError(this.provider);
       log.warnOnce(`poll:${errMsg(err)}`, tr('Falha no ciclo de leitura: {0}', [errMsg(err)]));
     }
   }

@@ -1,3 +1,4 @@
+import { loadWebhookConfig, sendWebhook } from './notifications/webhook';
 import { AntigravitySource } from './sources/antigravity/source';
 import { AntigravityHistory } from './sources/antigravity/history';
 import { GeminiSource } from './sources/gemini/source';
@@ -16,6 +17,7 @@ import { AccountsService } from './accounts/service';
 import { isTruthy, loadConfig, messagesOffReason, terminalOffReason, worldSocketUrl } from './config';
 import { createApiHandler, sendJson } from './http/app';
 import { createRequestGuard, isLoopbackHost } from './http/guard';
+import { createObservabilityHandler } from './http/observability';
 import { createRemoteGate, isRemoteRequest, loadSecret, RemoteSessions, startRemoteListener, type RemoteListener } from './http/remote';
 import { Hub } from './http/sse';
 import { createStaticHandler } from './http/static';
@@ -45,6 +47,7 @@ import { discoverCodexDirs } from './sources/codex/accounts';
 import { CodexHistory } from './sources/codex/history';
 import { CodexSource } from './sources/codex/source';
 import { createBuildReader, readBuildInfo } from './build';
+import { createMetrics } from './metrics/habblaud';
 import { UpdateChecker } from './updates/checker';
 import { getLocale, tr } from '../shared/i18n';
 import type { WorldLocale } from '../shared/world/protocol';
@@ -68,6 +71,8 @@ import { WorldViewer } from './world/viewer';
 
 const config = loadConfig();
 const startedAt = Date.now();
+// Métricas do processo (/healthz e /metrics): uma instância, injetada no Hub, nas fontes e no handler HTTP.
+const metrics = createMetrics();
 
 // Nome antigo (CodeTown, até a 0.3.2): leva ~/.codetown para ~/.habblaud antes de ler qualquer estado e avisa
 // das variáveis CODETOWN_* que não valem mais. No Docker, quem migra é o docker:up.
@@ -140,7 +145,7 @@ const office = new Office({
 // Fontes de agentes, uma por ferramenta (sources/source.ts): a do Claude Code e, depois dela, a do Codex (quando há
 // pastas do Codex; HABBLAUD_CODEX=0 desliga), com o histórico dela no HistorySet abaixo e as contas registradas por
 // ela mesma (accounts.setProviderAccounts). `codex` também recebe os eventos dos hooks do Codex (CodexLive).
-const claude = new ClaudeWatcher({ accounts, office, inDocker: config.inDocker });
+const claude = new ClaudeWatcher({ accounts, office, inDocker: config.inDocker, metrics });
 const agents = new SourceSet([claude]);
 const codexDirs = config.codex ? discoverCodexDirs(process.env, config.home) : [];
 const codex = codexDirs.length ? new CodexSource({ accounts, office, dirs: codexDirs, env: process.env, home: config.home }) : undefined;
@@ -164,6 +169,7 @@ late.agents = agents;
 // Página que pode responder pelo escritório: Host local na porta local; na remota, só com permissions liberado.
 const hub = new Hub(office, {
   canAnswer: (req) => (isRemoteRequest(req) ? !!config.remote?.allow.has('permissions') : isLoopbackHost(req.headers.host)),
+  metrics,
 });
 // "Meu dia": amostra o escritório a cada segundo e persiste em <dataDir>/stats/ (ver history/daystats.ts).
 const stats = new DayStatsService({ dir: join(config.dataDir, 'stats'), snapshot: () => hub.current() });
@@ -251,6 +257,7 @@ const timelineDir = join(config.dataDir, TIMELINE_DIR);
 const timeline = config.timeline ? new TimelineRecorder({ dir: timelineDir }) : undefined;
 if (timeline) hub.onSnapshot((snap) => timeline.ingest(snap));
 // Responder pelo escritório (hook PermissionRequest): age sobre as sessões, então segue a mesma trava.
+const webhookConfig = loadWebhookConfig();
 const permissions = config.terminal
   ? new PermissionRegistry({
       office,
@@ -262,6 +269,19 @@ const permissions = config.terminal
       codexAccount: (account, codexHome) => codexAccountOf(accounts.entriesOf('codex'), account, codexHome),
       demoDecide: (id, d) => office.decideDemoPermission(id, d),
       demoDetail: (id) => office.demoPermission(id),
+      onPermissionRequested: (info, agentId) => {
+        if (!webhookConfig.url && !webhookConfig.telegramToken) return;
+        const agent = office.get(agentId);
+        void sendWebhook(webhookConfig, {
+          event: 'permission_request',
+          agentName: agent?.name,
+          title: info.title,
+          text: info.text,
+          tool: info.tool,
+          url: `http://localhost:${config.port}`,
+          timestamp: info.createdAt,
+        });
+      },
     })
   : undefined;
 late.permissions = permissions;
@@ -291,6 +311,7 @@ const messages = config.messages
   ? new MessageRegistry({
       office,
       demoAgent: (id) => office.demoAgent(id),
+      demoAgents: () => office.demoAgents(),
       demoDeliver: (id, text) => office.deliverDemoMessage(id, text),
       codex: {
         run: codexBin ? createCodexQueueRunner(codexBin) : undefined,
@@ -356,6 +377,7 @@ const ticker = setInterval(() => {
   try {
     office.tick();
   } catch (err) {
+    metrics.error('office');
     log.warnOnce(`tick:${errMsg(err)}`, tr('Falha no relógio do escritório: {0}', [errMsg(err)]));
   }
 }, 250);
@@ -408,6 +430,18 @@ const api = createApiHandler({
   remote: config.remote ? { is: isRemoteRequest, allows: (f) => config.remote!.allow.has(f) } : undefined,
   world: world ? createWorldRoutes(world, worldViewer, worldSocial) : undefined,
 });
+// Observabilidade: /healthz e /metrics ficam fora de /api (passam pelo guard, como o resto das rotas).
+const observability = createObservabilityHandler({
+  metrics,
+  office,
+  hub,
+  sources: () => agents.sources(),
+  sourceCount: () => agents.all().length,
+  version: config.version,
+  startedAt,
+  metricsEnabled: config.metrics,
+  isRemote: config.remote ? isRemoteRequest : undefined,
+});
 
 const server = http.createServer();
 let closeVite: (() => Promise<void>) | undefined;
@@ -442,10 +476,14 @@ const guard = createRequestGuard({ allowedHosts: config.allowedHosts });
 
 server.on('request', (req, res) => {
   const url = parseUrl(req);
+  // A contagem fecha no fim da resposta (ou quando o cliente do SSE desconecta), com o status já definido.
+  metrics.httpRequest(req, res, url.pathname);
   try {
     if (guard(req, res)) return;
+    if (observability(req, res, url)) return;
     if (!api(req, res, url)) fallback(req, res, url);
   } catch (err) {
+    metrics.error('http');
     log.warn(tr('Erro ao responder {0} {1}: {2}', [req.method, url.pathname, errMsg(err)]));
     if (!res.headersSent) sendJson(res, 500, { error: tr('erro interno') });
     else res.destroy();
@@ -475,11 +513,15 @@ if (config.remote) {
     remote,
     (req, res) => {
       const url = parseUrl(req);
+      metrics.httpRequest(req, res, url.pathname);
       try {
         if (guard(req, res)) return;
+        // Saúde e métricas antes do login: um monitor não tem sessão. /metrics continua só local (403 pela rede).
+        if (observability(req, res, url)) return;
         if (gate(req, res, url)) return;
         if (!api(req, res, url)) fallback(req, res, url);
       } catch (err) {
+        metrics.error('http');
         log.warn(tr('Erro ao responder (remoto) {0} {1}: {2}', [req.method, url.pathname, errMsg(err)]));
         if (!res.headersSent) sendJson(res, 500, { error: tr('erro interno') });
         else res.destroy();

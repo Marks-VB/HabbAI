@@ -2454,6 +2454,7 @@ export const ES: Readonly<Record<string, string>> = {
   "não liberado no acesso remoto (veja HABBLAUD_REMOTE_ALLOW)": "no permitido en el acceso remoto (mira HABBLAUD_REMOTE_ALLOW)",
   "esperado {enabled: boolean}": "se esperaba {enabled: boolean}",
   "rota só do próprio computador (hooks, plugins e o auxiliar do host)": "ruta solo para el propio equipo (hooks, plugins y el auxiliar del host)",
+  "as métricas só são servidas pelo próprio computador (http://localhost)": "las métricas solo se sirven desde el propio equipo (http://localhost)",
   "novo agente pelo escritório desligado": "nuevo agente desde la oficina desactivado",
   "agentes novos só são abertos pelo próprio computador (http://localhost)": "los agentes nuevos solo se abren desdel propio equipo (http://localhost)",
   "anexos desligados": "adjuntos desactivados",
@@ -3381,4 +3382,17 @@ export const ES: Readonly<Record<string, string>> = {
 
   // server/spawn/spawn.ts
   "o claude deste computador é um atalho .cmd e não achei o programa por trás dele": "el claude de este equipo es un acceso directo .cmd y no encontré el programa que hay detrás",
+
+  // broadcast
+  "Digite uma instrução para todos os agentes do escritório...": "Escribe una instrucción para todos los agentes de la oficina...",
+  "Transmitir ordem": "Transmitir orden",
+  "Ordem geral para os agentes": "Orden general para los agentes",
+  "{0} agentes principais receberão esta mensagem.": "{0} agentes principales recibirán este mensaje.",
+  "Digite uma instrução antes de enviar.": "Escribe una instrucción antes de enviar.",
+  "Transmitindo...": "Transmitiendo...",
+  "Ordem transmitida com sucesso para {0} agentes.": "Orden transmitida con éxito a {0} agentes.",
+  "Falha ao transmitir ordem: {0}": "Fallo al transmitir orden: {0}",
+  "Ordem geral: envia uma instrução para todos os agentes": "Orden general: envía una instrucción a todos los agentes",
+  "esperado {text}": "esperado {text}",
+  "o texto passa de {0} caracteres": "el texto supera los {0} caracteres",
 };

@@ -2454,6 +2454,7 @@ export const EN: Readonly<Record<string, string>> = {
   "não liberado no acesso remoto (veja HABBLAUD_REMOTE_ALLOW)": "not allowed over remote access (see HABBLAUD_REMOTE_ALLOW)",
   "esperado {enabled: boolean}": "expected {enabled: boolean}",
   "rota só do próprio computador (hooks, plugins e o auxiliar do host)": "route only for the computer running HabbAI (hooks, plugins and the host helper)",
+  "as métricas só são servidas pelo próprio computador (http://localhost)": "metrics are only served from the computer running HabbAI (http://localhost)",
   "novo agente pelo escritório desligado": "new agent from the office disabled",
   "agentes novos só são abertos pelo próprio computador (http://localhost)": "new agents can only be opened from the computer running HabbAI (http://localhost)",
   "anexos desligados": "attachments disabled",
@@ -3380,4 +3381,17 @@ export const EN: Readonly<Record<string, string>> = {
 
   // server/spawn/spawn.ts
   "o claude deste computador é um atalho .cmd e não achei o programa por trás dele": "this computer's claude is a .cmd shortcut and I couldn't find the program behind it",
+
+  // broadcast
+  "Digite uma instrução para todos os agentes do escritório...": "Type an instruction for all office agents...",
+  "Transmitir ordem": "Broadcast order",
+  "Ordem geral para os agentes": "Broadcast order to agents",
+  "{0} agentes principais receberão esta mensagem.": "{0} main agents will receive this message.",
+  "Digite uma instrução antes de enviar.": "Type an instruction before sending.",
+  "Transmitindo...": "Broadcasting...",
+  "Ordem transmitida com sucesso para {0} agentes.": "Order successfully broadcast to {0} agents.",
+  "Falha ao transmitir ordem: {0}": "Failed to broadcast order: {0}",
+  "Ordem geral: envia uma instrução para todos os agentes": "Broadcast: send an instruction to all agents",
+  "esperado {text}": "expected {text}",
+  "o texto passa de {0} caracteres": "text exceeds {0} characters",
 };

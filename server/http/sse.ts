@@ -3,6 +3,7 @@
 // Snapshots saem com throttle (~200 ms); feed e avisos vão em lote logo depois do snapshot.
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { OfficeSnapshot } from '../../shared/types';
+import type { SseMetrics } from '../metrics/habblaud';
 import type { Office } from '../model/office';
 import { isLoopbackHost } from './guard';
 
@@ -22,19 +23,22 @@ export class Hub {
   private readonly pingMs: number;
   /** Quem pode responder pelo escritório; padrão: Host local. A porta remota (http/remote.ts) troca a regra. */
   private readonly canAnswer: (req: IncomingMessage) => boolean;
+  /** Métricas (opcionais): clientes conectados e eventos transmitidos. */
+  private readonly metrics?: SseMetrics;
 
   constructor(
     private readonly office: Office,
-    opts: { throttleMs?: number; pingMs?: number; canAnswer?: (req: IncomingMessage) => boolean } = {},
+    opts: { throttleMs?: number; pingMs?: number; canAnswer?: (req: IncomingMessage) => boolean; metrics?: SseMetrics } = {},
   ) {
     this.throttleMs = opts.throttleMs ?? 200;
     this.pingMs = opts.pingMs ?? 15_000;
     this.canAnswer = opts.canAnswer ?? ((req) => isLoopbackHost(req.headers.host));
+    this.metrics = opts.metrics;
   }
 
   start(): void {
     this.unsubscribe = this.office.onChange(() => this.schedule());
-    this.pinger = setInterval(() => this.writeAll(': ping\n\n'), this.pingMs);
+    this.pinger = setInterval(() => this.writeAll(': ping\n\n', false), this.pingMs);
     this.pinger.unref?.();
   }
 
@@ -47,6 +51,7 @@ export class Hub {
     this.pinger = null;
     for (const c of this.clients) c.end();
     this.clients.clear();
+    this.metrics?.sseClients(0);
   }
 
   get size(): number {
@@ -82,7 +87,12 @@ export class Hub {
     res.write(frame('feed', this.office.recentFeed(50)));
     this.clients.add(res);
     if (this.canAnswer(req)) this.local.add(res);
-    const drop = () => this.clients.delete(res);
+    this.metrics?.sseClients(this.clients.size);
+    this.metrics?.eventEmitted();
+    const drop = () => {
+      this.clients.delete(res);
+      this.metrics?.sseClients(this.clients.size);
+    };
     req.on('close', drop);
     res.on('close', drop);
     res.on('error', drop);
@@ -124,7 +134,8 @@ export class Hub {
     this.timer.unref?.();
   }
 
-  private writeAll(chunk: string): void {
+  private writeAll(chunk: string, event = true): void {
+    let wrote = false;
     for (const c of this.clients) {
       if (c.destroyed || c.writableEnded) {
         this.clients.delete(c);
@@ -136,7 +147,10 @@ export class Hub {
         continue;
       }
       c.write(chunk);
+      wrote = true;
     }
+    // Um evento (snapshot/feed/notice) conta uma vez por transmissão com ao menos um cliente; o ping não é evento.
+    if (event && wrote) this.metrics?.eventEmitted();
   }
 }
 

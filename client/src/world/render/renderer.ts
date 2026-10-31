@@ -23,6 +23,8 @@ import { carSprite, propSprite, shadowSprite } from './props';
 import { countBadge, fallbackIcon } from './shell-sprites';
 import { decorateElevator, drawSeasonalLights, drawSeasonalWindow, seasonalCostume, seasonalFurniture } from './seasonal';
 import { buildAreaVis, furnitureSprites, opaqueBounds, paintShell, toWallVis, WALL_MARGIN, wallItemOrigin, wallSprites, type AreaVis, type FurnVis, type WallVis } from './scene';
+import { PetSprites } from '../../art/pet';
+import type { OfficePet } from '../sim/pet';
 
 const enum K {
   FurnBase,
@@ -30,6 +32,7 @@ const enum K {
   Char,
   Prop,
   Car,
+  Pet,
 }
 
 /** Ladrilho do vazio ao redor da estação orbital: fundo escuro, estrelas e uma nebulosa tênue. */
@@ -71,7 +74,7 @@ function starTile(): HTMLCanvasElement {
 interface Ent {
   k: K;
   y: number;
-  ref: FurnVis | Character | ExteriorProp | Car | null;
+  ref: FurnVis | Character | ExteriorProp | Car | OfficePet | null;
   area: AreaVis | null;
   scale: number;
 }
@@ -133,6 +136,7 @@ export class Renderer {
   private icons: { x: number; y: number; name: IconName; bounce: number; alpha: number; badge: number }[] = [];
   /** Pipoca, confete e chuva (pool fixo). */
   readonly particles = new Particles();
+  private readonly petSprites = new PetSprites();
   /** Festa e alarme das salas (eventos do GitHub). */
   private readonly roomFx = new RoomFxRenderer();
   /** dt do frame atual (s), para as partículas emitidas durante o desenho. */
@@ -652,6 +656,7 @@ export class Renderer {
       }
     }
     for (const car of this.cars) if (visible(car.x - 24, car.y - 24, 48, 28)) push(K.Car, car.y, car, null, 1);
+    if (this.sim.pet?.x && visible(this.sim.pet.x - 8, this.sim.pet.y - 8, 16, 16)) push(K.Pet, this.sim.pet.y, this.sim.pet, null, 1);
     ents.sort((a, b) => a.y - b.y || a.k - b.k);
 
     this.iconCount = 0;
@@ -668,6 +673,9 @@ export class Renderer {
           break;
         case K.Prop:
           this.drawProp(e.ref as ExteriorProp, e.scale, this.scenario);
+          break;
+        case K.Pet:
+          this.drawPet(e.ref as OfficePet, now);
           break;
         case K.Car:
           this.drawCar(e.ref as Car);
@@ -1007,6 +1015,16 @@ export class Renderer {
       ctx.fillRect(sx, sy, 1, 2);
     }
     ctx.globalAlpha = 1;
+  }
+
+  private drawPet(pet: OfficePet, _now: number): void {
+    const sprite = this.petSprites.get(pet.pose, pet.dir, pet.frame);
+    this.ctx.drawImage(sprite, Math.round(pet.x - 8), Math.round(pet.y - 12));
+    if (pet.purrTimer > 0) {
+      this.ctx.fillStyle = '#ff4d6d';
+      this.ctx.font = '8px monospace';
+      this.ctx.fillText('♥', Math.round(pet.x - 2), Math.round(pet.y - 14));
+    }
   }
 
   private drawCharacter(ch: Character, now: number, sel: { agent: string | null; hover: string | null }): void {

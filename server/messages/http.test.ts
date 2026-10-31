@@ -50,6 +50,7 @@ async function serveMessages(opts: { enabled?: boolean; demo?: boolean; registry
     ? new MessageRegistry({
         office,
         demoAgent: (id) => office.demoAgent(id),
+        demoAgents: () => office.demoAgents(),
         demoDeliver: (id, text) => office.deliverDemoMessage(id, text),
         tickMs: 20,
         ...opts.registry,
@@ -266,6 +267,13 @@ describe('rotas', () => {
     srv.office.tick();
     const after = (await snapshot(srv)).agents.find((a) => a.id === demo.id)!;
     expect(after.recent.some((a) => a.text === 'Mensagem pelo HabbAI' && a.detail === 'oi, demo')).toBe(true);
+  });
+
+  it('broadcast: envia instrução para todos os agentes principais ativos', async () => {
+    srv = await serveMessages({ demo: true });
+    const res = await post(srv, '/api/messages/broadcast', { text: 'rodar testes' });
+    expect(res.status).toBe(201);
+    expect((res.json as { count: number }).count).toBeGreaterThan(0);
   });
 
   it('demo com o recurso desligado: os agentes fictícios também não recebem', async () => {
