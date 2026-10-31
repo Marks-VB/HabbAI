@@ -1023,6 +1023,8 @@ mod/      o mod do Habblaud e os plugins de permissões e de mensagens (plugins 
 | `GET /api/timeline/days` | Jours enregistrés pour le timelapse, avec la taille et l'heure du premier et du dernier enregistrement. |
 | `GET /api/timeline/:dia` | Chronologie d'un jour (`AAAA-MM-DD`), en JSONL (avec gzip). |
 | `GET /api/health` | Santé : version, démonstration, Docker, terminal, réponse et envoi de messages depuis le bureau, sources et statut de l'utilisation de chaque compte. |
+| `GET /healthz` | Santé pour conteneurs et moniteurs, sans connexion : version, uptime, `ok`/`degraded`, sources actives, sessions connues, clients SSE et le dernier événement (avec son âge). Une source qui échoue 3 cycles de lecture de suite passe l'état à `degraded` (HTTP 503). |
+| `GET /metrics` | Métriques au format texte de Prometheus (uptime, clients SSE, sessions, événements, erreurs par sous-système et par source, requêtes HTTP groupées par route) ; en accès local uniquement, `HABBLAUD_METRICS=0` le désactive (404). |
 | `POST /api/demo` | `{"enabled": true \| false}` active ou désactive les agents simulés. |
 | `POST /api/rooms/rename` | `{"id": sala, "name": nome}` renomme la salle (vide = retour au nom du dossier) ; le nom est enregistré dans `rooms.json`, dans le dossier de données. En accès local uniquement. |
 | `GET /api/mod/summary` | Pour le mod de Claude Code : version, nombre d'agents, combien travaillent et qui a besoin de vous (sans la démo et, avec `?account=&session=`, sans la session elle-même). |

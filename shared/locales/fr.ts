@@ -2470,6 +2470,7 @@ export const FR: Readonly<Record<string, string>> = {
   "não liberado no acesso remoto (veja HABBLAUD_REMOTE_ALLOW)": "non autorisé en accès à distance (voir HABBLAUD_REMOTE_ALLOW)",
   "esperado {enabled: boolean}": "attendu {enabled: boolean}",
   "rota só do próprio computador (hooks, plugins e o auxiliar do host)": "route réservée à l'ordinateur lui-même (hooks, plugins et l'auxiliaire de l'hôte)",
+  "as métricas só são servidas pelo próprio computador (http://localhost)": "les métriques ne sont servies que depuis l'ordinateur lui-même (http://localhost)",
   "novo agente pelo escritório desligado": "nouvel agent depuis le bureau désactivé",
   "agentes novos só são abertos pelo próprio computador (http://localhost)": "les nouveaux agents ne s'ouvrent que depuis l'ordinateur lui-même (http://localhost)",
   "anexos desligados": "pièces jointes désactivées",

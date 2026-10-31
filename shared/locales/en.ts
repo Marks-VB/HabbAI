@@ -2454,6 +2454,7 @@ export const EN: Readonly<Record<string, string>> = {
   "não liberado no acesso remoto (veja HABBLAUD_REMOTE_ALLOW)": "not allowed over remote access (see HABBLAUD_REMOTE_ALLOW)",
   "esperado {enabled: boolean}": "expected {enabled: boolean}",
   "rota só do próprio computador (hooks, plugins e o auxiliar do host)": "route only for the computer running HabbAI (hooks, plugins and the host helper)",
+  "as métricas só são servidas pelo próprio computador (http://localhost)": "metrics are only served from the computer running HabbAI (http://localhost)",
   "novo agente pelo escritório desligado": "new agent from the office disabled",
   "agentes novos só são abertos pelo próprio computador (http://localhost)": "new agents can only be opened from the computer running HabbAI (http://localhost)",
   "anexos desligados": "attachments disabled",

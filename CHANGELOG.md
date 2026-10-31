@@ -12,6 +12,11 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
+- **Saúde e métricas para quem roda em Docker (`GET /healthz` e `GET /metrics`).** O `/healthz` (sem login) devolve
+  versão, uptime, `ok`/`degraded`, fontes ativas, sessões conhecidas, clientes SSE conectados e a idade do último evento;
+  uma fonte que falha 3 ciclos seguidos de leitura deixa o estado `degraded` (HTTP 503). O `/metrics` fala o formato de
+  texto do Prometheus (uptime, clientes SSE, sessões, eventos, erros por subsistema e por fonte, requisições HTTP por rota
+  agrupada), só pelo próprio computador, e desliga com `HABBLAUD_METRICS=0`.
 - **Ordem Geral (Broadcast de mensagens)**: botão de megafone na barra superior e rota POST /api/messages/broadcast para enviar uma instrução em lote para todos os agentes principais ativos no escritório.
 - **Contratar agente com um clique na mesa vazia (Spawner Visual)**: clicar em qualquer mesa vaga de uma sala abre diretamente o painel de novo agente com o caminho do projeto daquela sala pré-selecionado.
 - **Notificações por Webhook e Telegram**: suporte a HABBLAUD_WEBHOOK_URL (com payloads adaptados para Discord, Slack e genérico) e HABBLAUD_TELEGRAM_BOT_TOKEN / HABBLAUD_TELEGRAM_CHAT_ID para alertar em tempo real quando um agente pede permissão para rodar comandos ou ferramentas.
