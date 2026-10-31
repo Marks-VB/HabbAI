@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { AppearanceParts } from '../../../../shared/appearance';
 import type { AgentInfo, OfficeSnapshot, RoomInfo, ShellJob } from '../../../../shared/types';
 import type { Appearance, ArtModule, RoomTheme } from '../../art/api';
+import { TILE } from '../../art/api';
 import { DEFAULT_WORLD_OPTIONS } from '../api';
 import type { Character } from './character';
 import { SHELL_DONE_TOOL, Sim } from './sim';
@@ -434,6 +435,40 @@ describe('simulação do escritório', () => {
     const before = calls;
     expect(apply({ look: 'm', parts: { hairStyle: 'bob' } }).appearance.look).toBe('m');
     expect(calls).toBe(before + 1);
+  });
+
+  it('mascote: nasce no corredor, anda sem sair dos limites e senta/dorme entre um passeio e outro', () => {
+    const sim = newSim();
+    const clock = { now: T0 };
+    sim.applySnapshot(snap([room('/a', 0)], [agent('ana', '/a', 'working')]), clock.now);
+    run(sim, clock, 1);
+    const rect = sim.building.corridor.rect;
+    const left = rect.x * TILE;
+    const right = (rect.x + rect.w) * TILE;
+    const top = rect.y * TILE;
+    const bottom = (rect.y + rect.h) * TILE;
+    expect(sim.pet.x).toBeGreaterThanOrEqual(left);
+    expect(sim.pet.x).toBeLessThanOrEqual(right);
+    let walked = false;
+    let rested = false;
+    run(sim, clock, 60, () => {
+      const pet = sim.pet;
+      expect(pet.x).toBeGreaterThanOrEqual(left);
+      expect(pet.x).toBeLessThanOrEqual(right);
+      expect(pet.y).toBeGreaterThanOrEqual(top);
+      expect(pet.y).toBeLessThanOrEqual(bottom);
+      expect(['sit', 'walk', 'sleep']).toContain(pet.pose);
+      expect(pet.frame).toBeGreaterThanOrEqual(0);
+      expect(pet.frame).toBeLessThan(8);
+      if (pet.pose === 'walk') walked = true;
+      else rested = true;
+      return false;
+    });
+    expect(walked).toBe(true);
+    expect(rested).toBe(true);
+    // O clique no gato (world/index.ts) o senta e liga o ronrono.
+    expect(sim.pet.pet()).toBe(true);
+    expect(sim.pet).toMatchObject({ pose: 'sit', purrTimer: 4000 });
   });
 });
 

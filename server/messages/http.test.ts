@@ -30,8 +30,11 @@ interface MessageServer {
   close(): Promise<void>;
 }
 
-/** Office + Hub + rotas de verdade numa porta livre do 127.0.0.1, com um agente principal na sessão "sess-1". */
-async function serveMessages(opts: { enabled?: boolean; demo?: boolean; registry?: Partial<MessageRegistryOptions> } = {}): Promise<MessageServer> {
+/**
+ * Office + Hub + rotas de verdade numa porta livre do 127.0.0.1, com um agente principal na sessão "sess-1"
+ * (`noAgent` = escritório vazio, para o broadcast sem ninguém).
+ */
+async function serveMessages(opts: { enabled?: boolean; demo?: boolean; noAgent?: boolean; registry?: Partial<MessageRegistryOptions> } = {}): Promise<MessageServer> {
   const tmp = tempDir();
   const enabled = opts.enabled ?? true;
   const late: { registry?: MessageRegistry } = {};
@@ -50,6 +53,7 @@ async function serveMessages(opts: { enabled?: boolean; demo?: boolean; registry
     ? new MessageRegistry({
         office,
         demoAgent: (id) => office.demoAgent(id),
+        demoAgents: () => office.demoAgents(),
         demoDeliver: (id, text) => office.deliverDemoMessage(id, text),
         tickMs: 20,
         ...opts.registry,
@@ -75,7 +79,7 @@ async function serveMessages(opts: { enabled?: boolean; demo?: boolean; registry
   });
   await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
   const port = (server.address() as AddressInfo).port;
-  office.addMain({ id: MAIN, account: 'acc', sessionId: SESSION, cwd: '/p/loja', role: 'Agente principal', startedAt: Date.now(), status: 'idle' });
+  if (!opts.noAgent) office.addMain({ id: MAIN, account: 'acc', sessionId: SESSION, cwd: '/p/loja', role: 'Agente principal', startedAt: Date.now(), status: 'idle' });
   if (opts.demo) office.setDemo(true);
   return {
     base: `http://127.0.0.1:${port}`,
@@ -135,6 +139,7 @@ describe('trava das mensagens (config)', () => {
 describe('trava das rotas', () => {
   const ROUTES: Array<[string, string]> = [
     ['POST', '/api/messages'],
+    ['POST', '/api/messages/broadcast'],
     ['GET', '/api/messages/x'],
     ['POST', '/api/mod/inbox'],
     ['POST', '/api/mod/inbox/ack'],
@@ -268,8 +273,83 @@ describe('rotas', () => {
     expect(after.recent.some((a) => a.text === 'Mensagem pelo HabbAI' && a.detail === 'oi, demo')).toBe(true);
   });
 
+  it('broadcast: envia instrução para todos os agentes principais ativos', async () => {
+    srv = await serveMessages({ demo: true });
+    const res = await post(srv, '/api/messages/broadcast', { text: 'rodar testes' });
+    expect(res.status).toBe(201);
+    expect((res.json as { count: number }).count).toBeGreaterThan(0);
+  });
+
   it('demo com o recurso desligado: os agentes fictícios também não recebem', async () => {
     srv = await serveMessages({ enabled: false, demo: true });
     expect((await snapshot(srv)).agents.filter((a) => a.canMessage)).toEqual([]);
+  });
+});
+
+describe('broadcast (ordem geral)', () => {
+  const OTHER = 'acc:2';
+  const GONE = 'acc:3';
+  const SUB = `${SESSION}:a1b2c3`;
+
+  it('corpo inválido (vazio, só espaços, tipo errado, longo demais): 400; GET: 405; origem estranha: 403', async () => {
+    srv = await serveMessages();
+    for (const body of [{}, null, [], { text: '' }, { text: '  \n ' }, { text: 3 }, { text: 'x'.repeat(20_001) }]) {
+      const r = await post(srv, '/api/messages/broadcast', body);
+      expect(r.status, JSON.stringify(body).slice(0, 30)).toBe(400);
+      expect(r.json).toMatchObject({ error: expect.any(String) });
+    }
+    expect((await request(srv.base, '/api/messages/broadcast')).status).toBe(405);
+    expect((await post(srv, '/api/messages/broadcast', { text: 'oi' }, { Origin: 'https://evil.example' })).status).toBe(403);
+  });
+
+  it('nenhum agente ativo: 201 com a lista vazia (não é erro)', async () => {
+    srv = await serveMessages({ noAgent: true });
+    const r = await post(srv, '/api/messages/broadcast', { text: 'bom dia' });
+    expect(r.status).toBe(201);
+    expect(r.json).toEqual({ sent: [], count: 0 });
+  });
+
+  it('cria uma entrega para cada principal com o plugin: não para subagente nem para quem saiu', async () => {
+    srv = await serveMessages();
+    srv.office.addMain({ id: OTHER, account: 'acc', sessionId: 'sess-2', cwd: '/p/api', role: 'Agente principal', startedAt: Date.now(), status: 'idle' });
+    srv.office.addMain({ id: GONE, account: 'acc', sessionId: 'sess-3', cwd: '/p/loja', role: 'Agente principal', startedAt: Date.now(), status: 'idle' });
+    srv.office.addSub({ id: SUB, parentId: MAIN, sessionId: SESSION, role: 'Explore', background: false, startedAt: Date.now() });
+    srv.office.closeMain(GONE);
+    // Duas sessões com o plugin conectado (a de quem saiu não pergunta mais).
+    for (const session of [SESSION, 'sess-2']) expect((await post(srv, '/api/mod/inbox', { session, account: 'acc' })).json).toEqual({ messages: [] });
+
+    const text = '  rode a suíte completa  ';
+    const r = await post(srv, '/api/messages/broadcast', { text });
+    expect(r.status).toBe(201);
+    const { sent, count } = r.json as { sent: OutboxMessage[]; count: number };
+    expect(count).toBe(2);
+    expect(sent).toHaveLength(2);
+    expect(sent.map((m) => m.agentId).sort()).toEqual([MAIN, OTHER].sort());
+    expect(sent.some((m) => m.agentId === SUB || m.agentId === GONE)).toBe(false);
+    for (const m of sent) {
+      expect(m).toEqual({ id: expect.stringMatching(/^m-/), agentId: m.agentId, status: 'queued', createdAt: expect.any(Number), updatedAt: expect.any(Number) });
+    }
+    // A resposta não leva o texto; o plugin busca a mesma instrução, já aparada, nas duas sessões.
+    expect(r.text).not.toContain('suíte');
+    for (const [session, agentId] of [
+      [SESSION, MAIN],
+      ['sess-2', OTHER],
+    ] as const) {
+      const inbox = (await post(srv, '/api/mod/inbox', { session, account: 'acc' })).json as { messages: InboxMessage[] };
+      expect(inbox.messages).toEqual([{ id: sent.find((m) => m.agentId === agentId)!.id, text: 'rode a suíte completa' }]);
+    }
+    expect((await post(srv, '/api/mod/inbox', { session: 'sess-3', account: 'acc' })).json).toEqual({ messages: [] });
+  });
+
+  it('demo: os agentes fictícios também recebem (e o principal sem plugin fica de fora)', async () => {
+    srv = await serveMessages({ demo: true });
+    const expected = (await snapshot(srv)).agents.filter((a) => a.id.startsWith('demo:') && a.kind === 'main' && a.status !== 'offline' && a.status !== 'done' && a.canMessage === true);
+    const r = await post(srv, '/api/messages/broadcast', { text: 'bom dia, pessoal' });
+    expect(r.status).toBe(201);
+    const { sent, count } = r.json as { sent: OutboxMessage[]; count: number };
+    expect(count).toBe(sent.length);
+    expect(count).toBeGreaterThan(0);
+    expect(sent.map((m) => m.agentId).sort()).toEqual(expected.map((a) => a.id).sort());
+    expect(sent.some((m) => m.agentId === MAIN)).toBe(false);
   });
 });

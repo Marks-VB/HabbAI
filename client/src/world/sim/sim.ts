@@ -36,6 +36,7 @@ import { countShells, latestShellDone, shellLabel, shellStage, shellWaitSince, s
 import { SpotRegistry } from './spots';
 import type { Step } from './steps';
 import { EXIT_RADIUS, NO_INTENT, stepFree, tileAt, VISITOR_LANYARD, type VisitorIntent } from './visitor';
+import { OfficePet } from './pet';
 import { tr } from '../../../../shared/i18n';
 
 /**
@@ -135,6 +136,8 @@ export class Sim {
   private nextHousekeeping = 0;
   /** Visita a um prédio do mundo (SimMode.visit). */
   readonly visit: boolean;
+  /** Mascote do escritório (gato em pixel art). */
+  readonly pet = new OfficePet();
   /** Visita: o meu personagem (fora de `chars`: nem snapshot, nem vida social, nem lugar reservado). */
   visitor: Character | null = null;
   /** Visita: para onde o teclado manda o visitante. */
@@ -583,6 +586,22 @@ export class Sim {
       this.runCharacter(ch, dt, now);
     }
     if (this.visitor) this.runVisitor(this.visitor, dt, now);
+    if (!this.pet.x && this.building?.corridor) {
+      const cx = this.building.corridor.rect.x + Math.floor(this.building.corridor.rect.w / 2);
+      const cy = this.building.corridor.rect.y + Math.floor(this.building.corridor.rect.h / 2);
+      this.pet.init(cx * TILE, cy * TILE);
+    }
+    this.pet.tick(
+      dt * 1000,
+      (tx, ty) => this.building?.grid ? this.building.grid.walkable(tx, ty) : false,
+      () => {
+        const corr = this.building?.corridor;
+        if (!corr) return null;
+        const rx = corr.rect.x + 2 + Math.floor(Math.random() * Math.max(1, corr.rect.w - 4));
+        const ry = corr.rect.y + 1 + Math.floor(Math.random() * Math.max(1, corr.rect.h - 2));
+        return { x: rx, y: ry };
+      },
+    );
     for (const [id, ch] of this.chars) {
       if (ch.gone) {
         this.spots.releaseAll(id);

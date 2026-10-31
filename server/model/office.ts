@@ -777,6 +777,11 @@ export class Office {
 
   // ---------------------------------------------------------------- mensagens pelo escritório (server/messages)
 
+  /** Agentes fictícios do demo (só existem no snapshot). */
+  demoAgents(): AgentInfo[] {
+    return this.demoSnap?.agents ?? [];
+  }
+
   /** Agente fictício do demo (só existe no snapshot), para o registro de mensagens. */
   demoAgent(id: string): AgentInfo | undefined {
     return this.demoSnap?.agents.find((a) => a.id === id);

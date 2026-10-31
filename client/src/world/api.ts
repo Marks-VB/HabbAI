@@ -82,6 +82,7 @@ export interface WorldApi {
   getSelection(): Selection;
   /** Disparado quando a seleção muda (por clique no canvas ou por select()). */
   onSelect(cb: (sel: Selection) => void): () => void;
+  onDeskClick?(cb: (roomId: string, folder?: string) => void): () => void;
   /** Agente sob o cursor (para tooltips da UI). */
   onHover(cb: (agentId: string | null) => void): () => void;
   focusAgent(id: string, opts?: { follow?: boolean }): void;
