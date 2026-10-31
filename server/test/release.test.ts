@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { changelogSection, parseReleaseArgs, unwrapMarkdown } from '../../scripts/release';
+import { changelogSection, parseReleaseArgs, repoFromRemote, unwrapMarkdown } from '../../scripts/release';
 
 const ROOT = join(import.meta.dirname, '..', '..');
 
@@ -38,6 +38,20 @@ describe('changelogSection', () => {
     // "0.2.0" não casa com "0.2.01", e o ponto não vira curinga.
     expect(changelogSection('## [0.2.01]\n\n- não', '0.2.0')).toBeUndefined();
     expect(changelogSection('## [0x2y0]\n\n- não', '0.2.0')).toBeUndefined();
+  });
+});
+
+describe('repoFromRemote', () => {
+  it('tira owner/repo da URL do origin (https e ssh, com ou sem .git)', () => {
+    expect(repoFromRemote('https://github.com/Marks-VB/HabbAI.git')).toBe('Marks-VB/HabbAI');
+    expect(repoFromRemote('https://github.com/Marks-VB/HabbAI')).toBe('Marks-VB/HabbAI');
+    expect(repoFromRemote('git@github.com:Marks-VB/HabbAI.git')).toBe('Marks-VB/HabbAI');
+    expect(repoFromRemote('  https://github.com/a/b.git  ')).toBe('a/b');
+  });
+
+  it('URL que não é do GitHub: undefined (o gh decide sozinho)', () => {
+    expect(repoFromRemote('https://gitlab.com/a/b.git')).toBeUndefined();
+    expect(repoFromRemote('')).toBeUndefined();
   });
 });
 

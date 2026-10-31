@@ -47,6 +47,15 @@ export function changelogSection(changelog: string, version: string): string | u
 }
 
 /**
+ * Repositório do remoto (`owner/repo`) a partir da URL do `origin`. No fork, o `upstream` também existe, e sem isto o
+ * `gh` pode criar a release no repositório de cima em vez de no seu.
+ */
+export function repoFromRemote(url: string): string | undefined {
+  const m = url.trim().match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
+  return m ? `${m[1]}/${m[2]}` : undefined;
+}
+
+/**
  * Junta as linhas quebradas só para caber em 120 colunas: nas notas da release o GitHub mostra cada quebra de linha,
  * e as frases apareceriam cortadas no meio. Títulos, itens novos, citações, tabelas e blocos de código ficam como estão.
  */
@@ -109,8 +118,9 @@ function main(argv: string[]): void {
   }
   if (tagExists) fail(`a tag ${tag} já existe: suba a versão no package.json antes.`);
   const notes = unwrapMarkdown(section);
+  const repo = repoFromRemote(run('git', ['remote', 'get-url', 'origin']));
 
-  console.log(`Habblaud ${tag}\n\n${notes}\n`);
+  console.log(`HabbAI ${tag}\n\n${notes}\n`);
   if (args.dryRun) {
     console.log('(--dry-run: nada foi publicado)');
     return;
@@ -120,9 +130,11 @@ function main(argv: string[]): void {
   try {
     const file = join(dir, 'notas.md');
     writeFileSync(file, `${notes}\n`);
-    run('git', ['tag', '-a', tag, '-m', `Habblaud ${tag}`]);
+    run('git', ['tag', '-a', tag, '-m', `HabbAI ${tag}`]);
     run('git', ['push', 'origin', tag]);
-    const url = run('gh', ['release', 'create', tag, '--verify-tag', '--title', `Habblaud ${tag}`, '--notes-file', file]);
+    // `--repo` explícito: com um remoto `upstream` no fork, o `gh` sem ele escolhe o repositório errado.
+    const target = repo ? ['--repo', repo] : [];
+    const url = run('gh', ['release', 'create', tag, '--verify-tag', '--title', `HabbAI ${tag}`, ...target, '--notes-file', file]);
     console.log(`✓ Release publicada: ${url}`);
   } finally {
     rmSync(dir, { recursive: true, force: true });

@@ -10,6 +10,12 @@ do meio (0.**3**.0).
 
 ## [Não lançado]
 
+### Corrigido
+
+- **`npm run release` no fork**: o script agora usa **HabbAI** no título da release e passa `--repo` com o repositório
+  do `origin`. Antes, com o remoto `upstream` configurado, o `gh` criava a release no repositório de cima em vez de no
+  seu (a tag ia para o lugar certo, mas a release não existia no fork).
+
 ## [1.1.0] - 2026-10-31
 
 ### Adicionado
